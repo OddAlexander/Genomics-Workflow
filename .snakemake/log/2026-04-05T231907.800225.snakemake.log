@@ -1,0 +1,54 @@
+Assuming unrestricted shared filesystem usage.
+host: fedora
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 8
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+assemble                1
+identify_species        4
+kleborate               4
+report                  4
+all                     1
+total                  14
+
+Select jobs to execute...
+Execute 1 jobs...
+[Sun Apr  5 23:19:08 2026]
+localrule assemble:
+    input: results/4/Trimmed/4_R1.fastq.gz, results/4/Trimmed/4_R2.fastq.gz
+    output: results/4/Assembly/contigs.fa
+    jobid: 18
+    reason: Missing output files: results/4/Assembly/contigs.fa
+    wildcards: sample=4
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+RuleException:
+CalledProcessError in file "/home/odd/genomics/Snakefile", line 125:
+Command 'set -euo pipefail;  pixi run shovill --R1 results/4/Trimmed/4_R1.fastq.gz --R2 results/4/Trimmed/4_R2.fastq.gz --outdir results/4/Assembly --cpus 8 --force' returned non-zero exit status 1.
+[Sun Apr  5 23:19:10 2026]
+Error in rule assemble:
+    message: None
+    jobid: 18
+    input: results/4/Trimmed/4_R1.fastq.gz, results/4/Trimmed/4_R2.fastq.gz
+    output: results/4/Assembly/contigs.fa
+    shell:
+        pixi run shovill --R1 results/4/Trimmed/4_R1.fastq.gz --R2 results/4/Trimmed/4_R2.fastq.gz --outdir results/4/Assembly --cpus 8 --force
+        (command exited with non-zero exit code)
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Sun Apr  5 23:19:10 2026]
+Error in rule assemble:
+    message: None
+    jobid: 18
+    input: results/4/Trimmed/4_R1.fastq.gz, results/4/Trimmed/4_R2.fastq.gz
+    output: results/4/Assembly/contigs.fa
+    shell:
+        pixi run shovill --R1 results/4/Trimmed/4_R1.fastq.gz --R2 results/4/Trimmed/4_R2.fastq.gz --outdir results/4/Assembly --cpus 8 --force
+        (command exited with non-zero exit code)
+Complete log(s): /home/odd/genomics/.snakemake/log/2026-04-05T231907.800225.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

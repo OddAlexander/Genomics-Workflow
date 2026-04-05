@@ -1,0 +1,142 @@
+Assuming unrestricted shared filesystem usage.
+host: fedora
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 8
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+assemble                1
+fastqc                  4
+identify_species        4
+quast                   4
+kleborate               4
+multiqc                 4
+report                  4
+all                     1
+total                  26
+
+Select jobs to execute...
+Execute 4 jobs...
+[Sun Apr  5 23:53:24 2026]
+localrule fastqc:
+    input: results/1/Trimmed/1_R1.fastq.gz, results/1/Trimmed/1_R2.fastq.gz
+    output: results/1/QC/fastqc/1_R1_fastqc.html
+    jobid: 8
+    reason: Missing output files: results/1/QC/fastqc/1_R1_fastqc.html
+    wildcards: sample=1
+    threads: 2
+    resources: tmpdir=/tmp
+[Sun Apr  5 23:53:24 2026]
+localrule fastqc:
+    input: results/4/Trimmed/4_R1.fastq.gz, results/4/Trimmed/4_R2.fastq.gz
+    output: results/4/QC/fastqc/4_R1_fastqc.html
+    jobid: 32
+    reason: Missing output files: results/4/QC/fastqc/4_R1_fastqc.html
+    wildcards: sample=4
+    threads: 2
+    resources: tmpdir=/tmp
+[Sun Apr  5 23:53:24 2026]
+localrule fastqc:
+    input: results/3/Trimmed/3_R1.fastq.gz, results/3/Trimmed/3_R2.fastq.gz
+    output: results/3/QC/fastqc/3_R1_fastqc.html
+    jobid: 24
+    reason: Missing output files: results/3/QC/fastqc/3_R1_fastqc.html
+    wildcards: sample=3
+    threads: 2
+    resources: tmpdir=/tmp
+[Sun Apr  5 23:53:24 2026]
+localrule fastqc:
+    input: results/2/Trimmed/2_R1.fastq.gz, results/2/Trimmed/2_R2.fastq.gz
+    output: results/2/QC/fastqc/2_R1_fastqc.html
+    jobid: 16
+    reason: Missing output files: results/2/QC/fastqc/2_R1_fastqc.html
+    wildcards: sample=2
+    threads: 2
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Sun Apr  5 23:53:28 2026]
+Finished jobid: 32 (Rule: fastqc)
+1 of 26 steps (4%) done
+Execute 2 jobs...
+[Sun Apr  5 23:53:28 2026]
+localrule quast:
+    input: results/1/Assembly/contigs.fa
+    output: results/1/QUAST/report.html
+    jobid: 6
+    reason: Missing output files: results/1/QUAST/report.html
+    wildcards: sample=1
+    resources: tmpdir=/tmp
+[Sun Apr  5 23:53:28 2026]
+localrule identify_species:
+    input: results/3/Trimmed/3_R1.fastq.gz, results/3/Trimmed/3_R2.fastq.gz
+    output: results/3/species.txt, results/3/ID_Kraken2/kraken2_report.txt
+    jobid: 21
+    reason: Missing output files: results/3/species.txt
+    wildcards: sample=3
+    resources: tmpdir=/tmp
+RuleException:
+CalledProcessError in file "/home/odd/genomics/Snakefile", line 160:
+Command 'set -euo pipefail;  pixi run quast results/1/Assembly/contigs.fa -o results/1/QUAST' returned non-zero exit status 127.
+[Sun Apr  5 23:53:28 2026]
+Error in rule quast:
+    message: None
+    jobid: 6
+    input: results/1/Assembly/contigs.fa
+    output: results/1/QUAST/report.html
+    shell:
+        pixi run quast results/1/Assembly/contigs.fa -o results/1/QUAST
+        (command exited with non-zero exit code)
+RuleException:
+CalledProcessError in file "/home/odd/genomics/Snakefile", line 135:
+Command 'set -euo pipefail;  
+        pixi run --environment identification kraken2 --db /run/media/odd/Database/kraken2_db/ --paired --report results/3/ID_Kraken2/kraken2_report.txt results/3/Trimmed/3_R1.fastq.gz results/3/Trimmed/3_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/3/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/3/species.txt' returned non-zero exit status 2.
+[Sun Apr  5 23:53:28 2026]
+Error in rule identify_species:
+    message: None
+    jobid: 21
+    input: results/3/Trimmed/3_R1.fastq.gz, results/3/Trimmed/3_R2.fastq.gz
+    output: results/3/species.txt, results/3/ID_Kraken2/kraken2_report.txt
+    shell:
+        
+        pixi run --environment identification kraken2 --db /run/media/odd/Database/kraken2_db/ --paired --report results/3/ID_Kraken2/kraken2_report.txt results/3/Trimmed/3_R1.fastq.gz results/3/Trimmed/3_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/3/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/3/species.txt
+        
+        (command exited with non-zero exit code)
+[Sun Apr  5 23:53:29 2026]
+Finished jobid: 24 (Rule: fastqc)
+2 of 26 steps (8%) done
+[Sun Apr  5 23:53:32 2026]
+Finished jobid: 8 (Rule: fastqc)
+3 of 26 steps (12%) done
+[Sun Apr  5 23:53:32 2026]
+Finished jobid: 16 (Rule: fastqc)
+4 of 26 steps (15%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Sun Apr  5 23:53:32 2026]
+Error in rule identify_species:
+    message: None
+    jobid: 21
+    input: results/3/Trimmed/3_R1.fastq.gz, results/3/Trimmed/3_R2.fastq.gz
+    output: results/3/species.txt, results/3/ID_Kraken2/kraken2_report.txt
+    shell:
+        
+        pixi run --environment identification kraken2 --db /run/media/odd/Database/kraken2_db/ --paired --report results/3/ID_Kraken2/kraken2_report.txt results/3/Trimmed/3_R1.fastq.gz results/3/Trimmed/3_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/3/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/3/species.txt
+        
+        (command exited with non-zero exit code)
+[Sun Apr  5 23:53:32 2026]
+Error in rule quast:
+    message: None
+    jobid: 6
+    input: results/1/Assembly/contigs.fa
+    output: results/1/QUAST/report.html
+    shell:
+        pixi run quast results/1/Assembly/contigs.fa -o results/1/QUAST
+        (command exited with non-zero exit code)
+Complete log(s): /home/odd/genomics/.snakemake/log/2026-04-05T235324.274365.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

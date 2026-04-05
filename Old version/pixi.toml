@@ -1,0 +1,125 @@
+[workspace]
+name = "bacterial-genomics"
+version = "0.1.0"
+description = "Bacterial genomics pipeline: QC, assembly, annotation, comparative"
+channels = ["conda-forge", "bioconda"]
+platforms = ["linux-64"]
+
+[tasks]
+run-fastqc           = { cmd = "fastqc --threads 4 $INPUT -o $OUTPUT", env = { INPUT = "data/raw/*.fastq.gz", OUTPUT = "results/fastqc/" } }
+run-multiqc          = { cmd = "multiqc $INPUT -o $OUTPUT", env = { INPUT = "results/fastqc/", OUTPUT = "results/multiqc/" } }
+trim                 = { cmd = "fastp --thread 4 -i $R1 -I $R2 -o $OUT_R1 -O $OUT_R2 -h $REPORT", env = { R1 = "data/raw/R1.fastq.gz", R2 = "data/raw/R2.fastq.gz", OUT_R1 = "data/trimmed/R1.fastq.gz", OUT_R2 = "data/trimmed/R2.fastq.gz", REPORT = "results/fastp.html" } }
+assemble             = { cmd = "shovill --R1 $R1 --R2 $R2 --outdir $OUTPUT --cpus 8", env = { R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", OUTPUT = "results/assembly/" } }
+assemble-spades      = { cmd = "spades.py --pe1-1 $R1 --pe1-2 $R2 -o $OUTPUT --threads 8", env = { R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", OUTPUT = "results/spades/" } }
+run-checkassembly    = { cmd = "quast.py $INPUT -o $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/quast/" } }
+run-checkassembly-spades = { cmd = "quast.py $INPUT -o $OUTPUT", env = { INPUT = "results/spades/scaffolds.fasta", OUTPUT = "results/quast-spades/" } }
+mlst                 = { cmd = "mlst $INPUT > $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mlst.tsv" } }
+amr                  = { cmd = "abricate --db resfinder $INPUT > $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/amr.tsv" } }
+amrfinder            = { cmd = "amrfinder --nucleotide $INPUT --output $OUTPUT --threads 8", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/amrfinder/amrfinder.tsv" } }
+pangenome            = { cmd = "panaroo -i $INPUT -o $OUTPUT --clean-mode strict -t 8", env = { INPUT = "results/bakta/*.gff3", OUTPUT = "results/panaroo/" } }
+snippy               = { cmd = "snippy --cpus 8 --outdir $OUTPUT --ref $REF --R1 $R1 --R2 $R2", env = { REF = "reference.gbk", R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", OUTPUT = "results/snippy/" } }
+
+[dependencies]
+openjdk            = ">17"
+python             = "3.11.*"
+fastqc             = ">=0.12"
+multiqc            = ">=1.21"
+fastp              = ">=0.23"
+shovill            = ">=1.1"
+spades             = ">=3.15"
+mlst               = ">=2.23"
+abricate           = ">=1.0"
+ncbi-amrfinderplus = ">=3.12,<4.0"  # v4.x isolated in amrfinder4 env (libzlib conflict)
+panaroo            = ">=1.3"
+snippy             = ">=4.6"
+snp-sites          = ">=2.5"
+iqtree             = ">=2.2"
+fasttree           = ">=2.1"
+seqkit             = ">=2.8"
+samtools           = ">=1.19"
+bcftools           = ">=1.19"
+bwa-mem2           = ">=2.2"
+minimap2           = ">=2.26"
+setuptools         = "*"
+snp-dists          = ">=0.8"
+spatyper = ">=0.3"
+
+[pypi-dependencies]
+quast = ">=5.2"
+
+# ── Annotation (bakta 1.9.4 — stable with db v5)
+# NOTE: db v6 at /databases/bakta_db/db is incompatible — requires db v5
+[feature.annotation.dependencies]
+python = "3.9.*"
+bakta  = "==1.9.4"
+
+[feature.annotation.tasks]
+annotate          = { cmd = "bakta --db $BAKTA_DB --output $OUTPUT --threads 8 --force $INPUT", env = { INPUT = "results/assembly/scaffolds.fasta", OUTPUT = "results/bakta/" } }
+download-db       = { cmd = "bakta_db download --output $BAKTA_DB_DIR --type full", env = { BAKTA_DB_DIR = "/databases/bakta_db_v5" } }
+download-db-light = { cmd = "bakta_db download --output $BAKTA_DB_DIR --type light", env = { BAKTA_DB_DIR = "/databases/bakta_db_v5" } }
+
+# ── CheckM (isolated: requires Python 3.9 + setuptools)
+[feature.checkm.dependencies]
+python        = "3.9.*"
+checkm-genome = ">=1.2"
+setuptools    = "*"
+
+[feature.checkm.tasks]
+run-checkm = { cmd = "checkm lineage_wf $INPUT $OUTPUT -t 8 -x fasta", env = { INPUT = "results/assembly/", OUTPUT = "results/checkm/" } }
+
+# ── AMRFinder v4 (isolated: requires libzlib 1.3.1, conflicts with default env)
+[feature.amrfinder4.dependencies]
+ncbi-amrfinderplus = ">=4.2,<4.3"  # latest: 4.2.7
+
+[feature.amrfinder4.tasks]
+amrfinder4          = { cmd = "amrfinder --nucleotide $INPUT --output $OUTPUT --threads 8", env = { INPUT = "results/assembly/scaffolds.fasta", OUTPUT = "results/amrfinder/amrfinder.tsv" } }
+update-amrfinder-db = { cmd = "amrfinder --update" }
+
+# ── MOB-suite (isolated: plasmid typing, relaxase, conjugation, host-range)
+# First run: databases auto-downloaded (~1.5 GB) via mob_init
+[feature.mobsuite.dependencies]
+mob_suite = ">=3.1"
+
+[feature.mobsuite.tasks]
+mob-typer = { cmd = "mob_typer --infile $INPUT --outdir $OUTPUT", env = { INPUT = "results/assembly/scaffolds.fasta", OUTPUT = "results/mobsuite/" } }
+mob-recon = { cmd = "mob_recon --infile $INPUT --outdir $OUTPUT", env = { INPUT = "results/assembly/scaffolds.fasta", OUTPUT = "results/mobsuite/" } }
+mob-init  = { cmd = "mob_init" }
+
+[feature.poppunk.tasks]
+poppunk-assign = { cmd = "poppunk_assign --db $DB --query $QUERY --output $OUTPUT --threads 8", env = { DB = "/databases/poppunk/db", QUERY = "query.txt", OUTPUT = "results/poppunk/" } }
+
+# ── Identification
+[feature.identification.dependencies]
+kraken2   = ">=2.1"
+bracken   = ">=2.9"
+mash      = ">=2.3"
+fastani   = ">=1.34"
+gtdbtk    = ">=2.4"
+ectyper   = ">=2.0"
+kleborate = ">=2.3"
+
+[feature.poppunk.dependencies]
+python = "3.11.*"
+poppunk = ">=2.7"
+setuptools = "*"
+
+[feature.identification.pypi-dependencies]
+pyani = "*"
+
+[feature.identification.tasks]
+mash-screen  = { cmd = "mash screen -w -p 8 $MASH_DB $INPUT > $OUTPUT", env = { INPUT = "data/trimmed/R1.fastq.gz", OUTPUT = "results/mash_screen.tsv" } }
+kraken2-run  = { cmd = "kraken2 --db $KRAKEN2_DB --threads 8 --paired --gzip-compressed --report $REPORT $R1 $R2 > $OUTPUT", env = { R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", REPORT = "results/kraken2/report.txt", OUTPUT = "results/kraken2/output.txt" } }
+bracken-run  = { cmd = "bracken -d $KRAKEN2_DB -i $INPUT -o $OUTPUT -r 150 -l S", env = { INPUT = "results/kraken2/report.txt", OUTPUT = "results/bracken/species.txt" } }
+fastani-run  = { cmd = "fastANI -q $INPUT --rl $REFLIST -o $OUTPUT", env = { INPUT = "results/assembly/scaffolds.fasta", REFLIST = "reference_list.txt", OUTPUT = "results/fastani/ani.txt" } }
+gtdbtk-run   = { cmd = "gtdbtk classify_wf --genome_dir $INPUT --out_dir $OUTPUT --cpus 8 --extension fa", env = { INPUT = "results/assembly/", OUTPUT = "results/gtdbtk/" } }
+ectyper-run  = { cmd = "ectyper -i $INPUT -o $OUTPUT", env = { INPUT = "results/assembly/scaffolds.fasta", OUTPUT = "results/ectyper/" } }
+kleborate-run = { cmd = "kleborate --all -a $INPUT -o $OUTPUT", env = { INPUT = "results/assembly/scaffolds.fasta", OUTPUT = "results/kleborate/results.txt" } }
+
+[environments]
+default        = { solve-group = "main" }
+annotation     = { features = ["annotation"],     solve-group = "annotation",     no-default-feature = true }
+checkm         = { features = ["checkm"],          solve-group = "checkm",         no-default-feature = true }
+amrfinder4     = { features = ["amrfinder4"],      solve-group = "amrfinder4",     no-default-feature = true }
+mobsuite       = { features = ["mobsuite"],        solve-group = "mobsuite",       no-default-feature = true }
+identification = { features = ["identification"],  solve-group = "identification" }
+poppunk = { features = ["poppunk"], solve-group = "poppunk", no-default-feature = true }

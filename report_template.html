@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline-sammendrag -- __SAMPLE_NAME__</title>
+<style>
+  :root {
+    --blue:    #1a3a5c;
+    --blue2:   #2e6da4;
+    --teal:    #17a2b8;
+    --green:   #28a745;
+    --yellow:  #ffc107;
+    --red:     #dc3545;
+    --bg:      #f5f7fa;
+    --card:    #ffffff;
+    --border:  #e2e8f0;
+    --text:    #1a1a2e;
+    --muted:   #6c757d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); padding: 24px; font-size: 14px; }
+  h1 { color: var(--blue); font-size: 1.5rem; padding-bottom: 10px;
+       border-bottom: 2px solid var(--blue); margin-bottom: 20px; }
+  h2 { color: var(--blue2); font-size: 1.1rem; margin: 20px 0 8px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+          padding: 16px; margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .stat { background: var(--bg); border-radius: 6px; padding: 12px; text-align: center; }
+  .stat .val { font-size: 1.6rem; font-weight: 700; color: var(--blue); line-height: 1; }
+  .stat .lbl { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { background: var(--blue); color: white; padding: 7px 12px; text-align: left;
+       font-weight: 600; }
+  td { padding: 5px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: #f8fafc; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px;
+           font-size: 0.75rem; font-weight: 600; }
+  .red    { background: #fde8ea; color: #b02a37; }
+  .yellow { background: #fff3cd; color: #856404; }
+  .green  { background: #d1e7dd; color: #0a3622; }
+  .blue   { background: #cfe2ff; color: #084298; }
+  .alert  { border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;
+            border-left: 4px solid; font-size: 0.88rem; }
+  .alert-red    { background: #fde8ea; border-color: var(--red); }
+  .alert-yellow { background: #fff3cd; border-color: var(--yellow); }
+  .alert-green  { background: #d1e7dd; border-color: var(--green); }
+  .alert-blue   { background: #e8f4f8; border-color: var(--teal); font-family: monospace; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>Pipeline-sammendrag</h1>
+<div id="root"></div>
+<script>
+const D = __PIPELINE_JSON_DATA__;
+
+const badge = (t, c) => `<span class="badge ${c}">${t}</span>`;
+const mob_badge = m => {
+  if (!m || m==='-') return badge(m||'-','blue');
+  if (m==='CONJUGATIVE') return badge(m,'red');
+  if (m.includes('HELPER')) return badge('MOB+HELPER','yellow');
+  if (m==='MOBILIZABLE') return badge(m,'yellow');
+  return badge(m,'green');
+};
+const purity_badge = p => {
+  if (p.includes('RENKULTUR')) return badge(p,'green');
+  if (p.includes('MULIG')) return badge(p,'yellow');
+  return badge(p,'red');
+};
+
+function render() {
+  const s = D;
+  let h = '';
+
+  // -- Toppseksjon
+  // Artsspesifikk typing for toppkort
+  const sp = s.species || '';
+  let extraStats = '';
+
+  if (sp.includes('Staphylococcus_aureus')) {
+    if (s.sccmec?.type && s.sccmec.type!=='-' && s.sccmec.type!=='hoppet_over')
+      extraStats += `<div class="stat"><div class="val" style="color:${s.sccmec.mrsa?'#b02a37':'#0a3622'}">${s.sccmec.mrsa?'MRSA':'MSSA'}</div><div class="lbl">SCCmec ${s.sccmec.type}</div></div>`;
+    if (s.spatyper?.spa_type && s.spatyper.spa_type!=='-' && s.spatyper.spa_type!=='skipped')
+      extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.spatyper.spa_type}</div><div class="lbl">spa-type (${s.spatyper.CC||'-'})</div></div>`;
+  }
+
+  // Kleborate -- les fra JSON hvis tilgjengelig
+  if (sp.includes('Klebsiella') || sp.includes('Escherichia') || sp.includes('Shigella')) {
+    if (s.kleborate?.K_type && s.kleborate.K_type!=='-')
+      extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.kleborate.K_type}</div><div class="lbl">K-type</div></div>`;
+    if (s.kleborate?.O_type && s.kleborate.O_type!=='-')
+      extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.kleborate.O_type}</div><div class="lbl">O-type</div></div>`;
+    if (s.kleborate?.virulence_score && s.kleborate.virulence_score!=='-')
+      extraStats += `<div class="stat"><div class="val" style="color:${s.kleborate.virulence_score>='2'?'#b02a37':'#0a3622'}">${s.kleborate.virulence_score}</div><div class="lbl">Virulensscoring</div></div>`;
+    if (s.kleborate?.Bla_Carb && s.kleborate.Bla_Carb!=='-') {
+      const carbs = s.kleborate.Bla_Carb.split(/[;,]/).map(g=>g.trim()).filter(g=>g&&g!=='-');
+      carbs.forEach(g => {
+        extraStats += `<div class="stat"><div class="val" style="color:#b02a37;font-size:0.9rem">${g}</div><div class="lbl">Karbapenemase</div></div>`;
+      });
+    }
+    if (s.kleborate?.Bla_ESBL && s.kleborate.Bla_ESBL!=='-') {
+      const esbls = s.kleborate.Bla_ESBL.split(/[;,]/).map(g=>g.trim()).filter(g=>g&&g!=='-');
+      esbls.forEach(g => {
+        extraStats += `<div class="stat"><div class="val" style="color:#856404;font-size:0.9rem">${g}</div><div class="lbl">ESBL</div></div>`;
+      });
+    }
+  }
+
+  // ECTyper serotype
+  if (sp.includes('Escherichia') || sp.includes('Shigella')) {
+    if (s.ectyper?.serotype && s.ectyper.serotype!=='-')
+      extraStats += `<div class="stat"><div class="val" style="font-size:0.9rem">${s.ectyper.serotype}</div><div class="lbl">Serotype (ECTyper)</div></div>`;
+  }
+
+  // emmtyper
+  if (sp.includes('Streptococcus_pyogenes')) {
+    if (s.emmtyper?.emm_type && s.emmtyper.emm_type!=='-')
+      extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.emmtyper.emm_type}</div><div class="lbl">emm-type</div></div>`;
+  }
+
+  h += `<div class="card"><div class="grid">
+    <div class="stat"><div class="val">${s.sample}</div><div class="lbl">Prøve</div></div>
+    <div class="stat"><div class="val" style="font-size:1rem">${sp.replace(/_/g,' ')}</div><div class="lbl">Art</div></div>
+    <div class="stat"><div class="val">ST${s.mlst.ST}</div><div class="lbl">MLST (${s.mlst.scheme})</div></div>
+    <div class="stat"><div class="val">${s.amr.total_amr_genes}</div><div class="lbl">AMR-gener</div></div>
+    <div class="stat"><div class="val">${s.plasmids.count}</div><div class="lbl">Plasmider</div></div>
+    ${extraStats}
+  </div></div>`;
+
+  // -- Risiko-varsler
+  if (s.amr.high_risk_genes.length)
+    h += `<div class="alert alert-red"><strong>HØY RISIKO</strong> -- Gener på konjugative plasmider: ${s.amr.high_risk_genes.map(g=>badge(g,'red')).join(' ')}</div>`;
+  if (s.amr.medium_risk_genes.length)
+    h += `<div class="alert alert-yellow"><strong>MODERAT RISIKO</strong> -- Mobiliserbare + konjugativ hjelper: ${s.amr.medium_risk_genes.map(g=>badge(g,'yellow')).join(' ')}</div>`;
+
+  // -- Assembly + Artsidentifikasjon
+  h += `<div class="two-col">`;
+  h += `<div><h2>Assembly</h2><div class="card"><div class="grid">
+    <div class="stat"><div class="val">${s.assembly.contigs}</div><div class="lbl">Kontiger</div></div>
+    <div class="stat"><div class="val">${(s.assembly.total_length/1e6).toFixed(2)}</div><div class="lbl">Mb totalt</div></div>
+    <div class="stat"><div class="val">${(s.assembly.N50/1e3).toFixed(0)}</div><div class="lbl">N50 (kb)</div></div>
+    <div class="stat"><div class="val">${(s.assembly.largest_contig/1e3).toFixed(0)}</div><div class="lbl">Største kontig (kb)</div></div>
+  </div></div></div>`;
+
+  const sid = s.species_id;
+  const pcls = sid.purity.includes('RENKULTUR')?'alert-green':sid.purity.includes('MULIG')?'alert-yellow':'alert-red';
+  h += `<div><h2>Artsidentifikasjon</h2><div class="card">
+    <div class="alert ${pcls}" style="margin-bottom:10px"><strong>Renhet: ${sid.purity}</strong></div>
+    <div class="alert alert-blue">
+      Metode: ${sid.id_method}<br>
+      FastANI ANI: ${sid.fastani_ani?.toFixed(1)}%${sid.fastani_ani>=95?' (primær)':' (under terskel)'}<br>
+      Referanse: ${sid.fastani_reference}
+    </div>
+    <table style="margin-top:8px">
+      <tr><td>Primær art</td><td>${sid.primary_species} (${sid.primary_pct}%)</td></tr>
+      <tr><td>Sekundær art</td><td>${sid.secondary_species} (${sid.secondary_pct}%)</td></tr>
+      <tr><td>Uklassifisert</td><td>${sid.unclassified_pct}%</td></tr>
+      <tr><td>Menneskelige reads</td><td>${sid.human_pct}%</td></tr>
+    </table>
+  </div></div>`;
+  h += `</div>`;
+
+  // -- AMR-gener
+  h += `<h2>Resistensgener</h2><div class="card">
+  <table><tr><th>Gen</th><th>Navn</th><th>Klasse</th><th>Lokasjon</th><th>Mobilitet</th><th>Replikon</th><th>Klynge</th></tr>`;
+  for (const g of s.amr.details) {
+    h += `<tr>
+      <td><strong>${g.gene}</strong></td><td>${g.gene_name}</td><td>${g.class}</td>
+      <td>${g.location}</td><td>${mob_badge(g.mobility)}</td>
+      <td>${g.replicon}</td><td>${g.cluster}</td>
+    </tr>`;
+  }
+  h += `</table></div>`;
+
+  // -- Plasmider
+  h += `<h2>Plasmider</h2><div class="card"><div class="grid" style="margin-bottom:12px">
+    <div class="stat"><div class="val">${s.plasmids.count}</div><div class="lbl">Totalt</div></div>
+    <div class="stat"><div class="val" style="color:${s.plasmids.conjugative?'#b02a37':'inherit'}">${s.plasmids.conjugative}</div><div class="lbl">Konjugative</div></div>
+    <div class="stat"><div class="val" style="color:${s.plasmids.mobilizable?'#856404':'inherit'}">${s.plasmids.mobilizable}</div><div class="lbl">Mobiliserbare</div></div>
+    <div class="stat"><div class="val">${s.plasmids.non_mobilizable}</div><div class="lbl">Ikke-mobiliserbare</div></div>
+  </div>
+  <table><tr><th>Plasmid</th><th>Replikon</th><th>Relaxase</th><th>Mobilitet</th><th>Vertsområde</th><th>Klynge</th><th>Størrelse (bp)</th></tr>`;
+  for (const p of s.plasmids.details) {
+    h += `<tr>
+      <td>${p.file_id}</td><td>${p.replicon}</td><td>${p.relaxase}</td>
+      <td>${mob_badge(p.mobility)}</td><td>${p.host_range}</td>
+      <td>${p.cluster}</td><td>${Number(p.size).toLocaleString()}</td>
+    </tr>`;
+  }
+  h += `</table></div>`;
+
+  // -- SCCmec (kun S. aureus)
+  if (s.sccmec?.type && s.sccmec.type!=='-' && s.sccmec.type!=='hoppet_over') {
+    const SCCMEC = {"I":"HA-MRSA tidlig","II":"HA-MRSA ST5/CC5","III":"HA-MRSA størst kassett",
+                    "IV":"CA/HA-MRSA vanligst (USA300)","V":"CA-MRSA liten kassett",
+                    "VI":"HA-MRSA ST239","XI":"mecC -- bovint opphav"};
+    h += `<h2>SCCmec-typing</h2><div class="card">
+      <div class="alert ${s.sccmec.mrsa?'alert-red':'alert-green'}" style="margin-bottom:10px">
+        <strong>${s.sccmec.mrsa?'MRSA':'MSSA'} -- SCCmec type ${s.sccmec.type}</strong>
+      </div>
+      <table>
+        <tr><td>Type</td><td>${s.sccmec.type}</td></tr>
+        <tr><td>Klinisk kontekst</td><td>${SCCMEC[s.sccmec.type]||'Se IWG-SCC'}</td></tr>
+        ${s.spatyper?.spa_type && s.spatyper.spa_type!=='-'
+          ? `<tr><td>spa-type</td><td>${s.spatyper.spa_type} (${s.spatyper.CC})</td></tr>` : ''}
+        <tr><td>MRSA-nomenklatur</td><td>ST${s.mlst.ST}-SCCmec${s.sccmec.type} (${s.spatyper?.spa_type||'-'})</td></tr>
+      </table>
+    </div>`;
+  }
+
+  // -- MGE
+  if (s.mge && s.mge.count > 0) {
+    h += `<h2>Mobile genetiske elementer (MGE)</h2><div class="card">
+    <table><tr><th>#</th><th>Navn</th><th>Type</th><th>Kontig</th><th>Start</th><th>Slutt</th></tr>`;
+    for (const m of s.mge.elements) {
+      h += `<tr><td>${m.nr}</td><td><strong>${m.name}</strong></td><td>${m.type}</td>
+        <td>${m.contig}</td><td>${m.start}</td><td>${m.end}</td></tr>`;
+    }
+    h += `</table></div>`;
+  }
+
+  // -- Typingsmetoder brukt
+  h += `<h2>Typingsmetoder</h2><div class="card">
+  <table><tr><th>Verktøy</th><th>Resultat</th><th>Database/metode</th></tr>
+    <tr><td>Kraken2 + Bracken</td><td>${sid.primary_species} (${sid.primary_pct}%)</td><td style="font-size:0.8rem">${sid.kraken2_db}</td></tr>
+    <tr><td>FastANI</td><td>${sid.fastani_reference} (${sid.fastani_ani?.toFixed(1)}% ANI)</td><td style="font-size:0.8rem">${sid.fastani_db}</td></tr>
+    <tr><td>MLST (PubMLST)</td><td>ST${s.mlst.ST}</td><td>${s.mlst.scheme}</td></tr>
+    <tr><td>AMRFinder v4</td><td>${s.amr.total_amr_genes} AMR-gener, ${s.amr.total_virulence_genes} virulens</td><td>NCBI AMR Reference Gene Catalog</td></tr>
+    <tr><td>MOB-suite</td><td>${s.plasmids.count} plasmid(er)</td><td>~/.mob_suite</td></tr>
+    ${s.species?.includes('Klebsiella') || s.species?.includes('Escherichia') || s.species?.includes('Shigella')
+      ? `<tr><td>Kleborate</td><td>K/O-type + virulensscoring</td><td>Kleborate v3 (${
+          s.species.includes('Klebsiella_pneumoniae')||s.species.includes('Klebsiella_variicola')||s.species.includes('Klebsiella_quasipneumoniae') ? 'kpsc' :
+          s.species.includes('Klebsiella_oxytoca')||s.species.includes('Klebsiella_michiganensis') ? 'kosc' : 'escherichia'} preset)</td></tr>` : ''}
+    ${s.species?.includes('Staphylococcus_aureus')
+      ? `<tr><td>spaTyper</td><td>${s.spatyper?.spa_type||'-'} (${s.spatyper?.CC||'-'})</td><td>SpaTyper-database</td></tr>
+         <tr><td>SCCmec</td><td>Type ${s.sccmec?.type||'-'} -- ${s.sccmec?.mrsa?'MRSA':'MSSA'}</td><td>IWG-SCC-skjema</td></tr>
+         <tr><td>AgrVATE</td><td>agr-gruppe</td><td>Bundlet database</td></tr>` : ''}
+    ${s.species?.includes('Escherichia') || s.species?.includes('Shigella')
+      ? `<tr><td>ECTyper</td><td>O:H-serotyping</td><td>ECTyper v2</td></tr>` : ''}
+    ${s.species?.includes('Streptococcus_pyogenes')
+      ? `<tr><td>emmtyper</td><td>emm-typing (GAS)</td><td>CDC emm-typebase</td></tr>` : ''}
+    ${s.mge && s.mge.count > 0
+      ? `<tr><td>MobileElementFinder</td><td>${s.mge.count} MGE-er</td><td>MGEdb v1.1.1 (CGE)</td></tr>` : ''}
+  </table></div>`;
+
+  h += `<p style="color:var(--muted);font-size:0.78rem;margin-top:16px">
+    Generert: ${s.completed} | Bakteriell genomikk-pipeline
+  </p>`;
+
+  document.getElementById('root').innerHTML = h;
+}
+render();
+</script>
+</body>
+</html>

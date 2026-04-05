@@ -1,0 +1,23 @@
+# =============================================================================
+# config.yaml — Bacterial Genomics Pipeline configuration
+# =============================================================================
+
+# Sample list — comment out to auto-detect from data_dir
+# samples:
+#   - 001k
+#   - 002k
+#   - 003k
+
+# Directory containing raw FASTQ files
+# Expected structure: data/<sample>/<sample>_R1.fastq.gz
+data_dir: data/
+
+# Output directory
+results_dir: results
+
+# Directory containing pipeline scripts (from install-scripts.sh)
+scripts_dir: ~/bin
+
+
+# Number of threads per rule (override per rule in Snakefile if needed)
+threads: 8

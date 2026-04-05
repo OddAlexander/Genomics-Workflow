@@ -1,0 +1,10 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: fedora
+Building DAG of jobs...
+MissingInputException in rule all in file "/home/odd/genomics/Snakefile", line 119:
+Missing input files for rule all:
+    affected files:
+        results/2/pipeline_sammendrag.html
+        results/1/pipeline_sammendrag.html
+        results/3/pipeline_sammendrag.html

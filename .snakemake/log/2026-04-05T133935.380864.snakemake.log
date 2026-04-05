@@ -1,0 +1,12 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: fedora
+Building DAG of jobs...
+InputFunctionException in rule kleborate in file "/home/odd/genomics/Snakefile", line 160:
+Error:
+  NameError: name 'SPECIES_CONFIG' is not defined
+Wildcards:
+  sample=1
+Traceback:
+  File "/home/odd/genomics/Snakefile", line 167, in <lambda>
+  File "/home/odd/genomics/Snakefile", line 82, in get_species_param (rule kleborate, line 220, /home/odd/genomics/Snakefile)

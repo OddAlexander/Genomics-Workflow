@@ -1,0 +1,12 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: fedora
+Building DAG of jobs...
+InputFunctionException in rule fastp in file "/home/odd/genomics/Snakefile", line 123:
+Error:
+  FileNotFoundError: Fant ikke R1 for 1
+Wildcards:
+  sample=1
+Traceback:
+  File "/home/odd/genomics/Snakefile", line 125, in <lambda>
+  File "/home/odd/genomics/Snakefile", line 111, in find_r1 (rule fastp, line 132, /home/odd/genomics/Snakefile)

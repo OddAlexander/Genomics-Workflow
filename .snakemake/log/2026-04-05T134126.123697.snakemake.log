@@ -1,0 +1,179 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: fedora
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 8
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+fastp                   3
+assemble                3
+identify_species        3
+kleborate               3
+report                  3
+all                     1
+total                  16
+
+Select jobs to execute...
+Execute 2 jobs...
+[Sun Apr  5 13:41:26 2026]
+localrule fastp:
+    input: data/3/3_R1.fastq.gz, data/3/3_R2.fastq.gz
+    output: results/3/Trimmed/3_R1.fastq.gz, results/3/Trimmed/3_R2.fastq.gz, results/3/QC/fastp.json
+    jobid: 14
+    reason: Missing output files: results/3/Trimmed/3_R2.fastq.gz, results/3/Trimmed/3_R1.fastq.gz
+    wildcards: sample=3
+    threads: 4
+    resources: tmpdir=/tmp
+[Sun Apr  5 13:41:26 2026]
+localrule fastp:
+    input: data/2/2_R1.fastq.gz, data/2/2_R2.fastq.gz
+    output: results/2/Trimmed/2_R1.fastq.gz, results/2/Trimmed/2_R2.fastq.gz, results/2/QC/fastp.json
+    jobid: 9
+    reason: Missing output files: results/2/Trimmed/2_R2.fastq.gz, results/2/Trimmed/2_R1.fastq.gz
+    wildcards: sample=2
+    threads: 4
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Sun Apr  5 13:41:28 2026]
+Finished jobid: 14 (Rule: fastp)
+1 of 16 steps (6%) done
+Execute 1 jobs...
+[Sun Apr  5 13:41:28 2026]
+localrule fastp:
+    input: data/1/1_R1.fastq.gz, data/1/1_R2.fastq.gz
+    output: results/1/Trimmed/1_R1.fastq.gz, results/1/Trimmed/1_R2.fastq.gz, results/1/QC/fastp.json
+    jobid: 4
+    reason: Missing output files: results/1/Trimmed/1_R1.fastq.gz, results/1/Trimmed/1_R2.fastq.gz
+    wildcards: sample=1
+    threads: 4
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Sun Apr  5 13:41:29 2026]
+Finished jobid: 9 (Rule: fastp)
+2 of 16 steps (12%) done
+Execute 2 jobs...
+[Sun Apr  5 13:41:29 2026]
+localrule identify_species:
+    input: results/2/Trimmed/2_R1.fastq.gz, results/2/Trimmed/2_R2.fastq.gz
+    output: results/2/species.txt, results/2/ID_Kraken2/kraken2_report.txt
+    jobid: 10
+    reason: Missing output files: results/2/species.txt; Input files updated by another job: results/2/Trimmed/2_R2.fastq.gz, results/2/Trimmed/2_R1.fastq.gz
+    wildcards: sample=2
+    resources: tmpdir=/tmp
+[Sun Apr  5 13:41:29 2026]
+localrule identify_species:
+    input: results/3/Trimmed/3_R1.fastq.gz, results/3/Trimmed/3_R2.fastq.gz
+    output: results/3/species.txt, results/3/ID_Kraken2/kraken2_report.txt
+    jobid: 15
+    reason: Missing output files: results/3/species.txt; Input files updated by another job: results/3/Trimmed/3_R2.fastq.gz, results/3/Trimmed/3_R1.fastq.gz
+    wildcards: sample=3
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Sun Apr  5 13:41:31 2026]
+Finished jobid: 4 (Rule: fastp)
+3 of 16 steps (19%) done
+Execute 1 jobs...
+[Sun Apr  5 13:41:31 2026]
+localrule identify_species:
+    input: results/1/Trimmed/1_R1.fastq.gz, results/1/Trimmed/1_R2.fastq.gz
+    output: results/1/species.txt, results/1/ID_Kraken2/kraken2_report.txt
+    jobid: 5
+    reason: Missing output files: results/1/species.txt; Input files updated by another job: results/1/Trimmed/1_R1.fastq.gz, results/1/Trimmed/1_R2.fastq.gz
+    wildcards: sample=1
+    resources: tmpdir=/tmp
+Select jobs to execute...
+RuleException:
+CalledProcessError in file "/home/odd/genomics/Snakefile", line 154:
+Command 'set -euo pipefail;  
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/1/ID_Kraken2/kraken2_report.txt results/1/Trimmed/1_R1.fastq.gz results/1/Trimmed/1_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/1/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/1/species.txt' returned non-zero exit status 2.
+[Sun Apr  5 13:41:31 2026]
+Error in rule identify_species:
+    message: None
+    jobid: 5
+    input: results/1/Trimmed/1_R1.fastq.gz, results/1/Trimmed/1_R2.fastq.gz
+    output: results/1/species.txt, results/1/ID_Kraken2/kraken2_report.txt
+    shell:
+        
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/1/ID_Kraken2/kraken2_report.txt results/1/Trimmed/1_R1.fastq.gz results/1/Trimmed/1_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/1/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/1/species.txt
+        
+        (command exited with non-zero exit code)
+RuleException:
+CalledProcessError in file "/home/odd/genomics/Snakefile", line 154:
+Command 'set -euo pipefail;  
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/2/ID_Kraken2/kraken2_report.txt results/2/Trimmed/2_R1.fastq.gz results/2/Trimmed/2_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/2/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/2/species.txt' returned non-zero exit status 2.
+[Sun Apr  5 13:41:31 2026]
+Error in rule identify_species:
+    message: None
+    jobid: 10
+    input: results/2/Trimmed/2_R1.fastq.gz, results/2/Trimmed/2_R2.fastq.gz
+    output: results/2/species.txt, results/2/ID_Kraken2/kraken2_report.txt
+    shell:
+        
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/2/ID_Kraken2/kraken2_report.txt results/2/Trimmed/2_R1.fastq.gz results/2/Trimmed/2_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/2/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/2/species.txt
+        
+        (command exited with non-zero exit code)
+RuleException:
+CalledProcessError in file "/home/odd/genomics/Snakefile", line 154:
+Command 'set -euo pipefail;  
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/3/ID_Kraken2/kraken2_report.txt results/3/Trimmed/3_R1.fastq.gz results/3/Trimmed/3_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/3/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/3/species.txt' returned non-zero exit status 2.
+[Sun Apr  5 13:41:32 2026]
+Error in rule identify_species:
+    message: None
+    jobid: 15
+    input: results/3/Trimmed/3_R1.fastq.gz, results/3/Trimmed/3_R2.fastq.gz
+    output: results/3/species.txt, results/3/ID_Kraken2/kraken2_report.txt
+    shell:
+        
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/3/ID_Kraken2/kraken2_report.txt results/3/Trimmed/3_R1.fastq.gz results/3/Trimmed/3_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/3/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/3/species.txt
+        
+        (command exited with non-zero exit code)
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Sun Apr  5 13:41:32 2026]
+Error in rule identify_species:
+    message: None
+    jobid: 10
+    input: results/2/Trimmed/2_R1.fastq.gz, results/2/Trimmed/2_R2.fastq.gz
+    output: results/2/species.txt, results/2/ID_Kraken2/kraken2_report.txt
+    shell:
+        
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/2/ID_Kraken2/kraken2_report.txt results/2/Trimmed/2_R1.fastq.gz results/2/Trimmed/2_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/2/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/2/species.txt
+        
+        (command exited with non-zero exit code)
+[Sun Apr  5 13:41:32 2026]
+Error in rule identify_species:
+    message: None
+    jobid: 5
+    input: results/1/Trimmed/1_R1.fastq.gz, results/1/Trimmed/1_R2.fastq.gz
+    output: results/1/species.txt, results/1/ID_Kraken2/kraken2_report.txt
+    shell:
+        
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/1/ID_Kraken2/kraken2_report.txt results/1/Trimmed/1_R1.fastq.gz results/1/Trimmed/1_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/1/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/1/species.txt
+        
+        (command exited with non-zero exit code)
+[Sun Apr  5 13:41:32 2026]
+Error in rule identify_species:
+    message: None
+    jobid: 15
+    input: results/3/Trimmed/3_R1.fastq.gz, results/3/Trimmed/3_R2.fastq.gz
+    output: results/3/species.txt, results/3/ID_Kraken2/kraken2_report.txt
+    shell:
+        
+        pixi run --environment identification kraken2 --db /databases/kraken2_db --paired --report results/3/ID_Kraken2/kraken2_report.txt results/3/Trimmed/3_R1.fastq.gz results/3/Trimmed/3_R2.fastq.gz > /dev/null
+        grep -P '\tS\t' results/3/ID_Kraken2/kraken2_report.txt | sort -nrk3 | head -n1 | cut -f6 | sed 's/^[[:space:]]*//' > results/3/species.txt
+        
+        (command exited with non-zero exit code)
+Complete log(s): /home/odd/genomics/.snakemake/log/2026-04-05T134126.123697.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

@@ -1,0 +1,130 @@
+[workspace]
+name = "bacterial-genomics"
+version = "0.1.0"
+description = "Bakteriell genomikk-pipeline: KK, montering, artsidentifikasjon, AMR, typing"
+channels = ["conda-forge", "bioconda"]
+platforms = ["linux-64"]
+
+[tasks]
+run-fastqc       = { cmd = "fastqc --threads 4 $INPUT -o $OUTPUT", env = { INPUT = "data/raw/*.fastq.gz", OUTPUT = "results/fastqc/" } }
+run-multiqc      = { cmd = "multiqc $INPUT -o $OUTPUT", env = { INPUT = "results/", OUTPUT = "results/multiqc/" } }
+trim             = { cmd = "fastp --thread 4 -i $R1 -I $R2 -o $OUT_R1 -O $OUT_R2 -h $REPORT", env = { R1 = "data/raw/R1.fastq.gz", R2 = "data/raw/R2.fastq.gz", OUT_R1 = "data/trimmed/R1.fastq.gz", OUT_R2 = "data/trimmed/R2.fastq.gz", REPORT = "results/fastp.html" } }
+assemble         = { cmd = "shovill --R1 $R1 --R2 $R2 --outdir $OUTPUT --cpus 8", env = { R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", OUTPUT = "results/assembly/" } }
+run-quast        = { cmd = "quast.py $INPUT -o $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/quast/" } }
+mlst             = { cmd = "mlst $INPUT > $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mlst.tsv" } }
+snippy           = { cmd = "snippy --cpus 8 --outdir $OUTPUT --ref $REF --R1 $R1 --R2 $R2", env = { REF = "reference.gbk", R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", OUTPUT = "results/snippy/" } }
+
+[dependencies]
+openjdk            = ">17"
+python             = "3.11.*"
+snakemake          = ">=8.0"          # Pipeline-orkestrator
+fastqc             = ">=0.12"
+multiqc            = ">=1.21"
+fastp              = ">=0.23"
+shovill            = ">=1.1"
+spades             = ">=3.15"
+mlst               = ">=2.23"
+snippy             = ">=4.6"
+snp-sites          = ">=2.5"
+snp-dists          = ">=0.8"
+iqtree             = ">=2.2"
+seqkit             = ">=2.8"
+samtools           = ">=1.19"
+bcftools           = ">=1.19"
+bwa-mem2           = ">=2.2"
+minimap2           = ">=2.26"
+setuptools         = "*"
+spatyper           = ">=0.3"          # S. aureus spa-typing
+sccmec             = ">=1.0"          # S. aureus SCCmec-kassetttyping
+agrvate            = ">=1.0"          # S. aureus agr-typing (--mummer)
+ectyper            = ">=2.0"          # E. coli O:H-serotyping
+emmtyper           = ">=0.2"          # S. pyogenes emm-typing (GAS)
+cgmlst-dists       = ">=0.4"          # Parvise cgMLST-avstandar
+sra-tools = ">=2.9.6,<3"
+
+[pypi-dependencies]
+quast = ">=5.2"
+
+# ── Annotering (bakta 1.9.4 -- stabil med db v5)
+# NB: db v6 på /databases/bakta_db/db er inkompatibel -- krev db v5
+[feature.annotation.dependencies]
+python = "3.9.*"
+bakta  = "==1.9.4"
+
+[feature.annotation.tasks]
+annotate          = { cmd = "bakta --db $BAKTA_DB --output $OUTPUT --threads 8 --force $INPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/bakta/" } }
+download-db       = { cmd = "bakta_db download --output $BAKTA_DB_DIR --type full", env = { BAKTA_DB_DIR = "/databases/bakta_db_v5" } }
+
+# ── CheckM (isolert: krev Python 3.9 + setuptools)
+[feature.checkm.dependencies]
+python        = "3.9.*"
+checkm-genome = ">=1.2"
+setuptools    = "*"
+
+[feature.checkm.tasks]
+run-checkm = { cmd = "checkm lineage_wf $INPUT $OUTPUT -t 8 -x fasta", env = { INPUT = "results/assembly/", OUTPUT = "results/checkm/" } }
+
+# ── AMRFinder v4 (isolert: libzlib 1.3.1-konflikt med default)
+[feature.amrfinder4.dependencies]
+ncbi-amrfinderplus = ">=4.2,<4.3"
+
+[feature.amrfinder4.tasks]
+amrfinder4          = { cmd = "amrfinder --nucleotide $INPUT --output $OUTPUT --threads 8 --plus", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/amrfinder/amrfinder.tsv" } }
+update-amrfinder-db = { cmd = "amrfinder --update" }
+
+# ── MOB-suite (isolert: plasmidtyping, relaxase, konjugasjon)
+# Første kjøring: databasar lastast ned automatisk (~1.5 GB) via mob_init
+[feature.mobsuite.dependencies]
+mob_suite = ">=3.1"
+
+[feature.mobsuite.tasks]
+mob-typer = { cmd = "mob_typer --infile $INPUT --out_file $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mobsuite/mobtyper.tsv" } }
+mob-recon = { cmd = "mob_recon --infile $INPUT --outdir $OUTPUT --force", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mobsuite/" } }
+mob-init  = { cmd = "mob_init" }
+
+# ── Artsidentifikasjon
+[feature.identification.dependencies]
+kraken2   = ">=2.1"
+bracken   = ">=2.9"
+mash      = ">=2.3"
+fastani   = ">=1.34"
+ectyper   = ">=2.0"
+kleborate = ">=3.0"
+
+# ── MobileElementFinder (CGE)
+# NB: krever Python <3.12 pga biopython/PyUnicode_WCHAR_KIND
+[feature.mefinder.dependencies]
+python     = "3.11.*"
+blast      = ">=2.10"
+kma        = ">=1.2"
+setuptools = "*"
+pip        = "*"
+
+[feature.mefinder.tasks]
+install-mefinder = { cmd = "pip install MobileElementFinder --break-system-packages" }
+
+[feature.identification.tasks]
+mash-screen  = { cmd = "mash screen -w -p 8 $MASH_DB $INPUT | sort -gr | head -20 > $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mash_screen.tsv" } }
+kraken2-run  = { cmd = "kraken2 --db $KRAKEN2_DB --threads 8 --paired --gzip-compressed --report $REPORT $R1 $R2 > $OUTPUT", env = { R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", REPORT = "results/kraken2/report.txt", OUTPUT = "results/kraken2/output.txt" } }
+bracken-run  = { cmd = "bracken -d $KRAKEN2_DB -i $INPUT -o $OUTPUT -r 150 -l S", env = { INPUT = "results/kraken2/report.txt", OUTPUT = "results/bracken/species.txt" } }
+fastani-run  = { cmd = "fastANI -q $INPUT --rl $REFLIST -o $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", REFLIST = "/databases/fastANI_refs/reference_list.txt", OUTPUT = "results/fastani/ani.txt" } }
+
+# ── cgMLST (chewBBACA + cgmlst-dists)
+[feature.cgmlst.dependencies]
+python       = "3.11.*"
+chewbbaca    = ">=3.3"
+cgmlst-dists = ">=0.4"
+
+[feature.cgmlst.tasks]
+prep-schema = { cmd = "chewBBACA.py PrepExternalSchema -g $SCHEMA -o $OUTPUT --cpu 8", env = { SCHEMA = "/databases/cgmlst/schema", OUTPUT = "/databases/cgmlst/schema_prep" } }
+allele-call = { cmd = "chewBBACA.py AlleleCall -i $INPUT -g $SCHEMA -o $OUTPUT --cpu 8 --no-inferred", env = { INPUT = "results/assemblies/", SCHEMA = "/databases/cgmlst/schema", OUTPUT = "results/cgmlst/" } }
+
+[environments]
+default        = { solve-group = "main" }
+annotation     = { features = ["annotation"],     solve-group = "annotation",     no-default-feature = true }
+checkm         = { features = ["checkm"],          solve-group = "checkm",         no-default-feature = true }
+amrfinder4     = { features = ["amrfinder4"],      solve-group = "amrfinder4",     no-default-feature = true }
+mobsuite       = { features = ["mobsuite"],        solve-group = "mobsuite",       no-default-feature = true }
+identification = { features = ["identification"],  solve-group = "identification" }
+cgmlst         = { features = ["cgmlst"],          solve-group = "cgmlst",         no-default-feature = true }
+mefinder = { features = ["mefinder"], solve-group = "mefinder", no-default-feature = true }

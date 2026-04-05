@@ -1,0 +1,4 @@
+Config file config.yaml is extended by additional config specified via the command line.
+ValueError in file "/home/odd/genomics/Snakefile", line 96:
+too many values to unpack (expected 1)
+  File "/home/odd/genomics/Snakefile", line 96, in <module>

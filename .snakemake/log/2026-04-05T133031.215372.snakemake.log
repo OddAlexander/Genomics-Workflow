@@ -1,0 +1,4 @@
+Config file config.yaml is extended by additional config specified via the command line.
+NameError in file "/home/odd/genomics/Snakefile", line 93:
+name 'SAMPLES' is not defined
+  File "/home/odd/genomics/Snakefile", line 93, in <module>
