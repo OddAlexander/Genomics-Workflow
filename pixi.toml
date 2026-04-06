@@ -11,7 +11,7 @@ run-multiqc      = { cmd = "multiqc $INPUT -o $OUTPUT", env = { INPUT = "results
 trim             = { cmd = "fastp --thread 4 -i $R1 -I $R2 -o $OUT_R1 -O $OUT_R2 -h $REPORT", env = { R1 = "data/raw/R1.fastq.gz", R2 = "data/raw/R2.fastq.gz", OUT_R1 = "data/trimmed/R1.fastq.gz", OUT_R2 = "data/trimmed/R2.fastq.gz", REPORT = "results/fastp.html" } }
 assemble         = { cmd = "shovill --R1 $R1 --R2 $R2 --outdir $OUTPUT --cpus 8", env = { R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", OUTPUT = "results/assembly/" } }
 run-quast        = { cmd = "quast.py $INPUT -o $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/quast/" } }
-mlst             = { cmd = "mlst $INPUT > $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mlst.tsv" } }
+run-mlst         = { cmd = "mlst $INPUT > $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mlst.tsv" } }
 snippy           = { cmd = "snippy --cpus 8 --outdir $OUTPUT --ref $REF --R1 $R1 --R2 $R2", env = { REF = "reference.gbk", R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", OUTPUT = "results/snippy/" } }
 
 [dependencies]
@@ -41,9 +41,7 @@ ectyper            = ">=2.0"          # E. coli O:H-serotyping
 emmtyper           = ">=0.2"          # S. pyogenes emm-typing (GAS)
 cgmlst-dists       = ">=0.4"          # Parvise cgMLST-avstandar
 sra-tools = ">=2.9.6,<3"
-
-[pypi-dependencies]
-quast = ">=5.2"
+quast     = ">=5.2"
 
 # ── Annotering (bakta 1.9.4 -- stabil med db v5)
 # NB: db v6 på /databases/bakta_db/db er inkompatibel -- krev db v5
