@@ -1,61 +1,0 @@
-[shovill] Hello odd
-[shovill] You ran: /home/odd/genomics/.pixi/envs/default/bin/shovill --R1 results/4/Trimmed/4_R1.fastq.gz --R2 results/4/Trimmed/4_R2.fastq.gz --outdir results/4/Assembly --cpus 8 --force
-[shovill] This is shovill 1.4.2
-[shovill] Written by Torsten Seemann
-[shovill] Homepage is https://github.com/tseemann/shovill
-[shovill] Operating system is linux
-[shovill] Perl version is v5.32.1
-[shovill] Machine has 12 CPU cores and 15.53 GB RAM
-[shovill] Using bwa - /home/odd/genomics/.pixi/envs/default/bin/bwa | Version: 0.7.18-r1243-dirty
-[shovill] Using csvtk - /home/odd/genomics/.pixi/envs/default/bin/csvtk | Error: unknown flag: --versiom
-[shovill] Using flash - /home/odd/genomics/.pixi/envs/default/bin/flash | FLASH v1.2.11
-[shovill] Using gfa_connector - /home/odd/genomics/.pixi/envs/default/bin/gfa_connector | gfa_connector --version 
-[shovill] Using java - /home/odd/genomics/.pixi/envs/default/bin/java | openjdk version "22.0.1-internal" 2024-04-16
-[shovill] Using kmc - /home/odd/genomics/.pixi/envs/default/bin/kmc | K-Mer Counter (KMC) ver. 3.2.4 (2024-02-09)
-[shovill] Using lighter - /home/odd/genomics/.pixi/envs/default/bin/lighter | Lighter v1.1.3
-[shovill] Using megahit - /home/odd/genomics/.pixi/envs/default/bin/megahit | MEGAHIT v1.2.9
-[shovill] Using megahit_toolkit - /home/odd/genomics/.pixi/envs/default/bin/megahit_toolkit | v1.2.9
-[shovill] Using pilon - /home/odd/genomics/.pixi/envs/default/bin/pilon | Pilon version 1.24 Thu Jan 28 13:00:45 2021 -0500
-[shovill] Using samclip - /home/odd/genomics/.pixi/envs/default/bin/samclip | samclip 0.4.0
-[shovill] Using samtools - /home/odd/genomics/.pixi/envs/default/bin/samtools | Version: 1.20 (using htslib 1.21)
-[shovill] Using seqkit - /home/odd/genomics/.pixi/envs/default/bin/seqkit | Error: unknown flag: --versiom
-[shovill] Using skesa - /home/odd/genomics/.pixi/envs/default/bin/skesa | SKESA 2.5.1
-[shovill] Using spades.py - /home/odd/genomics/.pixi/envs/default/bin/spades.py | SPAdes genome assembler v3.15.5
-[shovill] Using trimmomatic - /home/odd/genomics/.pixi/envs/default/bin/trimmomatic | 0.40
-[shovill] Using velvetg - /home/odd/genomics/.pixi/envs/default/bin/velvetg | Version 1.2.10
-[shovill] Using velveth - /home/odd/genomics/.pixi/envs/default/bin/velveth | Version 1.2.10
-[shovill] Found spades version: 003015000
-[shovill] Will use spades 003015000 options: --isolate and --merged
-[shovill] Forced overwrite of existing --outdir results/4/Assembly
-[shovill] Using tempdir: /tmp/2Il9y5lOzv
-[shovill] Changing into folder: /home/odd/genomics/results/4/Assembly
-[shovill] Collection stats for --R1 and --R2
-[shovill] Running: (seqkit stats --quiet --threads 2  -T \/home\/odd\/genomics\/results\/4\/Trimmed\/4_R1\.fastq\.gz \/home\/odd\/genomics\/results\/4\/Trimmed\/4_R2\.fastq\.gz | csvtk csv2json -t > /tmp/yTfXCoYF8M ) 2>&1 | sed 's/^/[fastq] /' | tee -a shovill.log
-[shovill] min_len = 53
-[shovill] avg_len = 138
-[shovill] max_len = 151
-[shovill] sum_Len = 27497
-[shovill] Estimating genome size by counting unqiue 21-mers > frequency 10 
-[shovill] Running: kmc -sm -m7 -t8 -k21 -ci10 \/home\/odd\/genomics\/results\/4\/Trimmed\/4_R1\.fastq\.gz /tmp/fDWiXobUpw/kmc /tmp/fDWiXobUpw 2>&1 | sed 's/^/[kmc] /' | tee -a shovill.log
-[kmc] **
-[kmc] Stage 1: 0%Stage 1: 100%
-[kmc] Stage 2: 0%Stage 2: 58%Stage 2: 86%Stage 2: 97%Stage 2: 99%Stage 2: 100%
-[kmc] 
-[kmc] 
-[kmc] 1st stage: 0.084189s
-[kmc] 2nd stage: 1.065s
-[kmc] 3rd stage: 0.001952s
-[kmc] Total    : 1.15114s
-[kmc] Tmp size : 0MB
-[kmc] Tmp size strict memory : 0MB
-[kmc] Tmp total: 0MB
-[kmc] 
-[kmc] Stats:
-[kmc]    No. of k-mers below min. threshold :         9054
-[kmc]    No. of k-mers above max. threshold :            0
-[kmc]    No. of unique k-mers               :         9054
-[kmc]    No. of unique counted k-mers       :            0
-[kmc]    Total no. of k-mers                :        11838
-[kmc]    Total no. of reads                 :           99
-[kmc]    Total no. of super-k-mers          :         1761
-[shovill] Bad genome depth, need > 10
