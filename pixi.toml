@@ -88,6 +88,7 @@ mash      = ">=2.3"
 fastani   = ">=1.34"
 ectyper   = ">=2.0"
 kleborate = ">=3.0"
+gambit    = ">=0.5"
 
 # ── MobileElementFinder (CGE)
 # NB: krever Python <3.12 pga biopython/PyUnicode_WCHAR_KIND

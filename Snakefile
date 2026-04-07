@@ -8,6 +8,7 @@ DATA_DIR    = config.get("data_dir", "data/")
 RESULTS_DIR = config.get("results_dir", "results/")
 THREADS     = config.get("threads", 8)
 KRAKEN2_DB  = config.get("kraken2_db", "/databases/kraken2_db/")
+GAMBIT_DB   = config.get("gambit_db", "/databases/gambit_db/")
 
 # --- Artsgrupper og skjemaer ---
 SA  = {"Staphylococcus_aureus"}
@@ -56,6 +57,9 @@ ALWAYS_TOOLS = [
     "AMRFinder/amrfinder.tsv",
     "MOBSuite/mobtyper.tsv",
     "MEfinder/mefinder.tsv",
+    "ID_Kraken2/kraken2_report.txt",
+    "ID_Kraken2/bracken_species.txt",
+    "ID_GAMBIT/gambit.csv",
 ]
 
 SPECIES_TOOLS = [
@@ -127,25 +131,41 @@ rule fastp:
     shell:
         "pixi run fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -j {output.json} --thread {threads} > {log} 2>&1"
 
-checkpoint identify_species:
+rule kraken2_qc:
     input:
         r1 = os.path.join(RESULTS_DIR, "{sample}/Trimmed/R1.fastq.gz"),
         r2 = os.path.join(RESULTS_DIR, "{sample}/Trimmed/R2.fastq.gz")
     output:
-        sp      = os.path.join(RESULTS_DIR, "{sample}/species.txt"),
         rep     = os.path.join(RESULTS_DIR, "{sample}/ID_Kraken2/kraken2_report.txt"),
         bracken = os.path.join(RESULTS_DIR, "{sample}/ID_Kraken2/bracken_species.txt")
     log:
-        os.path.join(RESULTS_DIR, "{sample}/logs/identify_species.log")
+        os.path.join(RESULTS_DIR, "{sample}/logs/kraken2_qc.log")
     params:
         db = KRAKEN2_DB
     shell:
         """
-        pixi run --environment identification kraken2 --db {params.db} --memory-mapping --paired --report {output.rep} {input.r1} {input.r2} > /dev/null 2>> {log}
-        pixi run --environment identification bracken -d {params.db} -i {output.rep} -o {output.bracken} -l S >> {log} 2>&1
-        RESULT=$(tail -n +2 {output.bracken} | sort -t$'\\t' -k6 -rn | head -n1 | cut -f1 | sed 's/ /_/g')
-        echo "${{RESULT:-Unknown}}" > {output.sp}
-        echo "Identifisert art: ${{RESULT:-Unknown}}" >> {log}
+        pixi run --environment identification kraken2 --db {params.db} --memory-mapping \
+            --paired --report {output.rep} {input.r1} {input.r2} > /dev/null 2>> {log}
+        pixi run --environment identification bracken -d {params.db} \
+            -i {output.rep} -o {output.bracken} -l S >> {log} 2>&1
+        """
+
+checkpoint identify_species:
+    input:
+        fa = os.path.join(RESULTS_DIR, "{sample}/Assembly/contigs.fa")
+    output:
+        sp  = os.path.join(RESULTS_DIR, "{sample}/species.txt"),
+        csv = os.path.join(RESULTS_DIR, "{sample}/ID_GAMBIT/gambit.csv")
+    log:
+        os.path.join(RESULTS_DIR, "{sample}/logs/identify_species.log")
+    params:
+        db = GAMBIT_DB
+    shell:
+        """
+        pixi run --environment identification gambit query \
+            -d {params.db} --output {output.csv} --output-format csv {input.fa} > {log} 2>&1
+        awk -F',' 'NR==2{{print $2}}' {output.csv} | sed 's/ /_/g' > {output.sp}
+        echo "Identifisert art: $(cat {output.sp})" >> {log}
         """
 
 rule assemble:
