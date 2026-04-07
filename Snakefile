@@ -64,9 +64,18 @@ SPECIES_TOOLS = [
 ]
 
 # --- Hjelpefunksjoner ---
-def read_species(sample):
-    sp = os.path.join(RESULTS_DIR, sample, "species.txt")
-    return open(sp).read().strip().replace(" ", "_") if os.path.exists(sp) else ""
+def read_species(wildcards):
+    # 1. Tving Snakemake til å vente på checkpointet   
+    checkpoint_output = checkpoints.get_species_info.get(**wildcards).output[0]
+    
+    # 2. Konstruer stien til fila (basert på checkpoint-outputen)
+    sp_path = os.path.join(checkpoint_output, "species.txt")
+    
+    # 3. Les innholdet trygt
+    with open(sp_path, "r") as f:
+        species = f.read().strip().replace(" ", "_")
+        
+    return species if species else "unknown_species"
 
 def get_all_outputs(wildcards):
     checkpoints.identify_species.get(sample=wildcards.sample)
