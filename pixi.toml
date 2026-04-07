@@ -96,10 +96,9 @@ python     = "3.11.*"
 blast      = ">=2.10"
 kma        = ">=1.2"
 setuptools = "*"
-pip        = "*"
 
-[feature.mefinder.tasks]
-install-mefinder = { cmd = "pip install MobileElementFinder --break-system-packages" }
+[feature.mefinder.pypi-dependencies]
+MobileElementFinder = ">=1.0"
 
 [feature.identification.tasks]
 mash-screen  = { cmd = "mash screen -w -p 8 $MASH_DB $INPUT | sort -gr | head -20 > $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mash_screen.tsv" } }
