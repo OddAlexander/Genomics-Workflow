@@ -160,7 +160,7 @@ function render() {
   const sid = s.species_id;
   const pcls = sid.purity.includes('RENKULTUR')?'alert-green':sid.purity.includes('MULIG')?'alert-yellow':'alert-red';
   const score_col = sid.concordance_score===3?'green':sid.concordance_score===1?'yellow':'red';
-  const score_lbl = sid.concordance_score===3?'Alle enige':'Delvis enige (2/3)':sid.concordance_score===0?'Ingen enige':'';
+  const score_lbl = sid.concordance_score===3?'Fullt samsvar':sid.concordance_score===1?'Delvis samsvar (2/3)':'Ingen samsvar';
   h += `<div><h2>Artsidentifikasjon</h2><div class="card">
     <div class="alert ${pcls}" style="margin-bottom:6px"><strong>Renhet: ${sid.purity}</strong></div>
     <div class="alert alert-blue" style="margin-bottom:8px">

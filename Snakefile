@@ -111,13 +111,13 @@ print(f"Kjører {len(SAMPLES)}/{len(ALL_SAMPLES)} samples.")
 # --- Rules ---
 rule all:
     input:
-        expand(f"{RESULTS_DIR}/{{sample}}/Report/report.html", sample=SAMPLES)
+        expand(f"{RESULTS_DIR}/{{sample}}/pipeline_summary.html", sample=SAMPLES)
 
 rule report:
     input:
         get_all_outputs
     output:
-        f"{RESULTS_DIR}/{{sample}}/Report/report.html"
+        f"{RESULTS_DIR}/{{sample}}/pipeline_summary.html"
     params:
         template   = "report_template.html",
         results    = RESULTS_DIR,
@@ -173,10 +173,11 @@ rule kraken2_qc:
         f"{RESULTS_DIR}/{{sample}}/logs/kraken2_qc.log"
     params:
         db = KRAKEN2_DB
+    threads: THREADS
     shell:
         """
-        pixi run --environment identification kraken2 --db {params.db} --memory-mapping \
-            --paired --report {output.rep} {input.r1} {input.r2} 2>&1 | tee {log}
+        pixi run --environment identification kraken2 --db {params.db} \
+            --threads {threads} --paired --report {output.rep} {input.r1} {input.r2} 2>&1 | tee {log}
         pixi run --environment identification bracken -d {params.db} \
             -i {output.rep} -o {output.bracken} -l S 2>&1 | tee -a {log}
         """
@@ -256,7 +257,7 @@ rule mlst:
 rule kleborate:
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
-        sp = f"{RESULTS_DIR}/{{sample}}/early_species.txt"
+        sp = f"{RESULTS_DIR}/{{sample}}/species.txt"
     output:
         f"{RESULTS_DIR}/{{sample}}/Kleborate/kleborate_output.tsv"
     log:
