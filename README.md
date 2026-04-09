@@ -12,8 +12,9 @@ genomics/
 ├── slektskap_Snakefile        # Slektskapsanalyse/utbruddspipeline
 ├── config.yaml                # Konfigurasjon
 ├── pixi.toml                  # Pixi-miljødefinisjon
-├── report_template.html       # HTML-rapportmal
-├── scripts/                   # Hjelpeskript
+├── report_template.html   what too    # HTML-rapportmal
+├── scripts/
+│   └── make_report.py         # Genererer HTML-rapport per prøve
 └── results/                   # Analyseresultater (ikke i git)
     └── <dato>/<prøve-id>/
         ├── Trimmed/           # Trimma reads (fastp)
@@ -21,11 +22,12 @@ genomics/
         ├── QC/                # FastQC + fastp JSON
         ├── MultiQC/           # MultiQC-rapport
         ├── QUAST/             # Assemblystatistikk
-        ├── ID_Kraken2/        # Kraken2 + Bracken renhetskontroll
-        ├── ID_GAMBIT/         # GAMBIT artsidentifikasjon
-        ├── species.txt        # Identifisert art
+        ├── ID_Kraken2/        # Kraken2 + Bracken artsidentifikasjon
+        ├── ID_GAMBIT/         # GAMBIT artsidentifikasjon (på assembly)
+        ├── early_species.txt  # Mash Screen artsidentifikasjon (tidlig, styrerer DAG)
+        ├── species.txt        # GAMBIT artsidentifikasjon
         ├── MLST/              # Sekvenstyping (PubMLST)
-        ├── AMRFinder/         # Resistens- og virulensgenar
+        ├── AMRFinder/         # Resistens- og virulensgen
         ├── MOBSuite/          # Plasmidtyping
         ├── MEfinder/          # Mobile genetiske element
         ├── SpaTyper/          # S. aureus spa-typing
@@ -34,6 +36,10 @@ genomics/
         ├── EmmTyper/          # S. pyogenes emm-typing
         ├── ECTyper/           # E. coli O:H-serotyping
         ├── Kleborate/         # Klebsiella K/O-type, ESBL, virulens
+        ├── Pasty/             # P. aeruginosa O-antigen serotyping
+        ├── SeqSero2/          # Salmonella serotyping
+        ├── Hicap/             # H. influenzae kapseltype
+        ├── Report/            # HTML-rapport (sluttprodukt)
         └── logs/
 ```
 
@@ -69,23 +75,27 @@ source ~/.bashrc
 pixi install
 ```
 
-Dette installerer alle verktøy, inkludert MobileElementFinder via PyPI.
-
 ### 4. Last ned GAMBIT-database
 
 ```bash
 pixi run --environment identification gambit-db-genomes download -d /databases/gambit_db/
-
 ```
-Ev. manuell nedlasting fra : https://github.com/jlumpe/gambit
 
-### 5. Initialiser MOB-suite databaser (~1.5 GB)
+### 5. Last ned Mash Screen-database (~3 GB)
+
+```bash
+mkdir -p /databases/mash_db
+wget -P /databases/mash_db \
+  https://gembox.cbcb.umd.edu/mash/refseq.genomes%2Bplasmid.k21s1000.msh
+```
+
+### 6. Initialiser MOB-suite databaser (~1.5 GB)
 
 ```bash
 pixi run --environment mobsuite mob_init
 ```
 
-### 6. Oppdater AMRFinder-database
+### 7. Oppdater AMRFinder-database
 
 ```bash
 pixi run --environment amrfinder4 amrfinder --update
@@ -118,11 +128,17 @@ pixi run snakemake -n --cores 8
 # Én prøve
 pixi run snakemake --cores 8 --config samples=001k
 
-# Flere prøver
+# Alle prøver fra én dato
+pixi run snakemake --cores 8 --config samples=19-03-2026
+
+# Flere spesifikke prøver
 pixi run snakemake --cores 8 --config "samples=[001k,002k]"
 
 # Alle prøver (auto-deteksjon)
 pixi run snakemake --cores 8
+
+# Kjør én spesifikk regel for én prøve
+pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
 ```
 
 **Forventet mappestruktur for input:**
@@ -162,27 +178,35 @@ FASTQ-filer
     ▼
 fastp (trimming) → FastQC
     │
-    ├── Kraken2 + Bracken (renhetskontroll, parallelt)
+    ├── Mash Screen (artsidentifikasjon på reads)
+    │       └── SJEKKPUNKT: early_species.txt (styrer DAG-routing)
+    │
+    ├── Kraken2 + Bracken (artsidentifikasjon, parallelt)
     │
     ▼
 Shovill (Assembly) → QUAST
     │
-    ▼
-GAMBIT
-    │
-    SJEKKPUNKT: art identifisert
+    ├── GAMBIT (artsidentifikasjon på assembly) → species.txt
     │
     ├── MLST
     ├── AMRFinder
     ├── MOB-suite (plasmid)
     ├── MEfinder (MGE)
-    ├── [S. aureus]   → spaTyper, SCCmec, AgrVATE
-    ├── [Klebsiella]  → Kleborate
-    ├── [E. coli]     → ECTyper
-    └── [S. pyogenes] → emmtyper
+    ├── [S. aureus]        → spaTyper, SCCmec, AgrVATE
+    ├── [Klebsiella/E.coli]→ Kleborate
+    ├── [E. coli/Shigella] → ECTyper
+    ├── [S. pyogenes]      → emmtyper
+    ├── [P. aeruginosa]    → Pasty
+    ├── [Salmonella]       → SeqSero2
+    └── [H. influenzae]    → hicap
     │
     ▼
 MultiQC
+    │
+    ▼
+HTML-rapport (Report/report.html)
+    └── Artsidentifikasjon (Mash/Bracken/GAMBIT konkordans + renhet)
+        AMR, plasmider, MGE, ST-type, artsspesifikk typing
 ```
 
 ---
@@ -191,10 +215,13 @@ MultiQC
 
 | Art | Verktøy | Resultat |
 |-----|---------|---------|
-| *S. aureus* | spaTyper, SCCmec, AgrVATE | spa-type, SCCmec-type, agr-gruppe |
-| *Klebsiella* spp. | Kleborate v3 | K-type, O-type, ESBL, karbapenemase, virulens |
+| *S. aureus* | spaTyper, SCCmec, AgrVATE | spa-type, SCCmec-type (MRSA/MSSA), agr-gruppe |
+| *Klebsiella* spp. + *E. coli* | Kleborate v3 | K-type, O-type, ESBL, karbapenemase, virulens |
 | *E. coli / Shigella* | ECTyper | O:H-serotype |
 | *S. pyogenes* | emmtyper | emm-type |
+| *P. aeruginosa* | Pasty | O-antigen serotype |
+| *Salmonella* spp. | SeqSero2 | Serotyping (O- og H-antigen) |
+| *H. influenzae* | hicap | Kapseltype (a–f, ikke-typbar) |
 | Alle | MEfinder | Insertionssekvenser og transposoner |
 | Alle | MOB-suite | Plasmidtyping (relaxase, konjugasjon) |
 
@@ -208,21 +235,22 @@ MultiQC
 | `results_dir` | `results/` | Utdatamappe |
 | `threads` | `8` | Antall tråder per regel |
 | `kraken2_db` | `/databases/kraken2_db/` | Sti til Kraken2-database |
-| `gambit_db`  | `/databases/gambit_db/`  | Sti til GAMBIT-database |
+| `gambit_db` | `/databases/gambit_db/` | Sti til GAMBIT-database |
+| `mash_db` | `/databases/mash_db/refseq.genomes+plasmid.k21s1000.msh` | Sti til Mash-database |
 
 ---
 
 ## Feilsøking
 
 ```bash
-# Sjekk logg for ein spesifikk regel
+# Sjekk logg for en spesifikk regel
 cat results/26-03-2026/001k/logs/amrfinder.log
 
 # Tving omkjøring av én regel
 pixi run snakemake --cores 8 --forcerun amrfinder
 
 # Tving full omkjøring av én prøve
-pixi run snakemake --cores 8 results/26-03-2026/001k/.done --forceall
+pixi run snakemake --cores 8 results/26-03-2026/001k/Report/report.html --forceall
 ```
 
 ---
@@ -235,8 +263,9 @@ pixi run snakemake --cores 8 results/26-03-2026/001k/.done --forceall
 | FastQC + MultiQC | ≥0.12 | Sekvenskvalitet |
 | Shovill | ≥1.1 | Genommontering (SPAdes) |
 | QUAST | ≥5.2 | Assemblystatistikk |
-| Kraken2 + Bracken | ≥2.1 | Renhetskontroll av reads |
-| GAMBIT | ≥0.5 | Artsidentifikasjon (på assembly) |
+| Mash Screen | ≥2.3 | Tidleg artsidentifikasjon på reads (styrer DAG) |
+| Kraken2 + Bracken | ≥2.1 | Artsidentifikasjon og renhetskontroll |
+| GAMBIT | ≥0.5 | Artsidentifikasjon på assembly |
 | MLST | ≥2.23 | Sekvenstyping (PubMLST) |
 | AMRFinder | v4.x | Resistens- og virulensgen-deteksjon |
 | MOB-suite | ≥3.1 | Plasmidtyping |
@@ -247,6 +276,9 @@ pixi run snakemake --cores 8 results/26-03-2026/001k/.done --forceall
 | ECTyper | ≥2.0 | *E. coli* O:H-serotyping |
 | emmtyper | ≥0.2 | *S. pyogenes* emm-typing |
 | Kleborate | ≥3.0 | *Klebsiella* K/O-type, ESBL, virulens |
+| Pasty | ≥2.2 | *P. aeruginosa* O-antigen serotyping |
+| SeqSero2 | ≥1.3 | *Salmonella* serotyping |
+| hicap | ≥1.0 | *H. influenzae* kapseltype |
 | Snippy | ≥4.6 | SNP-kalling mot referansegenom |
 | IQ-TREE | ≥2.2 | Fylogenetisk tre (ML) |
 | snp-dists | ≥0.8 | SNP-avstandsmatrise |

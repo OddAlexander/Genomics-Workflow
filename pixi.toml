@@ -35,6 +35,7 @@ bwa-mem2           = ">=2.2"
 minimap2           = ">=2.26"
 setuptools         = "*"
 spatyper           = ">=0.3"          # S. aureus spa-typing
+pasty              = ">=2.2"          # P. aeruginosa O-antigen serotyping
 sccmec             = ">=1.0"          # S. aureus SCCmec-kassetttyping
 agrvate            = ">=1.0"          # S. aureus agr-typing (--mummer)
 ectyper            = ">=2.0"          # E. coli O:H-serotyping
@@ -82,13 +83,14 @@ mob-init  = { cmd = "mob_init" }
 
 # ── Artsidentifikasjon
 [feature.identification.dependencies]
-kraken2   = ">=2.1"
-bracken   = ">=2.9"
-mash      = ">=2.3"
-fastani   = ">=1.34"
-ectyper   = ">=2.0"
-kleborate = ">=3.0"
-gambit    = ">=0.5"
+kraken2    = ">=2.1"
+bracken    = ">=2.9"
+mash       = ">=2.3"
+fastani    = ">=1.34"
+ectyper    = ">=2.0"
+kleborate  = ">=3.0"
+ezclermont = ">=0.7"
+gambit     = ">=0.5"
 
 # ── MobileElementFinder (CGE)
 # NB: krever Python <3.12 pga biopython/PyUnicode_WCHAR_KIND
@@ -96,7 +98,7 @@ gambit    = ">=0.5"
 python     = "3.11.*"
 blast      = ">=2.10"
 kma        = ">=1.2"
-setuptools = "*"
+setuptools = "<71"
 
 [feature.mefinder.pypi-dependencies]
 MobileElementFinder = ">=1.0"
@@ -117,6 +119,13 @@ cgmlst-dists = ">=0.4"
 prep-schema = { cmd = "chewBBACA.py PrepExternalSchema -g $SCHEMA -o $OUTPUT --cpu 8", env = { SCHEMA = "/databases/cgmlst/schema", OUTPUT = "/databases/cgmlst/schema_prep" } }
 allele-call = { cmd = "chewBBACA.py AlleleCall -i $INPUT -g $SCHEMA -o $OUTPUT --cpu 8 --no-inferred", env = { INPUT = "results/assemblies/", SCHEMA = "/databases/cgmlst/schema", OUTPUT = "results/cgmlst/" } }
 
+[feature.seqsero2.dependencies]
+seqsero2 = ">=1.3"          # Salmonella serotyping
+
+[feature.hicap.dependencies]
+python = "3.11.*"
+hicap  = ">=1.0"            # H. influenzae kapseltype
+
 [environments]
 default        = { solve-group = "main" }
 annotation     = { features = ["annotation"],     solve-group = "annotation",     no-default-feature = true }
@@ -125,4 +134,6 @@ amrfinder4     = { features = ["amrfinder4"],      solve-group = "amrfinder4",  
 mobsuite       = { features = ["mobsuite"],        solve-group = "mobsuite",       no-default-feature = true }
 identification = { features = ["identification"],  solve-group = "identification" }
 cgmlst         = { features = ["cgmlst"],          solve-group = "cgmlst",         no-default-feature = true }
-mefinder = { features = ["mefinder"], solve-group = "mefinder", no-default-feature = true }
+mefinder       = { features = ["mefinder"],        solve-group = "mefinder",       no-default-feature = true }
+seqsero2       = { features = ["seqsero2"],        solve-group = "seqsero2",       no-default-feature = true }
+hicap          = { features = ["hicap"],           solve-group = "hicap",          no-default-feature = true }

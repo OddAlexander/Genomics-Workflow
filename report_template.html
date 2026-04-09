@@ -121,6 +121,18 @@ function render() {
       extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.emmtyper.emm_type}</div><div class="lbl">emm-type</div></div>`;
   }
 
+  // SeqSero2
+  if (sp.includes('Salmonella')) {
+    if (s.seqsero2?.serotype && s.seqsero2.serotype!=='-')
+      extraStats += `<div class="stat"><div class="val" style="font-size:0.9rem">${s.seqsero2.serotype}</div><div class="lbl">Serotype (SeqSero2)</div></div>`;
+  }
+
+  // hicap
+  if (sp.includes('Haemophilus')) {
+    if (s.hicap?.serotype && s.hicap.serotype!=='-')
+      extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.hicap.serotype}</div><div class="lbl">Kapseltype (hicap)</div></div>`;
+  }
+
   h += `<div class="card"><div class="grid">
     <div class="stat"><div class="val">${s.sample}</div><div class="lbl">Prøve</div></div>
     <div class="stat"><div class="val" style="font-size:1rem">${sp.replace(/_/g,' ')}</div><div class="lbl">Art</div></div>
@@ -147,18 +159,20 @@ function render() {
 
   const sid = s.species_id;
   const pcls = sid.purity.includes('RENKULTUR')?'alert-green':sid.purity.includes('MULIG')?'alert-yellow':'alert-red';
+  const score_col = sid.concordance_score===3?'green':sid.concordance_score===1?'yellow':'red';
+  const score_lbl = sid.concordance_score===3?'Alle enige':'Delvis enige (2/3)':sid.concordance_score===0?'Ingen enige':'';
   h += `<div><h2>Artsidentifikasjon</h2><div class="card">
-    <div class="alert ${pcls}" style="margin-bottom:10px"><strong>Renhet: ${sid.purity}</strong></div>
-    <div class="alert alert-blue">
-      Metode: ${sid.id_method}<br>
-      FastANI ANI: ${sid.fastani_ani?.toFixed(1)}%${sid.fastani_ani>=95?' (primær)':' (under terskel)'}<br>
-      Referanse: ${sid.fastani_reference}
+    <div class="alert ${pcls}" style="margin-bottom:6px"><strong>Renhet: ${sid.purity}</strong></div>
+    <div class="alert alert-blue" style="margin-bottom:8px">
+      <strong>Konkordans: ${badge(score_lbl, score_col)}</strong><br>
+      Mash: ${sid.mash_species.replace(/_/g,' ')} &nbsp;|&nbsp;
+      Bracken: ${sid.bracken_species.replace(/_/g,' ')} &nbsp;|&nbsp;
+      GAMBIT: ${sid.gambit_species.replace(/_/g,' ')}
     </div>
     <table style="margin-top:8px">
-      <tr><td>Primær art</td><td>${sid.primary_species} (${sid.primary_pct}%)</td></tr>
-      <tr><td>Sekundær art</td><td>${sid.secondary_species} (${sid.secondary_pct}%)</td></tr>
+      <tr><td>Primær art (Bracken)</td><td>${sid.primary_species.replace(/_/g,' ')} (${sid.primary_pct}%)</td></tr>
+      <tr><td>Sekundær art (Bracken)</td><td>${sid.secondary_species.replace(/_/g,' ')} (${sid.secondary_pct}%)</td></tr>
       <tr><td>Uklassifisert</td><td>${sid.unclassified_pct}%</td></tr>
-      <tr><td>Menneskelige reads</td><td>${sid.human_pct}%</td></tr>
     </table>
   </div></div>`;
   h += `</div>`;
@@ -244,6 +258,10 @@ function render() {
       ? `<tr><td>emmtyper</td><td>emm-typing (GAS)</td><td>CDC emm-typebase</td></tr>` : ''}
     ${s.mge && s.mge.count > 0
       ? `<tr><td>MobileElementFinder</td><td>${s.mge.count} MGE-er</td><td>MGEdb v1.1.1 (CGE)</td></tr>` : ''}
+    ${s.species?.includes('Salmonella') && s.seqsero2
+      ? `<tr><td>SeqSero2</td><td>${s.seqsero2.serotype} (${s.seqsero2.antigenic_profile})</td><td>Kauffmann-White-skjema</td></tr>` : ''}
+    ${s.species?.includes('Haemophilus') && s.hicap
+      ? `<tr><td>hicap</td><td>${s.hicap.serotype} — gener: ${s.hicap.genes}</td><td>hicap-database</td></tr>` : ''}
   </table></div>`;
 
   h += `<p style="color:var(--muted);font-size:0.78rem;margin-top:16px">
