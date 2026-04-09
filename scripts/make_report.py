@@ -208,6 +208,38 @@ def parse_emmtyper(path):
     return None
 
 
+def parse_fastani(path):
+    txt = safe_read(path)
+    if not txt:
+        return {"status": "hoppet_over", "top_hit": "-", "ani": None, "af": None}
+    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
+    if not rows or rows[0].get("status") == "hoppet_over":
+        return {"status": "hoppet_over", "top_hit": "-", "ani": None, "af": None}
+    # FastANI output: query, reference, ANI, bidirectional_frags, total_frags
+    r = rows[0]
+    ref = r.get("reference", list(r.values())[1] if len(r) > 1 else "-")
+    ani = r.get("ANI", list(r.values())[2] if len(r) > 2 else None)
+    return {
+        "status":  "ok",
+        "top_hit": ref.split("/")[-1].replace(".fna", "").replace(".fa", ""),
+        "ani":     float(ani) if ani else None,
+        "af":      r.get("bidirectional_fragment_count", "-"),
+    }
+
+
+def parse_gambit_distance(path):
+    txt = safe_read(path)
+    if not txt:
+        return None
+    rows = list(csv.DictReader(txt.splitlines()))
+    if not rows:
+        return None
+    try:
+        return float(rows[0].get("closest.distance", "") or "")
+    except ValueError:
+        return None
+
+
 def parse_seqsero2(path):
     txt = safe_read(path)
     if not txt:
@@ -255,8 +287,8 @@ def parse_mefinder(path):
     return {"count": len(elements), "elements": elements}
 
 
-def derive_purity(primary_pct, mash_sp, gambit_sp, bracken_sp):
-    concordant = (mash_sp == gambit_sp == bracken_sp)
+def derive_purity(primary_pct, gambit_sp, bracken_sp):
+    concordant = (gambit_sp == bracken_sp)
     if primary_pct >= 80 and concordant:
         return "RENKULTUR"
     elif primary_pct >= 60:
@@ -265,15 +297,10 @@ def derive_purity(primary_pct, mash_sp, gambit_sp, bracken_sp):
         return "BLANDING"
 
 
-def concordance_score(mash_sp, gambit_sp, bracken_sp):
-    tools = [mash_sp, gambit_sp, bracken_sp]
-    matches = sum(1 for a in tools for b in tools if a == b and a not in ("unknown", "-", "")) - len(tools)
-    # 0=none agree, 1=two agree, 3=all agree
-    if mash_sp == gambit_sp == bracken_sp and mash_sp not in ("unknown", "-", ""):
-        return 3
-    if mash_sp == gambit_sp or mash_sp == bracken_sp or gambit_sp == bracken_sp:
-        return 1
-    return 0
+def concordance_score(gambit_sp, bracken_sp):
+    if gambit_sp == bracken_sp and gambit_sp not in ("unknown", "-", ""):
+        return 2  # begge enige
+    return 0  # ingen samsvar
 
 
 if __name__ == "__main__":
@@ -295,16 +322,17 @@ if __name__ == "__main__":
     amr_raw      = parse_amrfinder(sp_dir / "AMRFinder/amrfinder.tsv")
     mob_data     = parse_mobsuite(sp_dir / "MOBSuite/mobtyper.tsv")
     mge_data     = parse_mefinder(sp_dir / "MEfinder/mefinder.tsv")
+    fastani_data = parse_fastani(sp_dir / "ID_FastANI/fastani.tsv")
+    gambit_dist  = parse_gambit_distance(sp_dir / "ID_GAMBIT/gambit.csv")
 
-    mash_sp   = (safe_read(sp_dir / "early_species.txt") or "unknown").strip()
-    gambit_sp = (safe_read(sp_dir / "species.txt")       or "unknown").strip()
+    gambit_sp = (safe_read(sp_dir / "species.txt") or "unknown").strip()
 
     amr_details, high_risk, medium_risk = build_amr_details(
         amr_raw.get("_rows", []), mob_data.get("_contig_mob", {}))
 
-    purity = derive_purity(bracken_data["primary_pct"], mash_sp, gambit_sp, bracken_data["primary_species"])
-    score  = concordance_score(mash_sp, gambit_sp, bracken_data["primary_species"])
-    species = gambit_sp if gambit_sp not in ("unknown", "") else mash_sp
+    purity  = derive_purity(bracken_data["primary_pct"], gambit_sp, bracken_data["primary_species"])
+    score   = concordance_score(gambit_sp, bracken_data["primary_species"])
+    species = gambit_sp if gambit_sp not in ("unknown", "") else bracken_data["primary_species"]
 
     data = {
         "sample":   args.sample,
@@ -324,20 +352,17 @@ if __name__ == "__main__":
         "species_id": {
             "purity":             purity,
             "concordance_score":  score,
-            "mash_species":       mash_sp,
             "bracken_species":    bracken_data["primary_species"],
             "gambit_species":     gambit_sp,
-            "id_method":          "Mash Screen + Bracken + GAMBIT",
+            "gambit_distance":    gambit_dist,
+            "id_method":          "Bracken + GAMBIT",
             "primary_species":    bracken_data["primary_species"],
             "primary_pct":        bracken_data["primary_pct"],
             "secondary_species":  bracken_data["secondary_species"],
             "secondary_pct":      bracken_data["secondary_pct"],
             "unclassified_pct":   uncl_pct,
-            "fastani_ani":        None,
-            "fastani_reference":  "-",
-            "human_pct":          None,
+            "fastani":            fastani_data,
             "kraken2_db":         args.kraken2_db,
-            "fastani_db":         "-",
         },
     }
 

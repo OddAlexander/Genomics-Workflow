@@ -6,10 +6,11 @@ configfile: "config.yaml"
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
-KRAKEN2_DB  = config.get("kraken2_db", "/databases/kraken2_db_mini/")
-KRAKEN2_MEM = config.get("kraken2_mem_mb", 10000)  # MB RAM reservert per Kraken2-jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
-GAMBIT_DB   = config.get("gambit_db", "/databases/gambit_db/")
-MASH_DB     = config.get("mash_db", "/databases/mash_db/refseq.msh")
+KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_mini/")
+KRAKEN2_MEM      = config.get("kraken2_mem_mb", 10000)  # MB RAM reservert per Kraken2-jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
+GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
+FASTANI_DB       = config.get("fastani_db", "")        # Sti til FastANI-referanseliste (.txt) -- tom = FastANI hoppes over
+FASTANI_THRESHOLD = config.get("fastani_threshold", 0.05)  # GAMBIT-distanse over denne utløser FastANI
 
 # --- Artsgrupper og skjemaer ---
 SA  = {"Staphylococcus_aureus"}
@@ -64,6 +65,7 @@ ALWAYS_TOOLS = [
     "ID_Kraken2/kraken2_report.txt",
     "ID_Kraken2/bracken_species.txt",
     "ID_GAMBIT/gambit.csv",
+    "ID_FastANI/fastani.tsv",
 ]
 
 SPECIES_TOOLS = [
@@ -78,7 +80,7 @@ SPECIES_TOOLS = [
 
 # --- Hjelpefunksjoner ---
 def read_species(sample):
-    sp_path = checkpoints.identify_species_early.get(sample=sample).output.sp
+    sp_path = checkpoints.identify_species.get(sample=sample).output.sp
     with open(sp_path, "r") as f:
         species = f.read().strip().replace(" ", "_")
     return species if species else "unknown_species"
@@ -140,29 +142,6 @@ rule fastp:
     shell:
         "pixi run fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -j {output.json} --thread {threads} 2>&1 | tee {log}"
 
-checkpoint identify_species_early:
-    input:
-        r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
-        r2 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz"
-    output:
-        sp = f"{RESULTS_DIR}/{{sample}}/early_species.txt"
-    log:
-        f"{RESULTS_DIR}/{{sample}}/logs/identify_species_early.log"
-    params:
-        db = MASH_DB
-    threads: THREADS
-    shell:
-        # Extract genus+species from top mash screen hit. 
-        """
-        pixi run --environment identification mash screen -w -p {threads} {params.db} {input.r1} {input.r2} \
-            > {output.sp}.mash_raw 2>{log}
-        sort -grk1 {output.sp}.mash_raw \
-            | awk -F'\\t' 'NR==1{{print $6}}' \
-            | grep -oP '[A-Z][a-z]+ [a-z]+' \
-            | awk 'NR==1{{gsub(/ /,"_"); print}}' > {output.sp}
-        rm {output.sp}.mash_raw
-        """
-
 rule kraken2_qc:
     input:
         r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
@@ -185,7 +164,7 @@ rule kraken2_qc:
             -i {output.rep} -o {output.bracken} -l S 2>&1 | tee -a {log}
         """
 
-rule identify_species:
+checkpoint identify_species:
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
     output:
@@ -200,6 +179,26 @@ rule identify_species:
         pixi run --environment identification gambit -d {params.db} query \
             --output {output.csv} --outfmt csv {input.fa} 2>&1 | tee {log}
         awk -F',' 'NR==2{{print $2}}' {output.csv} | sed 's/ /_/g' > {output.sp}
+        """
+
+rule fastani:
+    input:
+        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
+    output:
+        f"{RESULTS_DIR}/{{sample}}/ID_FastANI/fastani.tsv"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/fastani.log"
+    params:
+        db = FASTANI_DB
+    threads: THREADS
+    shell:
+        """
+        if [ -n "{params.db}" ]; then
+            pixi run --environment identification fastANI -q {input.fa} --rl {params.db} \
+                -o {output} --threads {threads} 2>&1 | tee {log}
+        else
+            echo -e "status\treason\nhoppet_over\tingen database konfigurert" > {output}
+        fi
         """
 
 rule assemble:
@@ -246,7 +245,7 @@ rule quast:
 rule mlst:
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
-        sp = f"{RESULTS_DIR}/{{sample}}/early_species.txt"
+        sp = f"{RESULTS_DIR}/{{sample}}/species.txt"
     output:
         f"{RESULTS_DIR}/{{sample}}/MLST/mlst.tsv"
     log:
@@ -326,7 +325,7 @@ rule emmtyper:
 rule amrfinder:
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
-        sp = f"{RESULTS_DIR}/{{sample}}/early_species.txt"
+        sp = f"{RESULTS_DIR}/{{sample}}/species.txt"
     output:
         f"{RESULTS_DIR}/{{sample}}/AMRFinder/amrfinder.tsv"
     log:

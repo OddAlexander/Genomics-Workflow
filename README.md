@@ -24,8 +24,8 @@ genomics/
         ├── QUAST/             # Assemblystatistikk
         ├── ID_Kraken2/        # Kraken2 + Bracken artsidentifikasjon
         ├── ID_GAMBIT/         # GAMBIT artsidentifikasjon (på assembly)
-        ├── early_species.txt  # Mash Screen artsidentifikasjon (tidlig, styrerer DAG)
-        ├── species.txt        # GAMBIT artsidentifikasjon
+        ├── ID_FastANI/        # FastANI (kjøres ved dårlig GAMBIT-match eller diskordans)
+        ├── species.txt        # GAMBIT artsidentifikasjon (styrer DAG-routing)
         ├── MLST/              # Sekvenstyping (PubMLST)
         ├── AMRFinder/         # Resistens- og virulensgen
         ├── MOBSuite/          # Plasmidtyping
@@ -81,21 +81,13 @@ pixi install
 pixi run --environment identification gambit-db-genomes download -d /databases/gambit_db/
 ```
 
-### 5. Last ned Mash Screen-database (~3 GB)
-
-```bash
-mkdir -p /databases/mash_db
-wget -P /databases/mash_db \
-  https://gembox.cbcb.umd.edu/mash/refseq.genomes%2Bplasmid.k21s1000.msh
-```
-
-### 6. Initialiser MOB-suite databaser (~1.5 GB)
+### 5. Initialiser MOB-suite databaser (~1.5 GB)
 
 ```bash
 pixi run --environment mobsuite mob_init
 ```
 
-### 7. Oppdater AMRFinder-database
+### 6. Oppdater AMRFinder-database
 
 ```bash
 pixi run --environment amrfinder4 amrfinder --update
@@ -187,16 +179,15 @@ FASTQ-filer
     ▼
 fastp (trimming) → FastQC
     │
-    ├── Mash Screen (artsidentifikasjon på reads)
-    │       └── SJEKKPUNKT: early_species.txt (styrer DAG-routing)
-    │
     ├── Kraken2 + Bracken (artsidentifikasjon, parallelt)
     │
     ▼
 Shovill (Assembly) → QUAST
     │
     ├── GAMBIT (artsidentifikasjon på assembly) → species.txt
+    │       └── SJEKKPUNKT: styrer DAG-routing
     │
+    ├── FastANI (ved dårlig GAMBIT-match ≥0.05 eller diskordans med Bracken)
     ├── MLST
     ├── AMRFinder
     ├── MOB-suite (plasmid)
@@ -214,7 +205,7 @@ MultiQC
     │
     ▼
 HTML-rapport (pipeline_summary.html)
-    └── Artsidentifikasjon (Mash/Bracken/GAMBIT konkordans + renhet)
+    └── Artsidentifikasjon (Bracken/GAMBIT samsvar + renhet)
         AMR, plasmider, MGE, ST-type, artsspesifikk typing
 ```
 
@@ -246,7 +237,8 @@ HTML-rapport (pipeline_summary.html)
 | `kraken2_db` | `/databases/kraken2_db/` | Sti til Kraken2-database |
 | `kraken2_mem_mb` | `10000` | MB RAM reservert per Kraken2-jobb — begrenser antall samtidige jobber via `--resources mem_mb=<tilgjengelig RAM>` |
 | `gambit_db` | `/databases/gambit_db/` | Sti til GAMBIT-database |
-| `mash_db` | `/databases/mash_db/refseq.genomes+plasmid.k21s1000.msh` | Sti til Mash-database |
+| `fastani_db` | `` | Sti til FastANI-referanseliste (.txt) — tom = FastANI hoppes over |
+| `fastani_threshold` | `0.05` | GAMBIT-distanse over denne utløser FastANI |
 
 ---
 
@@ -273,9 +265,9 @@ pixi run snakemake --cores 8 --resources mem_mb=14000 results/26-03-2026/001k/pi
 | FastQC + MultiQC | ≥0.12 | Sekvenskvalitet |
 | Shovill | ≥1.1 | Genommontering (SPAdes) |
 | QUAST | ≥5.2 | Assemblystatistikk |
-| Mash Screen | ≥2.3 | Tidleg artsidentifikasjon på reads (styrer DAG) |
 | Kraken2 + Bracken | ≥2.1 | Artsidentifikasjon og renhetskontroll |
-| GAMBIT | ≥0.5 | Artsidentifikasjon på assembly |
+| GAMBIT | ≥0.5 | Artsidentifikasjon på assembly (SJEKKPUNKT — styrer DAG) |
+| FastANI | ≥1.34 | Nøyaktig ANI-beregning ved usikker artsidentifikasjon |
 | MLST | ≥2.23 | Sekvenstyping (PubMLST) |
 | AMRFinder | v4.x | Resistens- og virulensgen-deteksjon |
 | MOB-suite | ≥3.1 | Plasmidtyping |

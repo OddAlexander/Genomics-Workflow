@@ -159,13 +159,12 @@ function render() {
 
   const sid = s.species_id;
   const pcls = sid.purity.includes('RENKULTUR')?'alert-green':sid.purity.includes('MULIG')?'alert-yellow':'alert-red';
-  const score_col = sid.concordance_score===3?'green':sid.concordance_score===1?'yellow':'red';
-  const score_lbl = sid.concordance_score===3?'Fullt samsvar':sid.concordance_score===1?'Delvis samsvar (2/3)':'Ingen samsvar';
+  const score_col = sid.concordance_score===2?'green':'red';
+  const score_lbl = sid.concordance_score===2?'Samsvar':'Ingen samsvar';
   h += `<div><h2>Artsidentifikasjon</h2><div class="card">
     <div class="alert ${pcls}" style="margin-bottom:6px"><strong>Renhet: ${sid.purity}</strong></div>
     <div class="alert alert-blue" style="margin-bottom:8px">
       <strong>Konkordans: ${badge(score_lbl, score_col)}</strong><br>
-      Mash: ${sid.mash_species.replace(/_/g,' ')} &nbsp;|&nbsp;
       Bracken: ${sid.bracken_species.replace(/_/g,' ')} &nbsp;|&nbsp;
       GAMBIT: ${sid.gambit_species.replace(/_/g,' ')}
     </div>
@@ -173,6 +172,14 @@ function render() {
       <tr><td>Primær art (Bracken)</td><td>${sid.primary_species.replace(/_/g,' ')} (${sid.primary_pct}%)</td></tr>
       <tr><td>Sekundær art (Bracken)</td><td>${sid.secondary_species.replace(/_/g,' ')} (${sid.secondary_pct}%)</td></tr>
       <tr><td>Uklassifisert</td><td>${sid.unclassified_pct}%</td></tr>
+      <tr><td>GAMBIT-distanse</td><td>${
+        sid.gambit_distance != null
+          ? `${sid.gambit_distance.toFixed(3)} ${badge(sid.gambit_distance < 0.05 ? 'svært god' : sid.gambit_distance < 0.15 ? 'god' : 'marginal', sid.gambit_distance < 0.05 ? 'green' : sid.gambit_distance < 0.15 ? 'yellow' : 'red')}`
+          : '-'
+      }</td></tr>
+      ${sid.fastani?.status === 'ok'
+        ? `<tr><td>FastANI</td><td>${sid.fastani.top_hit} — ${sid.fastani.ani?.toFixed(2)}% ANI</td></tr>`
+        : ''}
     </table>
   </div></div>`;
   h += `</div>`;
@@ -240,7 +247,6 @@ function render() {
   h += `<h2>Typingsmetoder</h2><div class="card">
   <table><tr><th>Verktøy</th><th>Resultat</th><th>Database/metode</th></tr>
     <tr><td>Kraken2 + Bracken</td><td>${sid.primary_species} (${sid.primary_pct}%)</td><td style="font-size:0.8rem">${sid.kraken2_db}</td></tr>
-    <tr><td>FastANI</td><td>${sid.fastani_reference} (${sid.fastani_ani?.toFixed(1)}% ANI)</td><td style="font-size:0.8rem">${sid.fastani_db}</td></tr>
     <tr><td>MLST (PubMLST)</td><td>ST${s.mlst.ST}</td><td>${s.mlst.scheme}</td></tr>
     <tr><td>AMRFinder v4</td><td>${s.amr.total_amr_genes} AMR-gener, ${s.amr.total_virulence_genes} virulens</td><td>NCBI AMR Reference Gene Catalog</td></tr>
     <tr><td>MOB-suite</td><td>${s.plasmids.count} plasmid(er)</td><td>~/.mob_suite</td></tr>
