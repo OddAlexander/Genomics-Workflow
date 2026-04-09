@@ -12,7 +12,7 @@ genomics/
 ├── slektskap_Snakefile        # Slektskapsanalyse/utbruddspipeline
 ├── config.yaml                # Konfigurasjon
 ├── pixi.toml                  # Pixi-miljødefinisjon
-├── report_template.html   what too    # HTML-rapportmal
+├── report_template.html       # HTML-rapportmal
 ├── scripts/
 │   └── make_report.py         # Genererer HTML-rapport per prøve
 └── results/                   # Analyseresultater (ikke i git)
@@ -39,7 +39,7 @@ genomics/
         ├── Pasty/             # P. aeruginosa O-antigen serotyping
         ├── SeqSero2/          # Salmonella serotyping
         ├── Hicap/             # H. influenzae kapseltype
-        ├── Report/            # HTML-rapport (sluttprodukt)
+        ├── pipeline_summary.html  # HTML-rapport (sluttprodukt)
         └── logs/
 ```
 
@@ -105,10 +105,19 @@ pixi run --environment amrfinder4 amrfinder --update
 
 ## Databaser
 
-### Kraken2 (PlusPF, ~80 GB)
+### Kraken2
+
+Anbefalt: **PlusPF 8 GB** (~8 GB, passer i RAM på maskiner med ≥16 GB):
 
 ```bash
 mkdir -p /databases/kraken2_db
+wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_8gb_20240904.tar.gz -P /databases/kraken2_db/
+tar -xzf /databases/kraken2_db/k2_pluspf_8gb_20240904.tar.gz -C /databases/kraken2_db/
+```
+
+Alternativ: **PlusPF full** (~80 GB, krever ≥80 GB RAM for full ytelse):
+
+```bash
 wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20240904.tar.gz -P /databases/kraken2_db/
 tar -xzf /databases/kraken2_db/k2_pluspf_20240904.tar.gz -C /databases/kraken2_db/
 ```
@@ -126,16 +135,16 @@ cd ~/genomics
 pixi run snakemake -n --cores 8
 
 # Én prøve
-pixi run snakemake --cores 8 --config samples=001k
+pixi run snakemake --cores 8 --resources mem_mb=14000 --config samples=001k
 
 # Alle prøver fra én dato
-pixi run snakemake --cores 8 --config samples=19-03-2026
+pixi run snakemake --cores 8 --resources mem_mb=14000 --config samples=19-03-2026
 
 # Flere spesifikke prøver
-pixi run snakemake --cores 8 --config "samples=[001k,002k]"
+pixi run snakemake --cores 8 --resources mem_mb=14000 --config "samples=[001k,002k]"
 
 # Alle prøver (auto-deteksjon)
-pixi run snakemake --cores 8
+pixi run snakemake --cores 8 --resources mem_mb=14000
 
 # Kjør én spesifikk regel for én prøve
 pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
@@ -204,7 +213,7 @@ Shovill (Assembly) → QUAST
 MultiQC
     │
     ▼
-HTML-rapport (Report/report.html)
+HTML-rapport (pipeline_summary.html)
     └── Artsidentifikasjon (Mash/Bracken/GAMBIT konkordans + renhet)
         AMR, plasmider, MGE, ST-type, artsspesifikk typing
 ```
@@ -235,6 +244,7 @@ HTML-rapport (Report/report.html)
 | `results_dir` | `results/` | Utdatamappe |
 | `threads` | `8` | Antall tråder per regel |
 | `kraken2_db` | `/databases/kraken2_db/` | Sti til Kraken2-database |
+| `kraken2_mem_mb` | `10000` | MB RAM reservert per Kraken2-jobb — begrenser antall samtidige jobber via `--resources mem_mb=<tilgjengelig RAM>` |
 | `gambit_db` | `/databases/gambit_db/` | Sti til GAMBIT-database |
 | `mash_db` | `/databases/mash_db/refseq.genomes+plasmid.k21s1000.msh` | Sti til Mash-database |
 
@@ -250,7 +260,7 @@ cat results/26-03-2026/001k/logs/amrfinder.log
 pixi run snakemake --cores 8 --forcerun amrfinder
 
 # Tving full omkjøring av én prøve
-pixi run snakemake --cores 8 results/26-03-2026/001k/Report/report.html --forceall
+pixi run snakemake --cores 8 --resources mem_mb=14000 results/26-03-2026/001k/pipeline_summary.html --forceall
 ```
 
 ---

@@ -7,6 +7,7 @@ DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
 KRAKEN2_DB  = config.get("kraken2_db", "/databases/kraken2_db_mini/")
+KRAKEN2_MEM = config.get("kraken2_mem_mb", 10000)  # MB RAM reservert per Kraken2-jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
 GAMBIT_DB   = config.get("gambit_db", "/databases/gambit_db/")
 MASH_DB     = config.get("mash_db", "/databases/mash_db/refseq.msh")
 
@@ -174,6 +175,8 @@ rule kraken2_qc:
     params:
         db = KRAKEN2_DB
     threads: THREADS
+    resources:
+        mem_mb = KRAKEN2_MEM
     shell:
         """
         pixi run --environment identification kraken2 --db {params.db} \
