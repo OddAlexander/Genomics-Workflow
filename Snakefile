@@ -7,9 +7,10 @@ DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
 KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db/")
-KRAKEN2_MEM      = config.get("kraken2_mem_mb", 25000)  # MB RAM reservert per jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
-SHOVILL_MEM      = config.get("shovill_mem_mb",  20000)  # MB RAM reservert per Shovill/SPAdes-jobb (SPAdes --ram settes til dette / 1024)
-FASTANI_MEM      = config.get("fastani_mem_mb",  32000)  # MB RAM reservert per FastANI-jobb (6 900 referanser, 8 tråder)
+KRAKEN2_MEM      = config.get("kraken2_mem_mb", 40000)  # MB RAM reservert per jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
+SHOVILL_MEM      = config.get("shovill_mem_mb",  40000)  # MB RAM reservert per Shovill/SPAdes-jobb (SPAdes --ram settes til dette / 1024)
+FASTANI_MEM      = config.get("fastani_mem_mb", 20000)  # MB RAM reservert per FastANI-jobb (6 900 referanser -- 20 GB for å unngå OOM)
+FASTANI_THREADS  = config.get("fastani_threads", 4)     # Færre tråder reduserer peak RAM-bruk for store referansedatabaser
 GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
 FASTANI_DB       = config.get("fastani_db", "/databases/fastani_db/")        # Sti til FastANI-referanseliste (.txt) -- tom = FastANI hoppes over
 FASTANI_THRESHOLD = config.get("fastani_threshold", 0.3)   # FastANI kjøres hvis closest.distance > denne
@@ -194,7 +195,7 @@ rule fastani:
     params:
         db        = FASTANI_DB,
         threshold = FASTANI_THRESHOLD
-    threads: THREADS
+    threads: FASTANI_THREADS
     resources:
         mem_mb = FASTANI_MEM
     run:

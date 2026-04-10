@@ -137,7 +137,9 @@ function render() {
     <div class="stat"><div class="val">${s.sample}</div><div class="lbl">Prøve</div></div>
     <div class="stat"><div class="val" style="font-size:1rem">${sp.replace(/_/g,' ')}</div><div class="lbl">Art</div></div>
     <div class="stat"><div class="val">ST${s.mlst.ST}</div><div class="lbl">MLST (${s.mlst.scheme})</div></div>
-    <div class="stat"><div class="val">${s.amr.total_amr_genes}</div><div class="lbl">AMR-gener</div></div>
+    <div class="stat"><div class="val" style="color:${s.amr.total_amr_genes>0?'#b02a37':'inherit'}">${s.amr.total_amr_genes}</div><div class="lbl">AMR-gener</div></div>
+    <div class="stat"><div class="val">${s.amr.total_virulence_genes}</div><div class="lbl">Virulens-gener</div></div>
+    <div class="stat"><div class="val">${s.amr.total_stress_genes||0}</div><div class="lbl">Stress-gener</div></div>
     <div class="stat"><div class="val">${s.plasmids.count}</div><div class="lbl">Plasmider</div></div>
     ${extraStats}
   </div></div>`;
@@ -161,40 +163,83 @@ function render() {
   const pcls = sid.purity.includes('RENKULTUR')?'alert-green':sid.purity.includes('MULIG')?'alert-yellow':'alert-red';
   const score_col = sid.concordance_score===2?'green':'red';
   const score_lbl = sid.concordance_score===2?'Samsvar':'Ingen samsvar';
+
+  const gambit_dist_badge = sid.gambit_distance != null
+    ? `${sid.gambit_distance.toFixed(3)} ${badge(sid.gambit_distance < 0.05 ? 'svært god' : sid.gambit_distance < 0.15 ? 'god' : sid.gambit_distance < 0.3 ? 'marginal' : 'usikker', sid.gambit_distance < 0.05 ? 'green' : sid.gambit_distance < 0.15 ? 'yellow' : 'red')}`
+    : '-';
+  const gambit_thresh_badge = sid.gambit_predicted_threshold != null
+    ? (sid.gambit_distance != null && sid.gambit_distance <= sid.gambit_predicted_threshold
+        ? badge('under terskel','green') : badge('over terskel','red'))
+    : '';
+
   h += `<div><h2>Artsidentifikasjon</h2><div class="card">
     <div class="alert ${pcls}" style="margin-bottom:6px"><strong>Renhet: ${sid.purity}</strong></div>
+    ${(sid.contamination_warnings||[]).map(w=>`<div class="alert alert-yellow" style="margin-bottom:4px">&#9888; ${w}</div>`).join('')}
     <div class="alert alert-blue" style="margin-bottom:8px">
       <strong>Konkordans: ${badge(score_lbl, score_col)}</strong><br>
       Bracken: ${sid.bracken_species.replace(/_/g,' ')} &nbsp;|&nbsp;
       GAMBIT: ${sid.gambit_species.replace(/_/g,' ')}
     </div>
     <table style="margin-top:8px">
-      <tr><td>Primær art (Bracken)</td><td>${sid.primary_species.replace(/_/g,' ')} (${sid.primary_pct}%)</td></tr>
-      <tr><td>Sekundær art (Bracken)</td><td>${sid.secondary_species.replace(/_/g,' ')} (${sid.secondary_pct}%)</td></tr>
-      <tr><td>Uklassifisert</td><td>${sid.unclassified_pct}%</td></tr>
-      <tr><td>GAMBIT-distanse</td><td>${
-        sid.gambit_distance != null
-          ? `${sid.gambit_distance.toFixed(3)} ${badge(sid.gambit_distance < 0.05 ? 'svært god' : sid.gambit_distance < 0.15 ? 'god' : 'marginal', sid.gambit_distance < 0.05 ? 'green' : sid.gambit_distance < 0.15 ? 'yellow' : 'red')}`
-          : '-'
-      }</td></tr>
-      ${sid.fastani?.status === 'ok'
-        ? `<tr><td>FastANI</td><td>${sid.fastani.top_hit} — ${sid.fastani.ani?.toFixed(2)}% ANI</td></tr>`
-        : ''}
+      <tr><th colspan="2">Bracken (Kraken2)</th></tr>
+      <tr><td>Primær art</td><td>${sid.primary_species.replace(/_/g,' ')}
+        ${badge(sid.primary_pct.toFixed(1)+'%', sid.primary_pct>=80?'green':sid.primary_pct>=60?'yellow':'red')}</td></tr>
+      <tr><td>Sekundær art</td><td>${sid.secondary_species.replace(/_/g,' ')}
+        ${badge(sid.secondary_pct.toFixed(1)+'%', sid.secondary_pct>=10?'yellow':'blue')}</td></tr>
+      <tr><td>Uklassifisert</td><td>${badge(sid.unclassified_pct.toFixed(1)+'%', sid.unclassified_pct>=20?'yellow':'blue')}</td></tr>
+      <tr><th colspan="2">GAMBIT</th></tr>
+      <tr><td>Prediksjon</td><td>${sid.gambit_predicted_name} ${badge(sid.gambit_predicted_rank||'-','blue')}</td></tr>
+      <tr><td>Nærmeste treff</td><td style="font-size:0.8rem">${sid.gambit_closest_description||'-'}</td></tr>
+      <tr><td>Distanse</td><td>${gambit_dist_badge} ${gambit_thresh_badge}
+        ${sid.gambit_predicted_threshold != null ? `(terskel: ${sid.gambit_predicted_threshold.toFixed(3)})` : ''}</td></tr>
+      ${sid.gambit_next_name && sid.gambit_next_name!=='-' ? `<tr><td>Nest nærmeste</td><td>${sid.gambit_next_name}</td></tr>` : ''}
+      ${sid.fastani?.status === 'ok' ? `<tr><th colspan="2">FastANI</th></tr>
+        <tr><td>Treff</td><td>${sid.fastani.top_hit}</td></tr>
+        <tr><td>ANI</td><td>${badge(sid.fastani.ani?.toFixed(2)+'%', sid.fastani.ani>=99?'green':sid.fastani.ani>=95?'yellow':'red')}</td></tr>
+        <tr><td>Bidireksjonelle fragmenter</td><td>${sid.fastani.af}</td></tr>` : ''}
     </table>
   </div></div>`;
   h += `</div>`;
 
-  // -- AMR-gener
-  h += `<h2>Resistensgener</h2><div class="card">
-  <table><tr><th>Gen</th><th>Navn</th><th>Klasse</th><th>Lokasjon</th><th>Mobilitet</th><th>Replikon</th><th>Klynge</th></tr>`;
-  for (const g of s.amr.details) {
-    h += `<tr>
-      <td><strong>${g.gene}</strong></td><td>${g.gene_name}</td><td>${g.class}</td>
-      <td>${g.location}</td><td>${mob_badge(g.mobility)}</td>
-      <td>${g.replicon}</td><td>${g.cluster}</td>
-    </tr>`;
+  // -- AMR-gener (type-fane-visning)
+  const amr_type_order = ['AMR', 'VIRULENCE', 'STRESS'];
+  const amr_type_label = {AMR:'Resistensgener', VIRULENCE:'Virulensgen', STRESS:'Stressrespons'};
+  const amr_type_color = {AMR:'#b02a37', VIRULENCE:'#856404', STRESS:'#495057'};
+
+  h += `<h2>AMRFinder-funn</h2>`;
+  if (!s.amr.details.length) {
+    h += `<div class="card"><p style="color:var(--muted)">Ingen funn.</p></div>`;
+  } else {
+    for (const typ of amr_type_order) {
+      const rows = s.amr.details.filter(g => g.type === typ);
+      if (!rows.length) continue;
+      h += `<h2 style="color:${amr_type_color[typ]};font-size:0.95rem;margin-top:12px">${amr_type_label[typ]||typ}</h2>
+      <div class="card" style="padding:0">
+      <table><tr><th>Gen</th><th>Navn</th><th>Klasse / Underklasse</th><th>Omfang</th><th>Kontig</th><th>Plasmid-mobilitet</th><th>Replikon</th></tr>`;
+      for (const g of rows) {
+        const cls_str = [g.class, g.subclass].filter(x=>x&&x!=='-'&&x!=='NA').join(' / ') || '-';
+        h += `<tr>
+          <td><strong>${g.gene}</strong></td>
+          <td style="font-size:0.82rem">${g.gene_name}</td>
+          <td>${cls_str}</td>
+          <td>${badge(g.scope||'-', g.scope==='core'?'blue':'green')}</td>
+          <td style="font-family:monospace;font-size:0.82rem">${g.location}</td>
+          <td>${mob_badge(g.mobility)}</td>
+          <td style="font-size:0.82rem">${g.replicon}</td>
+        </tr>`;
+      }
+      h += `</table></div>`;
+    }
+    // Catch any types not in the predefined list
+    const other = s.amr.details.filter(g => !amr_type_order.includes(g.type));
+    if (other.length) {
+      h += `<h2 style="font-size:0.95rem;margin-top:12px">Andre</h2><div class="card" style="padding:0"><table>
+        <tr><th>Gen</th><th>Navn</th><th>Type</th><th>Klasse</th><th>Kontig</th><th>Mobilitet</th></tr>`;
+      for (const g of other)
+        h += `<tr><td><strong>${g.gene}</strong></td><td>${g.gene_name}</td><td>${g.type}</td><td>${g.class}</td><td style="font-family:monospace;font-size:0.82rem">${g.location}</td><td>${mob_badge(g.mobility)}</td></tr>`;
+      h += `</table></div>`;
+    }
   }
-  h += `</table></div>`;
 
   // -- Plasmider
   h += `<h2>Plasmider</h2><div class="card"><div class="grid" style="margin-bottom:12px">
@@ -246,24 +291,40 @@ function render() {
   // -- Typingsmetoder brukt
   h += `<h2>Typingsmetoder</h2><div class="card">
   <table><tr><th>Verktøy</th><th>Resultat</th><th>Database/metode</th></tr>
-    <tr><td>Kraken2 + Bracken</td><td>${sid.primary_species} (${sid.primary_pct}%)</td><td style="font-size:0.8rem">${sid.kraken2_db}</td></tr>
+    <tr><td>Kraken2 + Bracken</td>
+      <td>${sid.primary_species.replace(/_/g,' ')} ${badge(sid.primary_pct.toFixed(1)+'%', sid.primary_pct>=80?'green':'yellow')}</td>
+      <td style="font-size:0.8rem">${sid.kraken2_db}</td></tr>
+    <tr><td>GAMBIT</td>
+      <td>${sid.gambit_predicted_name} ${badge(sid.gambit_predicted_rank||'-','blue')}
+        &nbsp; dist: ${sid.gambit_distance!=null?sid.gambit_distance.toFixed(3):'-'}</td>
+      <td style="font-size:0.8rem">GAMBIT-db (k-mer signatur)</td></tr>
+    ${sid.fastani?.status==='ok'
+      ? `<tr><td>FastANI</td>
+          <td>${sid.fastani.top_hit} — ${badge(sid.fastani.ani?.toFixed(2)+'% ANI', sid.fastani.ani>=99?'green':sid.fastani.ani>=95?'yellow':'red')}</td>
+          <td style="font-size:0.8rem">FastANI-referansedatabase</td></tr>`
+      : `<tr><td>FastANI</td><td style="color:var(--muted)">Hoppet over (GAMBIT tilstrekkelig)</td><td>-</td></tr>`}
     <tr><td>MLST (PubMLST)</td><td>ST${s.mlst.ST}</td><td>${s.mlst.scheme}</td></tr>
-    <tr><td>AMRFinder v4</td><td>${s.amr.total_amr_genes} AMR-gener, ${s.amr.total_virulence_genes} virulens</td><td>NCBI AMR Reference Gene Catalog</td></tr>
-    <tr><td>MOB-suite</td><td>${s.plasmids.count} plasmid(er)</td><td>~/.mob_suite</td></tr>
-    ${s.species?.includes('Klebsiella') || s.species?.includes('Escherichia') || s.species?.includes('Shigella')
-      ? `<tr><td>Kleborate</td><td>K/O-type + virulensscoring</td><td>Kleborate v3 (${
-          s.species.includes('Klebsiella_pneumoniae')||s.species.includes('Klebsiella_variicola')||s.species.includes('Klebsiella_quasipneumoniae') ? 'kpsc' :
-          s.species.includes('Klebsiella_oxytoca')||s.species.includes('Klebsiella_michiganensis') ? 'kosc' : 'escherichia'} preset)</td></tr>` : ''}
-    ${s.species?.includes('Staphylococcus_aureus')
-      ? `<tr><td>spaTyper</td><td>${s.spatyper?.spa_type||'-'} (${s.spatyper?.CC||'-'})</td><td>SpaTyper-database</td></tr>
-         <tr><td>SCCmec</td><td>Type ${s.sccmec?.type||'-'} -- ${s.sccmec?.mrsa?'MRSA':'MSSA'}</td><td>IWG-SCC-skjema</td></tr>
-         <tr><td>AgrVATE</td><td>agr-gruppe</td><td>Bundlet database</td></tr>` : ''}
-    ${s.species?.includes('Escherichia') || s.species?.includes('Shigella')
-      ? `<tr><td>ECTyper</td><td>O:H-serotyping</td><td>ECTyper v2</td></tr>` : ''}
-    ${s.species?.includes('Streptococcus_pyogenes')
-      ? `<tr><td>emmtyper</td><td>emm-typing (GAS)</td><td>CDC emm-typebase</td></tr>` : ''}
+    <tr><td>AMRFinder v4</td>
+      <td>${s.amr.total_amr_genes} AMR &nbsp; ${s.amr.total_virulence_genes} virulens &nbsp; ${s.amr.total_stress_genes||0} stress</td>
+      <td>NCBI AMR Reference Gene Catalog</td></tr>
+    <tr><td>MOB-suite (mob_typer)</td><td>${s.plasmids.count} plasmid(er)</td><td>mob_suite database</td></tr>
     ${s.mge && s.mge.count > 0
       ? `<tr><td>MobileElementFinder</td><td>${s.mge.count} MGE-er</td><td>MGEdb v1.1.1 (CGE)</td></tr>` : ''}
+    ${s.species?.includes('Klebsiella') || s.species?.includes('Escherichia') || s.species?.includes('Shigella')
+      ? `<tr><td>Kleborate</td>
+          <td>K: ${s.kleborate?.K_type||'-'} &nbsp; O: ${s.kleborate?.O_type||'-'}
+              &nbsp; Virulens: ${s.kleborate?.virulence_score||'-'}</td>
+          <td>Kleborate v3 (${
+            s.species.includes('Klebsiella_pneumoniae')||s.species.includes('Klebsiella_variicola')||s.species.includes('Klebsiella_quasipneumoniae') ? 'kpsc' :
+            s.species.includes('Klebsiella_oxytoca')||s.species.includes('Klebsiella_michiganensis') ? 'kosc' : 'escherichia'} preset)</td></tr>` : ''}
+    ${s.species?.includes('Staphylococcus_aureus')
+      ? `<tr><td>spaTyper</td><td>${s.spatyper?.spa_type||'-'} (CC: ${s.spatyper?.CC||'-'})</td><td>SpaTyper-database</td></tr>
+         <tr><td>SCCmec</td><td>Type ${s.sccmec?.type||'-'} &mdash; ${s.sccmec?.mrsa?badge('MRSA','red'):badge('MSSA','green')}</td><td>IWG-SCC-skjema</td></tr>
+         <tr><td>AgrVATE</td><td>agr-gruppe</td><td>Bundlet database</td></tr>` : ''}
+    ${s.species?.includes('Escherichia') || s.species?.includes('Shigella')
+      ? `<tr><td>ECTyper</td><td>${s.ectyper?.serotype||'-'}</td><td>ECTyper v2</td></tr>` : ''}
+    ${s.species?.includes('Streptococcus_pyogenes')
+      ? `<tr><td>emmtyper</td><td>${s.emmtyper?.emm_type||'-'}</td><td>CDC emm-typebase</td></tr>` : ''}
     ${s.species?.includes('Salmonella') && s.seqsero2
       ? `<tr><td>SeqSero2</td><td>${s.seqsero2.serotype} (${s.seqsero2.antigenic_profile})</td><td>Kauffmann-White-skjema</td></tr>` : ''}
     ${s.species?.includes('Haemophilus') && s.hicap

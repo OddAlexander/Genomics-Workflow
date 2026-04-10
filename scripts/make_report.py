@@ -80,11 +80,12 @@ def parse_kraken2_unclassified(path):
 def parse_amrfinder(path):
     txt = safe_read(path)
     if not txt:
-        return {"total_amr_genes": 0, "total_virulence_genes": 0, "_rows": []}
+        return {"total_amr_genes": 0, "total_virulence_genes": 0, "total_stress_genes": 0, "_rows": []}
     rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
     return {
-        "total_amr_genes":      sum(1 for r in rows if "AMR" in r.get("Element type", "")),
-        "total_virulence_genes": sum(1 for r in rows if "VIRULENCE" in r.get("Element type", "")),
+        "total_amr_genes":      sum(1 for r in rows if r.get("Type", "") == "AMR"),
+        "total_virulence_genes": sum(1 for r in rows if r.get("Type", "") == "VIRULENCE"),
+        "total_stress_genes":   sum(1 for r in rows if r.get("Type", "") == "STRESS"),
         "_rows": rows,
     }
 
@@ -124,19 +125,24 @@ def parse_mobsuite(path):
 def build_amr_details(amr_rows, contig_mob):
     details, high_risk, medium_risk = [], [], []
     for g in amr_rows:
-        contig   = g.get("Contig id", g.get("Protein identifier", "-"))
+        contig   = g.get("Contig id", "-")
         mob_info = contig_mob.get(contig, {})
         mobility = mob_info.get("mobility", "-")
-        gene     = g.get("Gene symbol", g.get("Element symbol", "-"))
-        if "AMR" in g.get("Element type", ""):
+        gene     = g.get("Element symbol", "-")
+        element_type = g.get("Type", "-")
+        if element_type == "AMR":
             if mobility == "CONJUGATIVE":
                 high_risk.append(gene)
             elif mobility == "MOBILIZABLE":
                 medium_risk.append(gene)
         details.append({
             "gene":      gene,
-            "gene_name": g.get("Sequence name", g.get("Element name", "-")),
+            "gene_name": g.get("Element name", "-"),
+            "type":      element_type,
+            "subtype":   g.get("Subtype", "-"),
             "class":     g.get("Class", "-"),
+            "subclass":  g.get("Subclass", "-"),
+            "scope":     g.get("Scope", "-"),
             "location":  contig,
             "mobility":  mobility,
             "replicon":  mob_info.get("replicon", "-"),
@@ -227,17 +233,32 @@ def parse_fastani(path):
     }
 
 
-def parse_gambit_distance(path):
+def parse_gambit_full(path):
     txt = safe_read(path)
     if not txt:
-        return None
+        return {}
     rows = list(csv.DictReader(txt.splitlines()))
     if not rows:
-        return None
-    try:
-        return float(rows[0].get("closest.distance", "") or "")
-    except ValueError:
-        return None
+        return {}
+    r = rows[0]
+    def _f(key):
+        try:
+            return float(r.get(key, "") or "")
+        except ValueError:
+            return None
+    return {
+        "predicted_name":      r.get("predicted.name", "-") or "-",
+        "predicted_rank":      r.get("predicted.rank", "-") or "-",
+        "predicted_threshold": _f("predicted.threshold"),
+        "closest_distance":    _f("closest.distance"),
+        "closest_description": r.get("closest.description", "-") or "-",
+        "next_name":           r.get("next.name", "-") or "-",
+    }
+
+
+def parse_gambit_distance(path):
+    d = parse_gambit_full(path)
+    return d.get("closest_distance")
 
 
 def parse_seqsero2(path):
@@ -297,6 +318,18 @@ def derive_purity(primary_pct, gambit_sp, bracken_sp):
         return "BLANDING"
 
 
+def contamination_check(primary_pct, secondary_pct, secondary_sp, uncl_pct):
+    """Return list of contamination warnings."""
+    warnings = []
+    if secondary_pct >= 10 and secondary_sp not in ("-", "unknown", ""):
+        warnings.append(f"Sekundær art {secondary_sp.replace('_', ' ')} utgjør {secondary_pct:.1f}%")
+    if uncl_pct >= 20:
+        warnings.append(f"{uncl_pct:.1f}% uklassifiserte reads")
+    if primary_pct < 80:
+        warnings.append(f"Primær art under 80% ({primary_pct:.1f}%)")
+    return warnings
+
+
 def concordance_score(gambit_sp, bracken_sp):
     if gambit_sp == bracken_sp and gambit_sp not in ("unknown", "-", ""):
         return 2  # begge enige
@@ -323,7 +356,7 @@ if __name__ == "__main__":
     mob_data     = parse_mobsuite(sp_dir / "MOBSuite/mobtyper.tsv")
     mge_data     = parse_mefinder(sp_dir / "MEfinder/mefinder.tsv")
     fastani_data = parse_fastani(sp_dir / "ID_FastANI/fastani.tsv")
-    gambit_dist  = parse_gambit_distance(sp_dir / "ID_GAMBIT/gambit.csv")
+    gambit_full  = parse_gambit_full(sp_dir / "ID_GAMBIT/gambit.csv")
 
     gambit_sp = (safe_read(sp_dir / "species.txt") or "unknown").strip()
 
@@ -333,6 +366,9 @@ if __name__ == "__main__":
     purity  = derive_purity(bracken_data["primary_pct"], gambit_sp, bracken_data["primary_species"])
     score   = concordance_score(gambit_sp, bracken_data["primary_species"])
     species = gambit_sp if gambit_sp not in ("unknown", "") else bracken_data["primary_species"]
+    contam_warnings = contamination_check(
+        bracken_data["primary_pct"], bracken_data["secondary_pct"],
+        bracken_data["secondary_species"], uncl_pct)
 
     data = {
         "sample":   args.sample,
@@ -343,6 +379,7 @@ if __name__ == "__main__":
         "amr": {
             "total_amr_genes":       amr_raw["total_amr_genes"],
             "total_virulence_genes": amr_raw["total_virulence_genes"],
+            "total_stress_genes":    amr_raw["total_stress_genes"],
             "high_risk_genes":       high_risk,
             "medium_risk_genes":     medium_risk,
             "details":               amr_details,
@@ -350,19 +387,25 @@ if __name__ == "__main__":
         "plasmids": {k: v for k, v in mob_data.items() if not k.startswith("_")},
         "mge":      mge_data,
         "species_id": {
-            "purity":             purity,
-            "concordance_score":  score,
-            "bracken_species":    bracken_data["primary_species"],
-            "gambit_species":     gambit_sp,
-            "gambit_distance":    gambit_dist,
-            "id_method":          "Bracken + GAMBIT",
-            "primary_species":    bracken_data["primary_species"],
-            "primary_pct":        bracken_data["primary_pct"],
-            "secondary_species":  bracken_data["secondary_species"],
-            "secondary_pct":      bracken_data["secondary_pct"],
-            "unclassified_pct":   uncl_pct,
-            "fastani":            fastani_data,
-            "kraken2_db":         args.kraken2_db,
+            "purity":               purity,
+            "concordance_score":    score,
+            "contamination_warnings": contam_warnings,
+            "bracken_species":      bracken_data["primary_species"],
+            "gambit_species":       gambit_sp,
+            "gambit_predicted_name":    gambit_full.get("predicted_name", "-"),
+            "gambit_predicted_rank":    gambit_full.get("predicted_rank", "-"),
+            "gambit_predicted_threshold": gambit_full.get("predicted_threshold"),
+            "gambit_distance":          gambit_full.get("closest_distance"),
+            "gambit_closest_description": gambit_full.get("closest_description", "-"),
+            "gambit_next_name":         gambit_full.get("next_name", "-"),
+            "id_method":            "Bracken + GAMBIT",
+            "primary_species":      bracken_data["primary_species"],
+            "primary_pct":          bracken_data["primary_pct"],
+            "secondary_species":    bracken_data["secondary_species"],
+            "secondary_pct":        bracken_data["secondary_pct"],
+            "unclassified_pct":     uncl_pct,
+            "fastani":              fastani_data,
+            "kraken2_db":           args.kraken2_db,
         },
     }
 
