@@ -83,14 +83,15 @@ mob-init  = { cmd = "mob_init" }
 
 # ── Artsidentifikasjon
 [feature.identification.dependencies]
-kraken2    = ">=2.1"
-bracken    = ">=2.9"
-mash       = ">=2.3"
-fastani    = ">=1.34"
-ectyper    = ">=2.0"
-kleborate  = ">=3.0"
-ezclermont = ">=0.7"
-gambit     = ">=0.5"
+kraken2              = ">=2.1"
+bracken              = ">=2.9"
+mash                 = ">=2.3"
+fastani              = ">=1.34"
+ectyper              = ">=2.0"
+kleborate            = ">=3.0"
+ezclermont           = ">=0.7"
+gambit               = ">=0.5"
+ncbi-datasets-cli    = ">=16.0"
 
 # ── MobileElementFinder (CGE)
 # NB: krever Python <3.12 pga biopython/PyUnicode_WCHAR_KIND

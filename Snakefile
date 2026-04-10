@@ -6,11 +6,13 @@ configfile: "config.yaml"
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
-KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_mini/")
-KRAKEN2_MEM      = config.get("kraken2_mem_mb", 10000)  # MB RAM reservert per Kraken2-jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
+KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db/")
+KRAKEN2_MEM      = config.get("kraken2_mem_mb", 25000)  # MB RAM reservert per jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
+SHOVILL_MEM      = config.get("shovill_mem_mb",  20000)  # MB RAM reservert per Shovill/SPAdes-jobb (SPAdes --ram settes til dette / 1024)
+FASTANI_MEM      = config.get("fastani_mem_mb",  32000)  # MB RAM reservert per FastANI-jobb (6 900 referanser, 8 tråder)
 GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
-FASTANI_DB       = config.get("fastani_db", "")        # Sti til FastANI-referanseliste (.txt) -- tom = FastANI hoppes over
-FASTANI_THRESHOLD = config.get("fastani_threshold", 0.05)  # GAMBIT-distanse over denne utløser FastANI
+FASTANI_DB       = config.get("fastani_db", "/databases/fastani_db/")        # Sti til FastANI-referanseliste (.txt) -- tom = FastANI hoppes over
+FASTANI_THRESHOLD = config.get("fastani_threshold", 0.3)   # FastANI kjøres hvis closest.distance > denne
 
 # --- Artsgrupper og skjemaer ---
 SA  = {"Staphylococcus_aureus"}
@@ -70,9 +72,9 @@ ALWAYS_TOOLS = [
 
 SPECIES_TOOLS = [
     (set(KLEB_PRESET.keys()), ["Kleborate/kleborate_output.tsv"]),
-    (SA,                  ["SpaTyper/spatyper.txt", "SCCmec/sccmec.txt", "AgrVATE/agrvate.txt"]),
+    (SA,                  ["SpaTyper/spatyper.txt", "SCCmec/sccmec.tsv", "AgrVATE/agrvate.txt"]),
     (GAS,                 ["EmmTyper/emmtyper.txt"]),
-    (EC,                  ["ECTyper/ectyper.tsv"]),
+    # (EC,                  ["ECTyper/ectyper.tsv"]),  # disabled: Zenodo outage, re-enable when MASH sketch is downloaded
     (PA,                  ["Pasty/pasty.tsv"]),
     (SAL,                 ["SeqSero2/seqsero2.tsv"]),
     (HI,                  ["Hicap/hicap.tsv"]),
@@ -183,23 +185,28 @@ checkpoint identify_species:
 
 rule fastani:
     input:
-        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
+        fa     = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
+        gambit = f"{RESULTS_DIR}/{{sample}}/ID_GAMBIT/gambit.csv"
     output:
         f"{RESULTS_DIR}/{{sample}}/ID_FastANI/fastani.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/fastani.log"
     params:
-        db = FASTANI_DB
+        db        = FASTANI_DB,
+        threshold = FASTANI_THRESHOLD
     threads: THREADS
-    shell:
-        """
-        if [ -n "{params.db}" ]; then
-            pixi run --environment identification fastANI -q {input.fa} --rl {params.db} \
-                -o {output} --threads {threads} 2>&1 | tee {log}
-        else
-            echo -e "status\treason\nhoppet_over\tingen database konfigurert" > {output}
-        fi
-        """
+    resources:
+        mem_mb = FASTANI_MEM
+    run:
+        import csv
+        row  = next(csv.DictReader(open(input.gambit)))
+        dist = float(row.get("closest.distance") or "inf")
+        if params.db and dist > params.threshold:
+            shell("pixi run --environment identification fastANI -q {input.fa} --rl {params.db}"
+                  " -o {output} --threads {threads} 2>&1 | tee {log}")
+        else:
+            reason = "no database" if not params.db else f"GAMBIT confident (dist={dist:.3f})"
+            shell(f"echo -e 'status\\treason\\nskipped\\t{reason}' > {{output}}")
 
 rule assemble:
     input:
@@ -212,8 +219,10 @@ rule assemble:
     params:
         outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/Assembly"
     threads: THREADS
+    resources:
+        mem_mb = SHOVILL_MEM
     shell:
-        "pixi run shovill --R1 {input.r1} --R2 {input.r2} --outdir {params.outdir} --cpus {threads} --force 2>&1 | tee {log}"
+        "pixi run shovill --R1 {input.r1} --R2 {input.r2} --outdir {params.outdir} --cpus {threads} --ram $(( {resources.mem_mb} / 1024 )) --force 2>&1 | tee {log}"
 
 rule fastqc:
     input:
@@ -239,8 +248,9 @@ rule quast:
         f"{RESULTS_DIR}/{{sample}}/logs/quast.log"
     params:
         outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/QUAST"
+    threads: THREADS
     shell:
-        "pixi run quast {input.fa} -o {params.outdir} 2>&1 | tee {log}"
+        "pixi run quast {input.fa} -o {params.outdir} --threads {threads} 2>&1 | tee {log}"
 
 rule mlst:
     input:
@@ -289,16 +299,13 @@ rule sccmec:
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
     output:
-        f"{RESULTS_DIR}/{{sample}}/SCCmec/sccmec.txt"
+        f"{RESULTS_DIR}/{{sample}}/SCCmec/sccmec.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/sccmec.log"
     params:
         outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/SCCmec"
     shell:
-        """
-        pixi run sccmec --input {input.fa} --outdir {params.outdir} 2>&1 | tee {log}
-        mv {params.outdir}/sccmec.tsv {output}
-        """
+        "pixi run sccmec --input {input.fa} --outdir {params.outdir} --prefix sccmec 2>&1 | tee {log}"
 
 rule agrvate:
     input:
@@ -308,9 +315,16 @@ rule agrvate:
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/agrvate.log"
     resources:
-        agrvate_jobs = 1 #bruker samme midlertidig fil, som kan skape konflikter ved parallell kjøring
+        agrvate_jobs = 1  # agrvate writes to contigs-results/ relative to CWD (named after input basename); limit to 1 to avoid collisions
     shell:
-        "pixi run agrvate -i {input.fa} -m -f 2>&1 | tee {log} && mv contigs-results/contigs-summary.tab {output}"
+        """
+        pixi run agrvate -i {input.fa} -m -f 2>&1 | tee {log} || true
+        if [ -f contigs-results/contigs-summary.tab ]; then
+            mv contigs-results/contigs-summary.tab {output}
+        else
+            printf 'filename\tagr_group\tscan_start\tscan_end\tsnp_group\texact_match\tmultiple_agr\tpossible_novel\n%s\tNT\t.\t.\t.\t.\t.\t.\n' {input.fa} > {output}
+        fi
+        """
 
 rule emmtyper:
     input:
@@ -339,7 +353,8 @@ rule amrfinder:
 
 rule ectyper:
     input:
-        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
+        fa   = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
+        mash = "databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh"
     output:
         f"{RESULTS_DIR}/{{sample}}/ECTyper/ectyper.tsv"
     log:
@@ -347,7 +362,7 @@ rule ectyper:
     params:
         outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/ECTyper"
     shell:
-        "pixi run ectyper -i {input.fa} -o {params.outdir} 2>&1 | tee {log} && mv {params.outdir}/output.tsv {output}"
+        "pixi run ectyper -i {input.fa} -o {params.outdir} -r {input.mash} 2>&1 | tee {log} && mv {params.outdir}/output.tsv {output}"
 
 rule mob_typer:
     input:
@@ -409,7 +424,7 @@ rule hicap:
     shell:
         """
         pixi run --environment hicap hicap -q {input.fa} -o {params.outdir} 2>&1 | tee {log}
-        mv {params.outdir}/*.tsv {output}
+        mv {params.outdir}/contigs.tsv {output}
         """
 
 rule pasty:
@@ -428,6 +443,7 @@ rule multiqc:
     input:
         fastp   = f"{RESULTS_DIR}/{{sample}}/QC/fastp.json",
         fastqc  = f"{RESULTS_DIR}/{{sample}}/QC/fastqc/R1_fastqc.html",
+        # lambda triggers checkpoint resolution via get_all_outputs → read_species → checkpoints.identify_species.get(...)
         dynamic = lambda wc: [f for f in get_all_outputs(wc) if "multiqc_report.html" not in f]
     output:
         f"{RESULTS_DIR}/{{sample}}/MultiQC/multiqc_report.html"

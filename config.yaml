@@ -25,3 +25,7 @@ threads: 8
 # Path to mash sketch database (e.g. RefSeq .msh file)
 mash_db: /databases/mash_db/refseq.genomes+plasmid.k21s1000.msh
 
+# Path to FastANI reference genome list (.txt, one genome path per line)
+# Run scripts/download_fastani_refs.sh to populate this database
+fastani_db: /databases/fastani_db/reference_list.txt
+
