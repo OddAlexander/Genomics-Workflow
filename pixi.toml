@@ -86,7 +86,7 @@ mob-init  = { cmd = "mob_init" }
 kraken2              = ">=2.1"
 bracken              = ">=2.9"
 mash                 = ">=2.3"
-fastani              = ">=1.34"
+skani                = ">=0.2"
 ectyper              = ">=2.0"
 kleborate            = ">=3.0"
 ezclermont           = ">=0.7"
@@ -108,7 +108,7 @@ MobileElementFinder = ">=1.0"
 mash-screen  = { cmd = "mash screen -w -p 8 $MASH_DB $INPUT | sort -gr | head -20 > $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/mash_screen.tsv" } }
 kraken2-run  = { cmd = "kraken2 --db $KRAKEN2_DB --threads 8 --paired --gzip-compressed --report $REPORT $R1 $R2 > $OUTPUT", env = { R1 = "data/trimmed/R1.fastq.gz", R2 = "data/trimmed/R2.fastq.gz", REPORT = "results/kraken2/report.txt", OUTPUT = "results/kraken2/output.txt" } }
 bracken-run  = { cmd = "bracken -d $KRAKEN2_DB -i $INPUT -o $OUTPUT -r 150 -l S", env = { INPUT = "results/kraken2/report.txt", OUTPUT = "results/bracken/species.txt" } }
-fastani-run  = { cmd = "fastANI -q $INPUT --rl $REFLIST -o $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", REFLIST = "/databases/fastANI_refs/reference_list.txt", OUTPUT = "results/fastani/ani.txt" } }
+skani-run    = { cmd = "skani search -q $INPUT -d $SKANI_DB -o $OUTPUT", env = { INPUT = "results/assembly/contigs.fa", SKANI_DB = "/databases/skani_db/bacteria", OUTPUT = "results/skani/skani.tsv" } }
 
 # ── cgMLST (chewBBACA + cgmlst-dists)
 [feature.cgmlst.dependencies]
@@ -127,6 +127,13 @@ seqsero2 = ">=1.3"          # Salmonella serotyping
 python = "3.11.*"
 hicap  = ">=1.0"            # H. influenzae kapseltype
 
+# ── PlasmidFinder (isolert: krever Python 3.14)
+[feature.plasmidfinder.dependencies]
+plasmidfinder = ">=2.1"
+
+[feature.plasmidfinder.tasks]
+plasmidfinder-run = { cmd = "plasmidfinder.py -i $INPUT -o $OUTPUT -p $DB", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/plasmidfinder/", DB = "/databases/plasmidfinder_db/" } }
+
 [environments]
 default        = { solve-group = "main" }
 annotation     = { features = ["annotation"],     solve-group = "annotation",     no-default-feature = true }
@@ -138,3 +145,4 @@ cgmlst         = { features = ["cgmlst"],          solve-group = "cgmlst",      
 mefinder       = { features = ["mefinder"],        solve-group = "mefinder",       no-default-feature = true }
 seqsero2       = { features = ["seqsero2"],        solve-group = "seqsero2",       no-default-feature = true }
 hicap          = { features = ["hicap"],           solve-group = "hicap",          no-default-feature = true }
+plasmidfinder  = { features = ["plasmidfinder"],   solve-group = "plasmidfinder",   no-default-feature = true }

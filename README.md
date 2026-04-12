@@ -14,8 +14,7 @@ genomics/
 ├── pixi.toml                  # Pixi-miljødefinisjon
 ├── report_template.html       # HTML-rapportmal
 ├── scripts/
-│   ├── make_report.py         # Genererer HTML-rapport per prøve
-│   └── download_fastani_refs.sh  # Laster ned FastANI-referansedatabase
+│   └── make_report.py         # Genererer HTML-rapport per prøve
 └── results/                   # Analyseresultater (ikke i git)
     └── <dato>/<prøve-id>/
         ├── Trimmed/           # Trimma reads (fastp)
@@ -25,7 +24,7 @@ genomics/
         ├── QUAST/             # Assemblystatistikk
         ├── ID_Kraken2/        # Kraken2 + Bracken artsidentifikasjon
         ├── ID_GAMBIT/         # GAMBIT artsidentifikasjon (på assembly)
-        ├── ID_FastANI/        # FastANI (kjøres kun ved usikker GAMBIT-match)
+        ├── ID_Skani/          # skani (kjøres kun ved usikker GAMBIT-match)
         ├── species.txt        # GAMBIT artsidentifikasjon (styrer DAG-routing)
         ├── MLST/              # Sekvenstyping (PubMLST)
         ├── AMRFinder/         # Resistens- og virulensgen
@@ -41,6 +40,7 @@ genomics/
         ├── Hicap/             # H. influenzae kapseltype
         ├── pipeline_summary.html  # HTML-rapport (sluttprodukt)
         └── logs/
+    └── pipeline_run_<YYYYMMDD_HHMM>.tsv  # Kjøringslogg (én fil per kjøring)
 ```
 
 ---
@@ -100,14 +100,25 @@ wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20240904.tar.gz -P /da
 tar -xzf /databases/kraken2_db/k2_pluspf_20240904.tar.gz -C /databases/kraken2_db/
 ```
 
-#### FastANI (~27 GB, ~6 900 RefSeq-referansegenomer)
+#### skani (~3 GB skisse, ~6 500 komplette RefSeq-referansegenomer)
 
 ```bash
-pixi install --environment identification
-pixi run --environment identification bash scripts/download_fastani_refs.sh
-```
+# Last ned genomer fra NCBI (~25 GB midlertidig diskplass)
+sudo mkdir -p /databases/fastani_db /databases/skani_db && sudo chown $USER /databases/fastani_db /databases/skani_db
+pixi run --environment identification datasets download genome taxon bacteria \
+    --reference --assembly-source refseq --assembly-level complete \
+    --include genome --filename /databases/fastani_db/bacteria_refs.zip
+unzip /databases/fastani_db/bacteria_refs.zip -d /databases/fastani_db/
+find /databases/fastani_db/ncbi_dataset/data -name "*.fna" > /databases/fastani_db/reference_list.txt
 
-Skriptet laster ned komplette og kromosomnivå RefSeq-referansegenomer fra NCBI og skriver en referanseliste til `/databases/fastani_db/reference_list.txt`.
+# Bygg skani-skissebase (~3 GB, beholder bare denne)
+pixi run --environment identification skani sketch \
+    -l /databases/fastani_db/reference_list.txt \
+    -o /databases/skani_db/bacteria -t 16
+
+# Slett rågenomene etter at skissen er ferdig (~25 GB frigjøres)
+rm -rf /databases/fastani_db/ncbi_dataset /databases/fastani_db/bacteria_refs.zip
+```
 
 #### MOB-suite (~1.5 GB)
 
@@ -149,7 +160,7 @@ pixi run snakemake --cores 16 --resources mem_mb=60000
 pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
 ```
 
-> **`mem_mb`** skaleres etter tilgjengelig RAM. Standard jobbreservasjoner: Kraken2=25 GB, Shovill=16 GB, FastANI=16 GB. Sett `mem_mb` til ca. total RAM minus 4 GB (f.eks. `60000` på en 64 GB maskin).
+> **`mem_mb`** skaleres etter tilgjengelig RAM. Standard jobbreservasjoner: Kraken2=12 GB, Shovill=12 GB, skani=4 GB. Sett `mem_mb` til ca. total RAM minus 4 GB (f.eks. `12000` på en 16 GB maskin).
 
 **Forventet mappestruktur for input:**
 
@@ -196,7 +207,7 @@ Shovill (Assembly) → QUAST
     ├── GAMBIT (artsidentifikasjon på assembly) → species.txt
     │       └── SJEKKPUNKT: styrer DAG-routing
     │
-    ├── FastANI (kun hvis GAMBIT closest.distance > fastani_threshold)
+    ├── skani (kun hvis GAMBIT closest.distance > skani_threshold)
     ├── MLST
     ├── AMRFinder
     ├── MOB-suite (plasmid)
@@ -230,7 +241,13 @@ HTML-rapport (pipeline_summary.html)
 | Alle | MEfinder | Insertionssekvenser og transposoner |
 | Alle | MOB-suite | Plasmidtyping (relaxase, konjugasjon) |
 
-> **ECTyper** (E. coli O:H-serotyping) er midlertidig deaktivert — krever MASH-skisse fra Zenodo (`EnteroRef_GTDBSketch_20231003_V2.msh`). Last den ned og legg den i `databases/ectyper/` når Zenodo er tilgjengelig, og aktiver `(EC, [...])` i `SPECIES_TOOLS` i Snakefilen.
+ECTyper (E. coli O:H-serotyping) krever MASH-skissen fra Zenodo. Last ned med:
+
+```bash
+mkdir -p databases/ectyper
+wget -O databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh \
+    "https://zenodo.org/records/13969103/files/EnteroRef_GTDBSketch_20231003_V2.msh?download=1"
+```
 
 ---
 
@@ -244,10 +261,11 @@ HTML-rapport (pipeline_summary.html)
 | `kraken2_db` | `/databases/kraken2_db/` | Sti til Kraken2-database |
 | `kraken2_mem_mb` | `25000` | MB RAM per Kraken2-jobb |
 | `gambit_db` | `/databases/gambit_db/` | Sti til GAMBIT-database |
-| `fastani_db` | `/databases/fastani_db/reference_list.txt` | Sti til FastANI-referanseliste |
-| `fastani_threshold` | `0.3` | GAMBIT `closest.distance` over denne utløser FastANI |
-| `shovill_mem_mb` | `20000` | MB RAM per Shovill/SPAdes-jobb (SPAdes begrenses til dette / 1024 GB) |
-| `fastani_mem_mb` | `32000` | MB RAM per FastANI-jobb (6 900 referanser, 8 tråder) |
+| `skani_db` | `/databases/skani_db/bacteria` | Sti til skani-skissebase (katalog) |
+| `skani_threshold` | `0.3` | GAMBIT `closest.distance` over denne utløser skani |
+| `skani_mem_mb` | `4000` | MB RAM per skani-jobb |
+| `skani_threads` | `8` | Antall tråder per skani-jobb |
+| `shovill_mem_mb` | `12000` | MB RAM per Shovill/SPAdes-jobb (SPAdes begrenses til dette / 1024 GB) |
 
 ---
 
@@ -280,7 +298,7 @@ pixi run snakemake --cores 16 --resources mem_mb=60000 --rerun-incomplete
 | QUAST | ≥5.2 | Assemblystatistikk |
 | Kraken2 + Bracken | ≥2.1 | Artsidentifikasjon og renhetskontroll |
 | GAMBIT | ≥0.5 | Artsidentifikasjon på assembly (SJEKKPUNKT — styrer DAG) |
-| FastANI | ≥1.34 | Nøyaktig ANI-beregning ved usikker GAMBIT-match |
+| skani | ≥0.2 | Rask ANI-beregning ved usikker GAMBIT-match |
 | MLST | ≥2.23 | Sekvenstyping (PubMLST) |
 | AMRFinder | v4.x | Resistens- og virulensgen-deteksjon |
 | MOB-suite | ≥3.1 | Plasmidtyping |

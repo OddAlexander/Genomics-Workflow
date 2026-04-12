@@ -6,14 +6,14 @@ configfile: "config.yaml"
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
-KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db/")
-KRAKEN2_MEM      = config.get("kraken2_mem_mb", 40000)  # MB RAM reservert per jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
-SHOVILL_MEM      = config.get("shovill_mem_mb",  40000)  # MB RAM reservert per Shovill/SPAdes-jobb (SPAdes --ram settes til dette / 1024)
-FASTANI_MEM      = config.get("fastani_mem_mb", 20000)  # MB RAM reservert per FastANI-jobb (6 900 referanser -- 20 GB for å unngå OOM)
-FASTANI_THREADS  = config.get("fastani_threads", 4)     # Færre tråder reduserer peak RAM-bruk for store referansedatabaser
+KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_mini/")
+KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reservert per jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
+SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reservert per Shovill/SPAdes-jobb (SPAdes --ram settes til dette / 1024)
+SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reservert per skani-jobb (mye lavere enn fastANI)
+SKANI_THREADS    = config.get("skani_threads", 8)
 GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
-FASTANI_DB       = config.get("fastani_db", "/databases/fastani_db/")        # Sti til FastANI-referanseliste (.txt) -- tom = FastANI hoppes over
-FASTANI_THRESHOLD = config.get("fastani_threshold", 0.3)   # FastANI kjøres hvis closest.distance > denne
+SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Sti til skani-sketch (katalog) -- tom = skani hoppes over
+SKANI_THRESHOLD  = config.get("skani_threshold", 0.3)      # skani kjøres hvis closest.distance i Gambit > denne
 
 # --- Artsgrupper og skjemaer ---
 SA  = {"Staphylococcus_aureus"}
@@ -64,18 +64,19 @@ ALWAYS_TOOLS = [
     "MLST/mlst.tsv",
     "AMRFinder/amrfinder.tsv",
     "MOBSuite/mobtyper.tsv",
+    "PlasmidFinder/results_tab.tsv",
     "MEfinder/mefinder.tsv",
     "ID_Kraken2/kraken2_report.txt",
     "ID_Kraken2/bracken_species.txt",
     "ID_GAMBIT/gambit.csv",
-    "ID_FastANI/fastani.tsv",
+    "ID_Skani/skani.tsv",
 ]
 
 SPECIES_TOOLS = [
     (set(KLEB_PRESET.keys()), ["Kleborate/kleborate_output.tsv"]),
     (SA,                  ["SpaTyper/spatyper.txt", "SCCmec/sccmec.tsv", "AgrVATE/agrvate.txt"]),
     (GAS,                 ["EmmTyper/emmtyper.txt"]),
-    # (EC,                  ["ECTyper/ectyper.tsv"]),  # disabled: Zenodo outage, re-enable when MASH sketch is downloaded
+    (EC,                  ["ECTyper/ectyper.tsv"]),
     (PA,                  ["Pasty/pasty.tsv"]),
     (SAL,                 ["SeqSero2/seqsero2.tsv"]),
     (HI,                  ["Hicap/hicap.tsv"]),
@@ -184,27 +185,27 @@ checkpoint identify_species:
         awk -F',' 'NR==2{{print $2}}' {output.csv} | sed 's/ /_/g' > {output.sp}
         """
 
-rule fastani:
+rule skani:
     input:
         fa     = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
         gambit = f"{RESULTS_DIR}/{{sample}}/ID_GAMBIT/gambit.csv"
     output:
-        f"{RESULTS_DIR}/{{sample}}/ID_FastANI/fastani.tsv"
+        f"{RESULTS_DIR}/{{sample}}/ID_Skani/skani.tsv"
     log:
-        f"{RESULTS_DIR}/{{sample}}/logs/fastani.log"
+        f"{RESULTS_DIR}/{{sample}}/logs/skani.log"
     params:
-        db        = FASTANI_DB,
-        threshold = FASTANI_THRESHOLD
-    threads: FASTANI_THREADS
+        db        = SKANI_DB,
+        threshold = SKANI_THRESHOLD
+    threads: SKANI_THREADS
     resources:
-        mem_mb = FASTANI_MEM
+        mem_mb = SKANI_MEM
     run:
         import csv
         row  = next(csv.DictReader(open(input.gambit)))
         dist = float(row.get("closest.distance") or "inf")
         if params.db and dist > params.threshold:
-            shell("pixi run --environment identification fastANI -q {input.fa} --rl {params.db}"
-                  " -o {output} --threads {threads} 2>&1 | tee {log}")
+            shell("pixi run --environment identification skani search -q {input.fa} -d {params.db}"
+                  " -o {output} -t {threads} 2>&1 | tee {log}")
         else:
             reason = "no database" if not params.db else f"GAMBIT confident (dist={dist:.3f})"
             shell(f"echo -e 'status\\treason\\nskipped\\t{reason}' > {{output}}")
@@ -374,6 +375,19 @@ rule mob_typer:
         f"{RESULTS_DIR}/{{sample}}/logs/mob_typer.log"
     shell:
         "pixi run --environment mobsuite mob_typer --infile {input.fa} --out_file {output} 2>&1 | tee {log}"
+
+rule plasmidfinder:
+    input:
+        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
+    output:
+        f"{RESULTS_DIR}/{{sample}}/PlasmidFinder/results_tab.tsv"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/plasmidfinder.log"
+    params:
+        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/PlasmidFinder",
+        db     = "/databases/plasmidfinder_db/"
+    shell:
+        "pixi run --environment plasmidfinder plasmidfinder.py -i {input.fa} -o {params.outdir} -p {params.db} -x 2>&1 | tee {log}"
 
 rule mefinder:
     input:

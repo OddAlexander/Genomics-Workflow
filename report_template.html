@@ -137,6 +137,7 @@ function render() {
     <div class="stat"><div class="val">${s.sample}</div><div class="lbl">Prøve</div></div>
     <div class="stat"><div class="val" style="font-size:1rem">${sp.replace(/_/g,' ')}</div><div class="lbl">Art</div></div>
     <div class="stat"><div class="val">ST${s.mlst.ST}</div><div class="lbl">MLST (${s.mlst.scheme})</div></div>
+    ${s.kleborate?.ST&&s.kleborate.ST!=='-'?`<div class="stat"><div class="val">ST${s.kleborate.ST}</div><div class="lbl">ST (Kleborate)</div></div>`:''}
     <div class="stat"><div class="val" style="color:${s.amr.total_amr_genes>0?'#b02a37':'inherit'}">${s.amr.total_amr_genes}</div><div class="lbl">AMR-gener</div></div>
     <div class="stat"><div class="val">${s.amr.total_virulence_genes}</div><div class="lbl">Virulens-gener</div></div>
     <div class="stat"><div class="val">${s.amr.total_stress_genes||0}</div><div class="lbl">Stress-gener</div></div>
@@ -193,10 +194,11 @@ function render() {
       <tr><td>Distanse</td><td>${gambit_dist_badge} ${gambit_thresh_badge}
         ${sid.gambit_predicted_threshold != null ? `(terskel: ${sid.gambit_predicted_threshold.toFixed(3)})` : ''}</td></tr>
       ${sid.gambit_next_name && sid.gambit_next_name!=='-' ? `<tr><td>Nest nærmeste</td><td>${sid.gambit_next_name}</td></tr>` : ''}
-      ${sid.fastani?.status === 'ok' ? `<tr><th colspan="2">FastANI</th></tr>
-        <tr><td>Treff</td><td>${sid.fastani.top_hit}</td></tr>
-        <tr><td>ANI</td><td>${badge(sid.fastani.ani?.toFixed(2)+'%', sid.fastani.ani>=99?'green':sid.fastani.ani>=95?'yellow':'red')}</td></tr>
-        <tr><td>Bidireksjonelle fragmenter</td><td>${sid.fastani.af}</td></tr>` : ''}
+      ${sid.skani?.status === 'ok' ? `<tr><th colspan="2">skani</th></tr>
+        <tr><td>Treff</td><td>${sid.skani.top_hit}</td></tr>
+        <tr><td>ANI</td><td>${badge(sid.skani.ani?.toFixed(2)+'%', sid.skani.ani>=99?'green':sid.skani.ani>=95?'yellow':'red')}</td></tr>
+        <tr><td>Aln. fraksjon (spørring)</td><td>${sid.skani.af_query}</td></tr>
+        <tr><td>Aln. fraksjon (referanse)</td><td>${sid.skani.af_ref}</td></tr>` : ''}
     </table>
   </div></div>`;
   h += `</div>`;
@@ -215,9 +217,15 @@ function render() {
       if (!rows.length) continue;
       h += `<h2 style="color:${amr_type_color[typ]};font-size:0.95rem;margin-top:12px">${amr_type_label[typ]||typ}</h2>
       <div class="card" style="padding:0">
-      <table><tr><th>Gen</th><th>Navn</th><th>Klasse / Underklasse</th><th>Omfang</th><th>Kontig</th><th>Plasmid-mobilitet</th><th>Replikon</th></tr>`;
+      <table><tr><th>Gen</th><th>Navn</th><th>Klasse / Underklasse</th><th>Omfang</th><th>Kontig</th><th>Plasmid-mobilitet</th><th>Replikon</th><th>PlasmidFinder</th><th>MGE</th></tr>`;
       for (const g of rows) {
         const cls_str = [g.class, g.subclass].filter(x=>x&&x!=='-'&&x!=='NA').join(' / ') || '-';
+        const mge_str = (g.mge&&g.mge.length)
+          ? g.mge.map(m=>`<span class="badge yellow" title="${m.type}">${m.name}</span>`).join(' ')
+          : '-';
+        const pf_str = (g.plasmids&&g.plasmids.length)
+          ? g.plasmids.map(p=>`<span class="badge red">${p}</span>`).join(' ')
+          : '-';
         h += `<tr>
           <td><strong>${g.gene}</strong></td>
           <td style="font-size:0.82rem">${g.gene_name}</td>
@@ -226,6 +234,8 @@ function render() {
           <td style="font-family:monospace;font-size:0.82rem">${g.location}</td>
           <td>${mob_badge(g.mobility)}</td>
           <td style="font-size:0.82rem">${g.replicon}</td>
+          <td style="font-size:0.82rem">${pf_str}</td>
+          <td style="font-size:0.82rem">${mge_str}</td>
         </tr>`;
       }
       h += `</table></div>`;
@@ -257,6 +267,22 @@ function render() {
     </tr>`;
   }
   h += `</table></div>`;
+
+  // -- PlasmidFinder
+  if (s.plasmidfinder?.hits?.length) {
+    h += `<h2>PlasmidFinder</h2><div class="card" style="padding:0">
+    <table><tr><th>Replikon</th><th>Identitet</th><th>Kontig</th><th>Database</th><th>Aksesjonsnummer</th></tr>`;
+    for (const p of s.plasmidfinder.hits) {
+      h += `<tr>
+        <td><strong>${p.plasmid}</strong></td>
+        <td>${p.identity}%</td>
+        <td style="font-family:monospace;font-size:0.82rem">${p.contig}</td>
+        <td style="font-size:0.82rem">${p.database}</td>
+        <td style="font-size:0.82rem">${p.accession}</td>
+      </tr>`;
+    }
+    h += `</table></div>`;
+  }
 
   // -- SCCmec (kun S. aureus)
   if (s.sccmec?.type && s.sccmec.type!=='-' && s.sccmec.type!=='hoppet_over') {
@@ -298,11 +324,11 @@ function render() {
       <td>${sid.gambit_predicted_name} ${badge(sid.gambit_predicted_rank||'-','blue')}
         &nbsp; dist: ${sid.gambit_distance!=null?sid.gambit_distance.toFixed(3):'-'}</td>
       <td style="font-size:0.8rem">GAMBIT-db (k-mer signatur)</td></tr>
-    ${sid.fastani?.status==='ok'
-      ? `<tr><td>FastANI</td>
-          <td>${sid.fastani.top_hit} — ${badge(sid.fastani.ani?.toFixed(2)+'% ANI', sid.fastani.ani>=99?'green':sid.fastani.ani>=95?'yellow':'red')}</td>
-          <td style="font-size:0.8rem">FastANI-referansedatabase</td></tr>`
-      : `<tr><td>FastANI</td><td style="color:var(--muted)">Hoppet over (GAMBIT tilstrekkelig)</td><td>-</td></tr>`}
+    ${sid.skani?.status==='ok'
+      ? `<tr><td>skani</td>
+          <td>${sid.skani.top_hit} — ${badge(sid.skani.ani?.toFixed(2)+'% ANI', sid.skani.ani>=99?'green':sid.skani.ani>=95?'yellow':'red')}</td>
+          <td style="font-size:0.8rem">skani-referansedatabase</td></tr>`
+      : `<tr><td>skani</td><td style="color:var(--muted)">Hoppet over (GAMBIT tilstrekkelig)</td><td>-</td></tr>`}
     <tr><td>MLST (PubMLST)</td><td>ST${s.mlst.ST}</td><td>${s.mlst.scheme}</td></tr>
     <tr><td>AMRFinder v4</td>
       <td>${s.amr.total_amr_genes} AMR &nbsp; ${s.amr.total_virulence_genes} virulens &nbsp; ${s.amr.total_stress_genes||0} stress</td>
@@ -312,7 +338,8 @@ function render() {
       ? `<tr><td>MobileElementFinder</td><td>${s.mge.count} MGE-er</td><td>MGEdb v1.1.1 (CGE)</td></tr>` : ''}
     ${s.species?.includes('Klebsiella') || s.species?.includes('Escherichia') || s.species?.includes('Shigella')
       ? `<tr><td>Kleborate</td>
-          <td>K: ${s.kleborate?.K_type||'-'} &nbsp; O: ${s.kleborate?.O_type||'-'}
+          <td>${s.kleborate?.ST&&s.kleborate.ST!=='-'?'ST'+s.kleborate.ST+' &nbsp; ':''
+            }K: ${s.kleborate?.K_type||'-'} &nbsp; O: ${s.kleborate?.O_type||'-'}
               &nbsp; Virulens: ${s.kleborate?.virulence_score||'-'}</td>
           <td>Kleborate v3 (${
             s.species.includes('Klebsiella_pneumoniae')||s.species.includes('Klebsiella_variicola')||s.species.includes('Klebsiella_quasipneumoniae') ? 'kpsc' :

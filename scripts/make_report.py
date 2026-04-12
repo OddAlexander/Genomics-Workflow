@@ -122,7 +122,7 @@ def parse_mobsuite(path):
     }
 
 
-def build_amr_details(amr_rows, contig_mob):
+def build_amr_details(amr_rows, contig_mob, contig_mge, contig_plasmid):
     details, high_risk, medium_risk = [], [], []
     for g in amr_rows:
         contig   = g.get("Contig id", "-")
@@ -130,11 +130,13 @@ def build_amr_details(amr_rows, contig_mob):
         mobility = mob_info.get("mobility", "-")
         gene     = g.get("Element symbol", "-")
         element_type = g.get("Type", "-")
+        plasmids = contig_plasmid.get(contig, [])
         if element_type == "AMR":
-            if mobility == "CONJUGATIVE":
+            if mobility == "CONJUGATIVE" or plasmids:
                 high_risk.append(gene)
             elif mobility == "MOBILIZABLE":
                 medium_risk.append(gene)
+        mge_hits = contig_mge.get(contig, [])
         details.append({
             "gene":      gene,
             "gene_name": g.get("Element name", "-"),
@@ -147,6 +149,8 @@ def build_amr_details(amr_rows, contig_mob):
             "mobility":  mobility,
             "replicon":  mob_info.get("replicon", "-"),
             "cluster":   mob_info.get("cluster", "-"),
+            "mge":       mge_hits,
+            "plasmids":  plasmids,
         })
     return details, high_risk, medium_risk
 
@@ -167,12 +171,11 @@ def parse_spatyper(path):
     txt = safe_read(path)
     if not txt:
         return None
-    for line in txt.splitlines():
-        if line.startswith("Type") or not line.strip():
-            continue
-        parts = line.strip().split("\t")
-        return {"spa_type": parts[0] or "-", "CC": parts[1] if len(parts) > 1 else "-"}
-    return {"spa_type": "-", "CC": "-"}
+    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
+    if not rows:
+        return {"spa_type": "-", "CC": "-"}
+    r = rows[0]
+    return {"spa_type": r.get("Type", "-") or "-", "CC": "-"}
 
 
 def parse_kleborate(path):
@@ -183,13 +186,31 @@ def parse_kleborate(path):
     if not rows:
         return None
     r = rows[0]
-    return {
-        "K_type":          r.get("K_locus", r.get("K_type", "-")),
-        "O_type":          r.get("O_locus", r.get("O_type", "-")),
-        "virulence_score": r.get("virulence_score", "-"),
-        "Bla_Carb":        r.get("Bla_Carb_acquired", "-"),
-        "Bla_ESBL":        r.get("Bla_ESBL_acquired", "-"),
+    # Kleborate v3 uses prefixed column names; find by suffix match
+    def _col(*suffixes):
+        for suffix in suffixes:
+            for k, v in r.items():
+                if k.endswith(suffix):
+                    return v or "-"
+        return "-"
+    # ST column ends with __mlst__ST or __mlst_achtman__ST; strip "ST" prefix from value
+    def _st():
+        for k, v in r.items():
+            if k.endswith("__mlst__ST") or k.endswith("__mlst_achtman__ST"):
+                return (v or "-").lstrip("ST") if v and v not in ("-", "") else "-"
+        return "-"
+    result = {
+        "ST":              _st(),
+        "K_type":          _col("__K_locus", "__K_type", "__wzi"),
+        "O_type":          _col("__O_locus", "__O_type", "__ectyper__O-type"),
+        "virulence_score": _col("__virulence_score"),
+        "Bla_Carb":        _col("__Carbapenem", "__Bla_Carb_acquired"),
+        "Bla_ESBL":        _col("__Cephalosporin", "__Bla_ESBL_acquired"),
     }
+    # Return None if no meaningful data — avoids empty Kleborate section in report
+    if all(v in ("-", "", None) for v in result.values()):
+        return None
+    return result
 
 
 def parse_ectyper(path):
@@ -214,22 +235,22 @@ def parse_emmtyper(path):
     return None
 
 
-def parse_fastani(path):
+def parse_skani(path):
     txt = safe_read(path)
     if not txt:
-        return {"status": "hoppet_over", "top_hit": "-", "ani": None, "af": None}
+        return {"status": "hoppet_over", "top_hit": "-", "ani": None, "af_query": None, "af_ref": None}
     rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
     if not rows or rows[0].get("status") == "hoppet_over":
-        return {"status": "hoppet_over", "top_hit": "-", "ani": None, "af": None}
-    # FastANI output: query, reference, ANI, bidirectional_frags, total_frags
+        return {"status": "hoppet_over", "top_hit": "-", "ani": None, "af_query": None, "af_ref": None}
+    # skani search output: Query_file, Ref_file, ANI, Align_fraction_query, Align_fraction_ref, Ref_name, Query_name
     r = rows[0]
-    ref = r.get("reference", list(r.values())[1] if len(r) > 1 else "-")
-    ani = r.get("ANI", list(r.values())[2] if len(r) > 2 else None)
+    ani = r.get("ANI")
     return {
-        "status":  "ok",
-        "top_hit": ref.split("/")[-1].replace(".fna", "").replace(".fa", ""),
-        "ani":     float(ani) if ani else None,
-        "af":      r.get("bidirectional_fragment_count", "-"),
+        "status":   "ok",
+        "top_hit":  r.get("Ref_name", r.get("Ref_file", "-").split("/")[-1].replace(".fna", "").replace(".fa", "")),
+        "ani":      float(ani) if ani else None,
+        "af_query": r.get("Align_fraction_query", "-"),
+        "af_ref":   r.get("Align_fraction_ref", "-"),
     }
 
 
@@ -292,16 +313,41 @@ def parse_hicap(path):
     }
 
 
+def parse_plasmidfinder(path):
+    txt = safe_read(path)
+    if not txt:
+        return {"hits": [], "_contig_plasmid": {}}
+    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
+    contig_plasmid = {}
+    hits = []
+    for r in rows:
+        raw_contig = r.get("Contig", "-")
+        # Shovill adds metadata after contig name — extract just the contigXXXXX prefix
+        contig = raw_contig.split(" ")[0] if raw_contig else "-"
+        plasmid = r.get("Plasmid", "-")
+        hits.append({
+            "plasmid":  plasmid,
+            "identity": r.get("Identity", "-"),
+            "contig":   contig,
+            "database": r.get("Database", "-"),
+            "accession": r.get("Accession number", "-"),
+        })
+        contig_plasmid.setdefault(contig, []).append(plasmid)
+    return {"hits": hits, "_contig_plasmid": contig_plasmid}
+
+
 def parse_mefinder(path):
     txt = safe_read(path)
     if not txt:
         return {"count": 0, "elements": []}
-    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
+    # Strip comment lines (start with #), then parse as CSV
+    data_lines = [l for l in txt.splitlines() if not l.startswith("#") and l.strip()]
+    rows = list(csv.DictReader(data_lines))
     elements = [{
         "nr":     i,
         "name":   r.get("name", r.get("Name", "-")),
         "type":   r.get("type", r.get("Type", "-")),
-        "contig": r.get("contig_id", r.get("sequence_id", "-")),
+        "contig": r.get("contig", r.get("contig_id", r.get("sequence_id", "-"))),
         "start":  r.get("start", r.get("Start", "-")),
         "end":    r.get("end",   r.get("End",   "-")),
     } for i, r in enumerate(rows, 1)]
@@ -355,13 +401,22 @@ if __name__ == "__main__":
     amr_raw      = parse_amrfinder(sp_dir / "AMRFinder/amrfinder.tsv")
     mob_data     = parse_mobsuite(sp_dir / "MOBSuite/mobtyper.tsv")
     mge_data     = parse_mefinder(sp_dir / "MEfinder/mefinder.tsv")
-    fastani_data = parse_fastani(sp_dir / "ID_FastANI/fastani.tsv")
+    pf_data      = parse_plasmidfinder(sp_dir / "PlasmidFinder/results_tab.tsv")
+    skani_data   = parse_skani(sp_dir / "ID_Skani/skani.tsv")
     gambit_full  = parse_gambit_full(sp_dir / "ID_GAMBIT/gambit.csv")
 
     gambit_sp = (safe_read(sp_dir / "species.txt") or "unknown").strip()
 
+    # Build contig → MGE lookup
+    contig_mge = {}
+    for el in mge_data.get("elements", []):
+        c = el.get("contig", "-")
+        if c and c != "-":
+            contig_mge.setdefault(c, []).append({"name": el["name"], "type": el["type"]})
+
     amr_details, high_risk, medium_risk = build_amr_details(
-        amr_raw.get("_rows", []), mob_data.get("_contig_mob", {}))
+        amr_raw.get("_rows", []), mob_data.get("_contig_mob", {}), contig_mge,
+        pf_data.get("_contig_plasmid", {}))
 
     purity  = derive_purity(bracken_data["primary_pct"], gambit_sp, bracken_data["primary_species"])
     score   = concordance_score(gambit_sp, bracken_data["primary_species"])
@@ -385,6 +440,7 @@ if __name__ == "__main__":
             "details":               amr_details,
         },
         "plasmids": {k: v for k, v in mob_data.items() if not k.startswith("_")},
+        "plasmidfinder": {"hits": pf_data.get("hits", [])},
         "mge":      mge_data,
         "species_id": {
             "purity":               purity,
@@ -404,7 +460,7 @@ if __name__ == "__main__":
             "secondary_species":    bracken_data["secondary_species"],
             "secondary_pct":        bracken_data["secondary_pct"],
             "unclassified_pct":     uncl_pct,
-            "fastani":              fastani_data,
+            "skani":                skani_data,
             "kraken2_db":           args.kraken2_db,
         },
     }
@@ -428,3 +484,62 @@ if __name__ == "__main__":
             .replace("__PIPELINE_JSON_DATA__", json.dumps(data, ensure_ascii=False))
             .replace("__SAMPLE_NAME__", args.sample))
     Path(args.output).write_text(html)
+
+    # --- Kumulativ kjøringslogg ---
+    log_path = Path(args.results_dir) / f"pipeline_run_{datetime.now().strftime('%Y%m%d_%H%M')}.tsv"
+    header   = "\t".join(["#", "Sample", "GAMBIT", "Bracken", "skani_treff", "skani_ANI", "ST", "MLST-verktøy", "Artsspesifikk typing", "Dato"])
+    skani    = data["species_id"]["skani"]
+
+    typing_parts = []
+    if data.get("kleborate"):
+        k = data["kleborate"]
+        parts = ["Kleborate:"]
+        if k.get("ST") and k["ST"] != "-": parts.append(f"ST{k['ST']}")
+        if k.get("K_type") and k["K_type"] != "-": parts.append(f"K={k['K_type']}")
+        if k.get("O_type") and k["O_type"] != "-": parts.append(f"O={k['O_type']}")
+        if k.get("Bla_Carb") and k["Bla_Carb"] != "-": parts.append(f"Carb={k['Bla_Carb']}")
+        if k.get("Bla_ESBL") and k["Bla_ESBL"] != "-": parts.append(f"ESBL={k['Bla_ESBL']}")
+        if len(parts) > 1:
+            typing_parts.append(" ".join(parts))
+    if data.get("ectyper"):
+        typing_parts.append(f"ECTyper: {data['ectyper'].get('serotype', '-')}")
+    if data.get("spatyper"):
+        typing_parts.append(f"spaTyper: {data['spatyper'].get('spa_type', '-')}")
+    if data.get("sccmec"):
+        typing_parts.append(f"SCCmec: {'MRSA' if data['sccmec'].get('mrsa') else 'MSSA'} type {data['sccmec'].get('type', '-')}")
+    if data.get("emmtyper"):
+        typing_parts.append(f"emmtyper: {data['emmtyper'].get('emm_type', '-')}")
+    if data.get("seqsero2"):
+        typing_parts.append(f"SeqSero2: {data['seqsero2'].get('serotype', '-')}")
+    if data.get("hicap"):
+        typing_parts.append(f"hicap: {data['hicap'].get('serotype', '-')}")
+
+    # Pasty — parse directly since it's not stored in data{}
+    pasty_path = sp_dir / "Pasty/pasty.tsv"
+    if pasty_path.exists():
+        pasty_txt = safe_read(pasty_path)
+        if pasty_txt:
+            pasty_rows = list(csv.DictReader(pasty_txt.splitlines(), delimiter="\t"))
+            if pasty_rows and pasty_rows[0].get("type") and pasty_rows[0]["type"] != "-":
+                typing_parts.append(f"Pasty: {pasty_rows[0]['type']}")
+
+    row = "\t".join([
+        "{nr}",
+        args.sample,
+        gambit_full.get("predicted_name", "-"),
+        bracken_data["primary_species"].replace("_", " "),
+        skani.get("top_hit", "-") if skani.get("status") == "ok" else "-",
+        f"{skani['ani']:.2f}" if skani.get("status") == "ok" and skani.get("ani") else "-",
+        mlst_data["ST"],
+        f"mlst ({mlst_data['scheme']})" if mlst_data["scheme"] != "-" else "mlst",
+        "; ".join(typing_parts) if typing_parts else "-",
+        datetime.now().strftime("%Y-%m-%d %H:%M"),
+    ])
+    if log_path.exists():
+        lines = log_path.read_text().splitlines()
+        nr = len([l for l in lines if l and not l.startswith("#")])
+    else:
+        lines = [header]
+        nr = 0
+    lines.append(row.format(nr=nr + 1))
+    log_path.write_text("\n".join(lines) + "\n")
