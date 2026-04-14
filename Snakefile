@@ -6,7 +6,7 @@ configfile: "config.yaml"
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
-KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_mini/")
+KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db/")
 KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reservert per jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
 SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reservert per Shovill/SPAdes-jobb (SPAdes --ram settes til dette / 1024)
 SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reservert per skani-jobb (mye lavere enn fastANI)
@@ -14,6 +14,7 @@ SKANI_THREADS    = config.get("skani_threads", 8)
 GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
 SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Sti til skani-sketch (katalog) -- tom = skani hoppes over
 SKANI_THRESHOLD  = config.get("skani_threshold", 0.3)      # skani kjøres hvis closest.distance i Gambit > denne
+PLASMIDFINDER_DB = config.get("plasmidfinder_db", "/databases/plasmidfinder_db/")
 
 # --- Artsgrupper og skjemaer ---
 SA  = {"Staphylococcus_aureus"}
@@ -199,6 +200,7 @@ rule skani:
     threads: SKANI_THREADS
     resources:
         mem_mb = SKANI_MEM
+    retries: 2
     run:
         import csv
         row  = next(csv.DictReader(open(input.gambit)))
@@ -356,7 +358,7 @@ rule amrfinder:
 rule ectyper:
     input:
         fa   = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
-        mash = "databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh"
+        mash = "/databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh"
     output:
         f"{RESULTS_DIR}/{{sample}}/ECTyper/ectyper.tsv"
     log:
@@ -385,7 +387,7 @@ rule plasmidfinder:
         f"{RESULTS_DIR}/{{sample}}/logs/plasmidfinder.log"
     params:
         outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/PlasmidFinder",
-        db     = "/databases/plasmidfinder_db/"
+        db     = PLASMIDFINDER_DB
     shell:
         "pixi run --environment plasmidfinder plasmidfinder.py -i {input.fa} -o {params.outdir} -p {params.db} -x 2>&1 | tee {log}"
 
@@ -405,7 +407,8 @@ rule mefinder:
         sed '/^>/s/ .*//' {input.fa} > {params.outdir}/contigs.fa
         pixi run --environment mefinder mefinder find {params.outdir}/mefinder \
             -c {params.outdir}/contigs.fa --temp-dir {params.outdir}/tmp 2>&1 | tee {log}
-        mv {params.outdir}/mefinder.csv {output}
+        # mefinder skriver direkte til {params.outdir}/mefinder.tsv (output = samme sti)
+        [ -f {params.outdir}/mefinder.tsv ] || mv {params.outdir}/mefinder.csv {output}
         """
 
 rule seqsero2:
