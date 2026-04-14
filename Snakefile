@@ -355,18 +355,26 @@ rule amrfinder:
         org = f"--organism {AMR_ORG[sp]}" if sp in AMR_ORG else ""
         shell("pixi run --environment amrfinder4 amrfinder --nucleotide {input.fa} " + org + " --output {output} --threads {threads} --plus 2>&1 | tee {log}")
 
+ECTYPER_MASH = config.get("ectyper_mash",
+              "/databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh")
+
 rule ectyper:
     input:
-        fa   = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
-        mash = "/databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh"
+        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
     output:
         f"{RESULTS_DIR}/{{sample}}/ECTyper/ectyper.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/ectyper.log"
     params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/ECTyper"
+        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/ECTyper",
+        mash   = ECTYPER_MASH,
     shell:
-        "pixi run ectyper -i {input.fa} -o {params.outdir} -r {input.mash} 2>&1 | tee {log} && mv {params.outdir}/output.tsv {output}"
+        """
+        ref_flag=""
+        [ -f {params.mash} ] && [ "$(stat -c%s {params.mash})" -gt 1000000 ] && ref_flag="-r {params.mash}"
+        pixi run ectyper -i {input.fa} -o {params.outdir} $ref_flag 2>&1 | tee {log}
+        mv {params.outdir}/output.tsv {output}
+        """
 
 rule mob_typer:
     input:
