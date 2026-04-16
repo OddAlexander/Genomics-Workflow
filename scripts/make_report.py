@@ -486,7 +486,7 @@ if __name__ == "__main__":
     Path(args.output).write_text(html)
 
     # --- Kumulativ kjøringslogg ---
-    log_path = Path(args.results_dir) / f"pipeline_run_{datetime.now().strftime('%Y%m%d_%H%M')}.tsv"
+    log_path = Path(args.results_dir) / f"pipeline_run_{datetime.now().strftime('%Y%m%d')}.tsv"
     header   = "\t".join(["#", "Sample", "GAMBIT", "Bracken", "skani_treff", "skani_ANI", "ST", "MLST-verktøy", "Artsspesifikk typing", "Dato"])
     skani    = data["species_id"]["skani"]
 
