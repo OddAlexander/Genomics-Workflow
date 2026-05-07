@@ -68,18 +68,26 @@ if __name__ == "__main__":
         })
 
     snp_data = parse_snp_dists(pd / "SNP_Dists/snp_dists.tsv")
-    iqtree   = safe_read(pd / "IQtree/iqtree.treefile")         or ""
-    raxml    = safe_read(pd / "RAxML/raxml.raxml.bestTree")     or ""
+    iqtree   = safe_read(pd / "IQtree/iqtree.treefile") or ""
+
+    ref_path = Path(args.ref)
+    if ref_path.name == "reference.gbk":
+        ref_label = ref_path.parent.parent.name
+        ref_auto  = True
+    else:
+        ref_label = ref_path.stem
+        ref_auto  = False
 
     data = {
-        "run_date":  datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "phylo_dir": str(pd),
-        "reference": args.ref,
-        "n_samples": len(samples),
+        "run_date":   datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "phylo_dir":  str(pd),
+        "reference":  ref_label,
+        "ref_path":   str(args.ref),
+        "ref_auto":   ref_auto,
+        "n_samples":  len(samples),
         "samples":   sample_data,
         "snp_dists": snp_data,
         "iqtree":    iqtree,
-        "raxml":     raxml,
     }
 
     template = Path(args.template).read_text()

@@ -31,7 +31,6 @@ CORE_DIR     = f"{PHYLO_DIR}/Core"
 GUBBINS_DIR  = f"{PHYLO_DIR}/Gubbins"
 SNP_DIR      = f"{PHYLO_DIR}/SNP_Dists"
 IQTREE_DIR   = f"{PHYLO_DIR}/IQtree"
-RAXML_DIR    = f"{PHYLO_DIR}/RAxML"
 
 # --- Sample Deteksjon ---
 # {sample} fanger hele den relative stien under DATA_DIR, f.eks. "19-03-2026/005a"
@@ -67,7 +66,6 @@ rule all:
         expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt",        sample=SAMPLES),
         f"{SNP_DIR}/snp_dists.tsv",
         f"{IQTREE_DIR}/iqtree.treefile",
-        f"{RAXML_DIR}/raxml.raxml.bestTree",
         f"{PHYLO_DIR}/MultiQC_run/multiqc_report.html",
         f"{PHYLO_DIR}/phylo_report.html",
 
@@ -210,7 +208,6 @@ rule snippy_core:
         vcfs = expand(f"{PHYLO_DIR}/Snippy/{{sample}}/snps.vcf", sample=SAMPLES),
         ref  = REFERENCE,
     output:
-        aln      = f"{CORE_DIR}/core.aln",
         full_aln = f"{CORE_DIR}/core.full.aln",
     log:
         f"{PHYLO_DIR}/logs/snippy_core.log"
@@ -219,6 +216,7 @@ rule snippy_core:
         prefix = f"{CORE_DIR}/core",
     shell:
         "pixi run snippy-core --ref {input.ref} --prefix {params.prefix} {params.dirs} 2>&1 | tee {log}"
+        " || grep -q 'No SNPs were detected' {log}"
 
 
 rule gubbins:
@@ -233,12 +231,13 @@ rule gubbins:
         prefix = f"{GUBBINS_DIR}/gubbins",
     threads: THREADS
     shell:
-        "pixi run --environment gubbins run_gubbins.py --threads {threads} --prefix {params.prefix} {input.aln} 2>&1 | tee {log}"
+        "pixi run --environment gubbins run_gubbins.py --threads {threads} --prefix {params.prefix} --tree-builder hybrid {input.aln} 2>&1 | tee {log}; "
+        "find . -maxdepth 1 -type d -name 'tmp????????' -exec rm -rf {{}} +"
 
 
 rule snp_dists:
     input:
-        aln = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
+        aln = f"{CORE_DIR}/core.full.aln",
     output:
         tsv = f"{SNP_DIR}/snp_dists.tsv",
     log:
@@ -258,22 +257,15 @@ rule iqtree:
         prefix = f"{IQTREE_DIR}/iqtree",
     threads: THREADS
     shell:
-        "pixi run iqtree -s {input.aln} --prefix {params.prefix} -T {threads} -m GTR+G -B 1000 --redo 2>&1 | tee {log}"
-
-
-rule raxml:
-    input:
-        aln = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
-    output:
-        tree = f"{RAXML_DIR}/raxml.raxml.bestTree",
-    log:
-        f"{PHYLO_DIR}/logs/raxml.log"
-    params:
-        prefix = f"{RAXML_DIR}/raxml",
-    threads: THREADS
-    shell:
-        "pixi run --environment raxml raxml-ng --msa {input.aln} --model GTR+G --prefix {params.prefix} --threads {threads} --all --bs-trees 100 --redo 2>&1 | tee {log}"
-
+        """
+        n=$(grep -c '^>' {input.aln} || echo 0)
+        if [ "$n" -lt 3 ]; then
+            echo "Fewer than 3 taxa ($n) — IQtree skipped" | tee {log}
+            touch {output.tree}
+        else
+            pixi run iqtree -s {input.aln} --prefix {params.prefix} -T {threads} -m GTR+G -B 1000 --redo 2>&1 | tee {log}
+        fi
+        """
 
 rule multiqc_run:
     input:
@@ -295,7 +287,6 @@ rule phylo_report:
     input:
         snp_dists = f"{SNP_DIR}/snp_dists.tsv",
         iqtree    = f"{IQTREE_DIR}/iqtree.treefile",
-        raxml     = f"{RAXML_DIR}/raxml.raxml.bestTree",
         species   = expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt", sample=SAMPLES),
         quast     = expand(f"{PHYLO_DIR}/{{sample}}/QUAST/report.html",    sample=SAMPLES),
     output:

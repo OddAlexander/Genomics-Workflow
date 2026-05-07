@@ -39,13 +39,13 @@
                                     border: 1px solid var(--border); }
   .snp-matrix th { background: var(--blue); color: white; }
   .snp-matrix td { font-variant-numeric: tabular-nums; }
-  .tree-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
-  .tab-btn { padding: 5px 16px; border: 1px solid var(--border); border-radius: 4px;
-             background: var(--bg); cursor: pointer; font-size: 0.88rem; color: var(--blue2); }
-  .tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
-  .tree-panel { display: none; overflow: auto; }
-  .tree-panel.active { display: block; }
-  canvas { display: block; }
+  .dl-btn { display: inline-block; padding: 7px 18px; border-radius: 5px;
+            background: var(--blue2); color: white; text-decoration: none;
+            font-size: 0.88rem; font-weight: 600; margin-right: 10px; }
+  .dl-btn:hover { background: var(--blue); }
+  .tree-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .tree-label { font-weight: 600; min-width: 80px; color: var(--text); }
+  .tree-note { font-size: 0.82rem; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -54,159 +54,6 @@
 
 <script>
 const D = __PHYLO_JSON_DATA__;
-
-// ── Newick parser ──────────────────────────────────────────────────────────
-function parseNewick(s) {
-  s = s.trim().replace(/;$/, '');
-  let i = 0;
-
-  function readUntil(chars) {
-    let start = i;
-    while (i < s.length && !chars.includes(s[i])) i++;
-    return s.slice(start, i);
-  }
-
-  function parseNode() {
-    const node = { name: '', length: 0, bootstrap: null, children: [] };
-    if (s[i] === '(') {
-      i++;
-      node.children.push(parseNode());
-      while (i < s.length && s[i] === ',') { i++; node.children.push(parseNode()); }
-      if (s[i] === ')') i++;
-      const label = readUntil([':', ',', ')', ';']).trim();
-      if (label !== '') {
-        const n = parseFloat(label);
-        if (!isNaN(n)) node.bootstrap = n;
-        else node.name = label;
-      }
-    } else {
-      node.name = readUntil([':', ',', ')', ';']);
-    }
-    if (i < s.length && s[i] === ':') {
-      i++;
-      node.length = parseFloat(readUntil([',', ')', ';'])) || 0;
-    }
-    return node;
-  }
-  return parseNode();
-}
-
-// ── Tree layout ────────────────────────────────────────────────────────────
-function layoutTree(root) {
-  function setCumDist(node, d) {
-    node._x = d + (node.length || 0);
-    if (node.children) node.children.forEach(c => setCumDist(c, node._x));
-  }
-  setCumDist(root, 0);
-
-  function getLeaves(node) {
-    if (!node.children || !node.children.length) return [node];
-    return node.children.flatMap(getLeaves);
-  }
-  const leaves = getLeaves(root);
-  leaves.forEach((l, idx) => { l._y = idx; });
-
-  function setY(node) {
-    if (!node.children || !node.children.length) return node._y;
-    const ys = node.children.map(setY);
-    node._y = (Math.min(...ys) + Math.max(...ys)) / 2;
-    return node._y;
-  }
-  setY(root);
-
-  const maxX = Math.max(...leaves.map(l => l._x));
-  return { leaves, maxX };
-}
-
-// ── Canvas renderer ────────────────────────────────────────────────────────
-function drawTree(canvasId, newickStr) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  if (!newickStr || !newickStr.trim()) {
-    canvas.height = 60;
-    ctx.fillStyle = '#888';
-    ctx.font = '13px sans-serif';
-    ctx.fillText('Ingen treefil tilgjengelig', 20, 35);
-    return;
-  }
-
-  const root = parseNewick(newickStr);
-  const { leaves, maxX } = layoutTree(root);
-
-  const ROW_H    = 22;
-  const LABEL_W  = 200;
-  const M        = { top: 15, right: 10, bottom: 40, left: 20 };
-  const CANVAS_W = canvas.width;
-  const TREE_W   = CANVAS_W - M.left - M.right - LABEL_W;
-  const H        = leaves.length * ROW_H + M.top + M.bottom;
-  canvas.height  = H;
-
-  ctx.clearRect(0, 0, CANVAS_W, H);
-
-  const scX = d => M.left + (maxX > 0 ? (d / maxX) * TREE_W : 0);
-  const scY = y => M.top + (y + 0.5) * ROW_H;
-
-  function drawNode(node) {
-    const x2 = scX(node._x);
-    const y  = scY(node._y);
-    const x1 = scX(node._x - (node.length || 0));
-
-    ctx.strokeStyle = '#2e6da4';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(x1, y);
-    ctx.lineTo(x2, y);
-    ctx.stroke();
-
-    if (node.children && node.children.length) {
-      const childYs = node.children.map(c => scY(c._y));
-      ctx.beginPath();
-      ctx.moveTo(x2, Math.min(...childYs));
-      ctx.lineTo(x2, Math.max(...childYs));
-      ctx.stroke();
-
-      if (node.bootstrap !== null) {
-        ctx.fillStyle = '#888';
-        ctx.font = '9px sans-serif';
-        ctx.fillText(Math.round(node.bootstrap), x2 + 2, y - 2);
-      }
-      node.children.forEach(drawNode);
-    } else {
-      ctx.fillStyle = '#1a1a2e';
-      ctx.font = '11px monospace';
-      ctx.fillText(node.name, x2 + 5, y + 4);
-    }
-  }
-
-  drawNode(root);
-
-  // Scale bar
-  if (maxX > 0) {
-    let sbLen = maxX / 4;
-    const mag = Math.pow(10, Math.floor(Math.log10(sbLen)));
-    sbLen = Math.round(sbLen / mag) * mag || mag;
-
-    const sbX1 = M.left;
-    const sbX2 = sbX1 + (sbLen / maxX) * TREE_W;
-    const sbY  = H - 12;
-
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth   = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(sbX1, sbY); ctx.lineTo(sbX2, sbY);
-    ctx.moveTo(sbX1, sbY - 4); ctx.lineTo(sbX1, sbY + 4);
-    ctx.moveTo(sbX2, sbY - 4); ctx.lineTo(sbX2, sbY + 4);
-    ctx.stroke();
-
-    ctx.fillStyle  = '#333';
-    ctx.font       = '10px sans-serif';
-    ctx.textAlign  = 'center';
-    ctx.fillText(sbLen < 0.001 ? sbLen.toExponential(1) : sbLen, (sbX1 + sbX2) / 2, sbY - 5);
-    ctx.textAlign  = 'left';
-  }
-}
 
 // ── SNP matrix renderer ────────────────────────────────────────────────────
 function renderSNPMatrix(data) {
@@ -247,13 +94,25 @@ function renderSNPMatrix(data) {
 // ── Page render ────────────────────────────────────────────────────────────
 function fmt(n) { return n ? n.toLocaleString('no-NO') : '-'; }
 
-const refLabel = D.reference !== '-' ? D.reference.split('/').pop() : '-';
+const refLabel = D.reference || '-';
 
 document.getElementById('root').innerHTML = `
 <div class="meta">
   <span><strong>Dato:</strong> ${D.run_date}</span>
   <span><strong>Referanse:</strong> ${refLabel}</span>
   <span><strong>Prøver:</strong> ${D.n_samples}</span>
+</div>
+
+<div class="card">
+  <h2>Referanse</h2>
+  <table>
+    <thead><tr><th>Parameter</th><th>Verdi</th></tr></thead>
+    <tbody>
+      <tr><td>Navn</td><td><strong>${D.reference}</strong></td></tr>
+      <tr><td>Kilde</td><td>${D.ref_auto ? 'Auto-generert (Prokka på første prøve)' : 'Ekstern'}</td></tr>
+      <tr><td>Sti</td><td style="font-family:monospace;font-size:0.82rem">${D.ref_path}</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="card">
@@ -283,29 +142,17 @@ document.getElementById('root').innerHTML = `
 </div>
 
 <div class="card">
-  <h2>Fylogenetisk tre</h2>
-  <div class="tree-tabs">
-    <button class="tab-btn active" onclick="showTab('iqtree',this)">IQtree</button>
-    <button class="tab-btn"        onclick="showTab('raxml',this)">RAxML</button>
-  </div>
-  <div id="tab-iqtree" class="tree-panel active">
-    <canvas id="canvas-iqtree" width="1000"></canvas>
-  </div>
-  <div id="tab-raxml" class="tree-panel">
-    <canvas id="canvas-raxml" width="1000"></canvas>
-  </div>
+  <h2>Treefiler</h2>
+  <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Last opp til <a href="https://itol.embl.de/upload.cgi" target="_blank">iTOL</a>, <a href="https://microreact.org/upload" target="_blank">Microreact</a> eller åpne i FigTree.</p>
+  ${D.iqtree ? `<div class="tree-row">
+    <span class="tree-label">IQtree</span>
+    <a class="dl-btn" download="iqtree.treefile"
+       href="data:text/plain;charset=utf-8,${encodeURIComponent(D.iqtree)}">Last ned</a>
+    <span class="tree-note">GTR+G, UFBoot 1000</span>
+  </div>` : ''}
 </div>
 `;
 
-function showTab(name, btn) {
-  document.querySelectorAll('.tree-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  btn.classList.add('active');
-}
-
-drawTree('canvas-iqtree', D.iqtree);
-drawTree('canvas-raxml',  D.raxml);
 </script>
 </body>
 </html>

@@ -391,7 +391,8 @@ rule mefinder:
         sed '/^>/s/ .*//' {input.fa} > {params.outdir}/contigs.fa
         pixi run --environment mefinder mefinder find {params.outdir}/mefinder \
             -c {params.outdir}/contigs.fa --temp-dir {params.outdir}/tmp 2>&1 | tee {log}
-        # mefinder skriver direkte til {params.outdir}/mefinder.tsv (output = samme sti)
+        rm -f {params.outdir}/contigs.fa
+        rm -rf {params.outdir}/tmp
         [ -f {params.outdir}/mefinder.tsv ] || mv {params.outdir}/mefinder.csv {output}
         """
 
