@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Generate HTML report for a single sample from pipeline outputs."""
-import argparse, csv, json, os
+import argparse, csv, json
 from datetime import datetime
 from pathlib import Path
 
 
 def safe_read(path):
     p = Path(path)
-
     return p.read_text().strip() if p.exists() and p.stat().st_size > 0 else None
 
 
@@ -16,7 +15,7 @@ def parse_mlst(path):
     if not txt:
         return {"ST": "-", "scheme": "-"}
     parts = txt.split("\t")
-    return {"ST": parts[2] if len(parts) > 2 else "-",
+    return {"ST":     parts[2] if len(parts) > 2 else "-",
             "scheme": parts[1] if len(parts) > 1 else "-"}
 
 
@@ -38,28 +37,28 @@ def parse_quast(report_html):
 
 
 def parse_bracken(path):
-    # kreport2: %  cov_reads  taxon_reads  rank  taxID  name
+    # Bracken abundance format: name  taxonomy_id  taxonomy_lvl  kraken_assigned_reads  added_reads  new_est_reads  fraction_total_reads
     txt = safe_read(path)
     result = {"primary_species": "-", "primary_pct": 0.0,
               "secondary_species": "-", "secondary_pct": 0.0}
     if not txt:
         return result
-    rows = []
-    for line in txt.splitlines():
-        parts = line.split("\t")
-        if len(parts) < 6:
-            continue
+    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
+    if not rows:
+        return result
+
+    def _frac(r):
         try:
-            rows.append((float(parts[0].strip()), parts[5].strip()))
+            return float(r.get("fraction_total_reads", 0) or 0)
         except ValueError:
-            continue
-    rows.sort(reverse=True)
-    if rows:
-        result["primary_pct"]     = rows[0][0]
-        result["primary_species"] = rows[0][1].replace(" ", "_")
+            return 0.0
+
+    rows.sort(key=_frac, reverse=True)
+    result["primary_pct"]     = _frac(rows[0]) * 100
+    result["primary_species"] = rows[0].get("name", "-").replace(" ", "_")
     if len(rows) > 1:
-        result["secondary_pct"]     = rows[1][0]
-        result["secondary_species"] = rows[1][1].replace(" ", "_")
+        result["secondary_pct"]     = _frac(rows[1]) * 100
+        result["secondary_species"] = rows[1].get("name", "-").replace(" ", "_")
     return result
 
 
@@ -83,9 +82,9 @@ def parse_amrfinder(path):
         return {"total_amr_genes": 0, "total_virulence_genes": 0, "total_stress_genes": 0, "_rows": []}
     rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
     return {
-        "total_amr_genes":      sum(1 for r in rows if r.get("Type", "") == "AMR"),
-        "total_virulence_genes": sum(1 for r in rows if r.get("Type", "") == "VIRULENCE"),
-        "total_stress_genes":   sum(1 for r in rows if r.get("Type", "") == "STRESS"),
+        "total_amr_genes":       sum(1 for r in rows if r.get("Type") == "AMR"),
+        "total_virulence_genes": sum(1 for r in rows if r.get("Type") == "VIRULENCE"),
+        "total_stress_genes":    sum(1 for r in rows if r.get("Type") == "STRESS"),
         "_rows": rows,
     }
 
@@ -125,18 +124,17 @@ def parse_mobsuite(path):
 def build_amr_details(amr_rows, contig_mob, contig_mge, contig_plasmid):
     details, high_risk, medium_risk = [], [], []
     for g in amr_rows:
-        contig   = g.get("Contig id", "-")
-        mob_info = contig_mob.get(contig, {})
-        mobility = mob_info.get("mobility", "-")
-        gene     = g.get("Element symbol", "-")
+        contig       = g.get("Contig id", "-")
+        mob_info     = contig_mob.get(contig, {})
+        mobility     = mob_info.get("mobility", "-")
+        gene         = g.get("Element symbol", "-")
         element_type = g.get("Type", "-")
-        plasmids = contig_plasmid.get(contig, [])
+        plasmids     = contig_plasmid.get(contig, [])
         if element_type == "AMR":
             if mobility == "CONJUGATIVE" or plasmids:
                 high_risk.append(gene)
             elif mobility == "MOBILIZABLE":
                 medium_risk.append(gene)
-        mge_hits = contig_mge.get(contig, [])
         details.append({
             "gene":      gene,
             "gene_name": g.get("Element name", "-"),
@@ -149,13 +147,13 @@ def build_amr_details(amr_rows, contig_mob, contig_mge, contig_plasmid):
             "mobility":  mobility,
             "replicon":  mob_info.get("replicon", "-"),
             "cluster":   mob_info.get("cluster", "-"),
-            "mge":       mge_hits,
+            "mge":       contig_mge.get(contig, []),
             "plasmids":  plasmids,
         })
     return details, high_risk, medium_risk
 
 
-def parse_sccmec(path):
+def parse_staphscope(path):
     txt = safe_read(path)
     if not txt:
         return None
@@ -163,19 +161,11 @@ def parse_sccmec(path):
     if not rows:
         return None
     r = rows[0]
-    t = r.get("type", r.get("Type", "-")) or "-"
-    return {"type": t, "mrsa": t not in ("-", "none", "")}
-
-
-def parse_spatyper(path):
-    txt = safe_read(path)
-    if not txt:
-        return None
-    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
-    if not rows:
-        return {"spa_type": "-", "CC": "-"}
-    r = rows[0]
-    return {"spa_type": r.get("Type", "-") or "-", "CC": "-"}
+    return {
+        "spa_type":    r.get("spa_type",    "-") or "-",
+        "sccmec_type": r.get("sccmec_type", "-") or "-",
+        "mrsa":        r.get("mrsa_status", "").upper() == "MRSA",
+    }
 
 
 def parse_kleborate(path):
@@ -186,19 +176,20 @@ def parse_kleborate(path):
     if not rows:
         return None
     r = rows[0]
-    # Kleborate v3 uses prefixed column names; find by suffix match
+
     def _col(*suffixes):
         for suffix in suffixes:
             for k, v in r.items():
                 if k.endswith(suffix):
                     return v or "-"
         return "-"
-    # ST column ends with __mlst__ST or __mlst_achtman__ST; strip "ST" prefix from value
+
     def _st():
         for k, v in r.items():
             if k.endswith("__mlst__ST") or k.endswith("__mlst_achtman__ST"):
                 return (v or "-").lstrip("ST") if v and v not in ("-", "") else "-"
         return "-"
+
     result = {
         "ST":              _st(),
         "K_type":          _col("__K_locus", "__K_type", "__wzi"),
@@ -207,7 +198,6 @@ def parse_kleborate(path):
         "Bla_Carb":        _col("__Carbapenem", "__Bla_Carb_acquired"),
         "Bla_ESBL":        _col("__Cephalosporin", "__Bla_ESBL_acquired"),
     }
-    # Return None if no meaningful data — avoids empty Kleborate section in report
     if all(v in ("-", "", None) for v in result.values()):
         return None
     return result
@@ -221,7 +211,7 @@ def parse_ectyper(path):
     if not rows:
         return None
     r = rows[0]
-    return {"serotype": f"{r.get('O-type','-')}:{r.get('H-type','-')}"}
+    return {"serotype": f"{r.get('O-type', '-')}:{r.get('H-type', '-')}"}
 
 
 def parse_emmtyper(path):
@@ -242,8 +232,7 @@ def parse_skani(path):
     rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
     if not rows or rows[0].get("status") == "hoppet_over":
         return {"status": "hoppet_over", "top_hit": "-", "ani": None, "af_query": None, "af_ref": None}
-    # skani search output: Query_file, Ref_file, ANI, Align_fraction_query, Align_fraction_ref, Ref_name, Query_name
-    r = rows[0]
+    r   = rows[0]
     ani = r.get("ANI")
     return {
         "status":   "ok",
@@ -262,24 +251,21 @@ def parse_gambit_full(path):
     if not rows:
         return {}
     r = rows[0]
+
     def _f(key):
         try:
             return float(r.get(key, "") or "")
         except ValueError:
             return None
+
     return {
-        "predicted_name":      r.get("predicted.name", "-") or "-",
-        "predicted_rank":      r.get("predicted.rank", "-") or "-",
+        "predicted_name":      r.get("predicted.name",      "-") or "-",
+        "predicted_rank":      r.get("predicted.rank",      "-") or "-",
         "predicted_threshold": _f("predicted.threshold"),
         "closest_distance":    _f("closest.distance"),
         "closest_description": r.get("closest.description", "-") or "-",
-        "next_name":           r.get("next.name", "-") or "-",
+        "next_name":           r.get("next.name",           "-") or "-",
     }
-
-
-def parse_gambit_distance(path):
-    d = parse_gambit_full(path)
-    return d.get("closest_distance")
 
 
 def parse_seqsero2(path):
@@ -291,10 +277,10 @@ def parse_seqsero2(path):
         return None
     r = rows[0]
     return {
-        "serotype":        r.get("Predicted serotype", "-") or "-",
+        "serotype":          r.get("Predicted serotype",         "-") or "-",
         "antigenic_profile": r.get("Predicted antigenic profile", "-") or "-",
-        "O_antigen":       r.get("O antigen prediction", "-") or "-",
-        "comment":         r.get("Note", "") or "",
+        "O_antigen":         r.get("O antigen prediction",        "-") or "-",
+        "comment":           r.get("Note", "") or "",
     }
 
 
@@ -308,7 +294,7 @@ def parse_hicap(path):
     r = rows[0]
     return {
         "serotype":     r.get("predicted_serotype", "-") or "-",
-        "genes":        r.get("genes_identified", "-") or "-",
+        "genes":        r.get("genes_identified",   "-") or "-",
         "completeness": r.get("percent_coverage", r.get("completeness", "-")) or "-",
     }
 
@@ -322,14 +308,14 @@ def parse_plasmidfinder(path):
     hits = []
     for r in rows:
         raw_contig = r.get("Contig", "-")
-        # Shovill adds metadata after contig name — extract just the contigXXXXX prefix
-        contig = raw_contig.split(" ")[0] if raw_contig else "-"
+        # Shovill appends metadata to contig name — keep only the contigXXXXX prefix
+        contig  = raw_contig.split(" ")[0] if raw_contig else "-"
         plasmid = r.get("Plasmid", "-")
         hits.append({
-            "plasmid":  plasmid,
-            "identity": r.get("Identity", "-"),
-            "contig":   contig,
-            "database": r.get("Database", "-"),
+            "plasmid":   plasmid,
+            "identity":  r.get("Identity", "-"),
+            "contig":    contig,
+            "database":  r.get("Database", "-"),
             "accession": r.get("Accession number", "-"),
         })
         contig_plasmid.setdefault(contig, []).append(plasmid)
@@ -340,32 +326,28 @@ def parse_mefinder(path):
     txt = safe_read(path)
     if not txt:
         return {"count": 0, "elements": []}
-    # Strip comment lines (start with #), then parse as CSV
     data_lines = [l for l in txt.splitlines() if not l.startswith("#") and l.strip()]
     rows = list(csv.DictReader(data_lines))
     elements = [{
         "nr":     i,
-        "name":   r.get("name", r.get("Name", "-")),
-        "type":   r.get("type", r.get("Type", "-")),
-        "contig": r.get("contig", r.get("contig_id", r.get("sequence_id", "-"))),
-        "start":  r.get("start", r.get("Start", "-")),
-        "end":    r.get("end",   r.get("End",   "-")),
+        "name":   r.get("name",   r.get("Name",        "-")),
+        "type":   r.get("type",   r.get("Type",        "-")),
+        "contig": r.get("contig", r.get("contig_id",   r.get("sequence_id", "-"))),
+        "start":  r.get("start",  r.get("Start",       "-")),
+        "end":    r.get("end",    r.get("End",         "-")),
     } for i, r in enumerate(rows, 1)]
     return {"count": len(elements), "elements": elements}
 
 
 def derive_purity(primary_pct, gambit_sp, bracken_sp):
-    concordant = (gambit_sp == bracken_sp)
-    if primary_pct >= 80 and concordant:
+    if primary_pct >= 80 and gambit_sp == bracken_sp:
         return "RENKULTUR"
     elif primary_pct >= 60:
         return "MULIG RENKULTUR"
-    else:
-        return "BLANDING"
+    return "BLANDING"
 
 
 def contamination_check(primary_pct, secondary_pct, secondary_sp, uncl_pct):
-    """Return list of contamination warnings."""
     warnings = []
     if secondary_pct >= 10 and secondary_sp not in ("-", "unknown", ""):
         warnings.append(f"Sekundær art {secondary_sp.replace('_', ' ')} utgjør {secondary_pct:.1f}%")
@@ -377,9 +359,7 @@ def contamination_check(primary_pct, secondary_pct, secondary_sp, uncl_pct):
 
 
 def concordance_score(gambit_sp, bracken_sp):
-    if gambit_sp == bracken_sp and gambit_sp not in ("unknown", "-", ""):
-        return 2  # begge enige
-    return 0  # ingen samsvar
+    return 2 if gambit_sp == bracken_sp and gambit_sp not in ("unknown", "-", "") else 0
 
 
 if __name__ == "__main__":
@@ -389,6 +369,7 @@ if __name__ == "__main__":
     ap.add_argument("--template",    required=True)
     ap.add_argument("--output",      required=True)
     ap.add_argument("--kraken2-db",  default="-")
+    ap.add_argument("--log-path",    default=None)
     args = ap.parse_args()
 
     rd     = Path(args.results_dir)
@@ -404,10 +385,8 @@ if __name__ == "__main__":
     pf_data      = parse_plasmidfinder(sp_dir / "PlasmidFinder/results_tab.tsv")
     skani_data   = parse_skani(sp_dir / "ID_Skani/skani.tsv")
     gambit_full  = parse_gambit_full(sp_dir / "ID_GAMBIT/gambit.csv")
+    gambit_sp    = (safe_read(sp_dir / "species.txt") or "unknown").strip()
 
-    gambit_sp = (safe_read(sp_dir / "species.txt") or "unknown").strip()
-
-    # Build contig → MGE lookup
     contig_mge = {}
     for el in mge_data.get("elements", []):
         c = el.get("contig", "-")
@@ -415,8 +394,8 @@ if __name__ == "__main__":
             contig_mge.setdefault(c, []).append({"name": el["name"], "type": el["type"]})
 
     amr_details, high_risk, medium_risk = build_amr_details(
-        amr_raw.get("_rows", []), mob_data.get("_contig_mob", {}), contig_mge,
-        pf_data.get("_contig_plasmid", {}))
+        amr_raw.get("_rows", []), mob_data.get("_contig_mob", {}),
+        contig_mge, pf_data.get("_contig_plasmid", {}))
 
     purity  = derive_purity(bracken_data["primary_pct"], gambit_sp, bracken_data["primary_species"])
     score   = concordance_score(gambit_sp, bracken_data["primary_species"])
@@ -426,11 +405,11 @@ if __name__ == "__main__":
         bracken_data["secondary_species"], uncl_pct)
 
     data = {
-        "sample":   args.sample,
-        "species":  species,
+        "sample":    args.sample,
+        "species":   species,
         "completed": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "mlst":     mlst_data,
-        "assembly": quast_data,
+        "mlst":      mlst_data,
+        "assembly":  quast_data,
         "amr": {
             "total_amr_genes":       amr_raw["total_amr_genes"],
             "total_virulence_genes": amr_raw["total_virulence_genes"],
@@ -439,45 +418,48 @@ if __name__ == "__main__":
             "medium_risk_genes":     medium_risk,
             "details":               amr_details,
         },
-        "plasmids": {k: v for k, v in mob_data.items() if not k.startswith("_")},
+        "plasmids":      {k: v for k, v in mob_data.items() if not k.startswith("_")},
         "plasmidfinder": {"hits": pf_data.get("hits", [])},
-        "mge":      mge_data,
+        "mge":           mge_data,
         "species_id": {
-            "purity":               purity,
-            "concordance_score":    score,
-            "contamination_warnings": contam_warnings,
-            "bracken_species":      bracken_data["primary_species"],
-            "gambit_species":       gambit_sp,
-            "gambit_predicted_name":    gambit_full.get("predicted_name", "-"),
-            "gambit_predicted_rank":    gambit_full.get("predicted_rank", "-"),
-            "gambit_predicted_threshold": gambit_full.get("predicted_threshold"),
-            "gambit_distance":          gambit_full.get("closest_distance"),
-            "gambit_closest_description": gambit_full.get("closest_description", "-"),
-            "gambit_next_name":         gambit_full.get("next_name", "-"),
-            "id_method":            "Bracken + GAMBIT",
-            "primary_species":      bracken_data["primary_species"],
-            "primary_pct":          bracken_data["primary_pct"],
-            "secondary_species":    bracken_data["secondary_species"],
-            "secondary_pct":        bracken_data["secondary_pct"],
-            "unclassified_pct":     uncl_pct,
-            "skani":                skani_data,
-            "kraken2_db":           args.kraken2_db,
+            "purity":                    purity,
+            "concordance_score":         score,
+            "contamination_warnings":    contam_warnings,
+            "bracken_species":           bracken_data["primary_species"],
+            "gambit_species":            gambit_sp,
+            "gambit_predicted_name":     gambit_full.get("predicted_name",      "-"),
+            "gambit_predicted_rank":     gambit_full.get("predicted_rank",      "-"),
+            "gambit_predicted_threshold":gambit_full.get("predicted_threshold"),
+            "gambit_distance":           gambit_full.get("closest_distance"),
+            "gambit_closest_description":gambit_full.get("closest_description", "-"),
+            "gambit_next_name":          gambit_full.get("next_name",           "-"),
+            "id_method":                 "Bracken + GAMBIT",
+            "primary_species":           bracken_data["primary_species"],
+            "primary_pct":               bracken_data["primary_pct"],
+            "secondary_species":         bracken_data["secondary_species"],
+            "secondary_pct":             bracken_data["secondary_pct"],
+            "unclassified_pct":          uncl_pct,
+            "skani":                     skani_data,
+            "kraken2_db":                args.kraken2_db,
         },
     }
 
-    # Species-specific — only add if file exists
     for parser, key, fname in [
-        (parse_sccmec,   "sccmec",    "SCCmec/sccmec.txt"),
-        (parse_spatyper, "spatyper",  "SpaTyper/spatyper.txt"),
-        (parse_kleborate,"kleborate", "Kleborate/kleborate_output.tsv"),
-        (parse_ectyper,  "ectyper",   "ECTyper/ectyper.tsv"),
-        (parse_emmtyper, "emmtyper",  "EmmTyper/emmtyper.txt"),
-        (parse_seqsero2, "seqsero2",  "SeqSero2/seqsero2.tsv"),
-        (parse_hicap,    "hicap",     "Hicap/hicap.tsv"),
+        (parse_kleborate, "kleborate", "Kleborate/kleborate_output.tsv"),
+        (parse_ectyper,   "ectyper",   "ECTyper/ectyper.tsv"),
+        (parse_emmtyper,  "emmtyper",  "EmmTyper/emmtyper.txt"),
+        (parse_seqsero2,  "seqsero2",  "SeqSero2/seqsero2.tsv"),
+        (parse_hicap,     "hicap",     "Hicap/hicap.tsv"),
     ]:
         result = parser(sp_dir / fname)
         if result:
             data[key] = result
+
+    ss = parse_staphscope(sp_dir / "Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv")
+    if ss:
+        data["staphscope"] = ss
+        data["spatyper"]   = {"spa_type": ss["spa_type"], "CC": "-"}
+        data["sccmec"]     = {"type": ss["sccmec_type"], "mrsa": ss["mrsa"]}
 
     template = Path(args.template).read_text()
     html = (template
@@ -486,27 +468,29 @@ if __name__ == "__main__":
     Path(args.output).write_text(html)
 
     # --- Kumulativ kjøringslogg ---
-    log_path = Path(args.results_dir) / f"pipeline_run_{datetime.now().strftime('%Y%m%d')}.tsv"
-    header   = "\t".join(["#", "Sample", "GAMBIT", "Bracken", "skani_treff", "skani_ANI", "ST", "MLST-verktøy", "Artsspesifikk typing", "Dato"])
-    skani    = data["species_id"]["skani"]
+    log_path = Path(args.log_path) if args.log_path else \
+               Path(args.results_dir) / f"pipeline_run_{datetime.now().strftime('%Y%m%d_%H%M')}.tsv"
+    header = "\t".join(["#", "Sample", "GAMBIT", "Bracken", "skani_treff", "skani_ANI",
+                         "ST", "MLST-verktøy", "Artsspesifikk typing", "Dato"])
+    skani  = data["species_id"]["skani"]
 
     typing_parts = []
     if data.get("kleborate"):
-        k = data["kleborate"]
+        k     = data["kleborate"]
         parts = ["Kleborate:"]
-        if k.get("ST") and k["ST"] != "-": parts.append(f"ST{k['ST']}")
-        if k.get("K_type") and k["K_type"] != "-": parts.append(f"K={k['K_type']}")
-        if k.get("O_type") and k["O_type"] != "-": parts.append(f"O={k['O_type']}")
+        if k.get("ST")       and k["ST"]       != "-": parts.append(f"ST{k['ST']}")
+        if k.get("K_type")   and k["K_type"]   != "-": parts.append(f"K={k['K_type']}")
+        if k.get("O_type")   and k["O_type"]   != "-": parts.append(f"O={k['O_type']}")
         if k.get("Bla_Carb") and k["Bla_Carb"] != "-": parts.append(f"Carb={k['Bla_Carb']}")
         if k.get("Bla_ESBL") and k["Bla_ESBL"] != "-": parts.append(f"ESBL={k['Bla_ESBL']}")
         if len(parts) > 1:
             typing_parts.append(" ".join(parts))
     if data.get("ectyper"):
         typing_parts.append(f"ECTyper: {data['ectyper'].get('serotype', '-')}")
-    if data.get("spatyper"):
-        typing_parts.append(f"spaTyper: {data['spatyper'].get('spa_type', '-')}")
-    if data.get("sccmec"):
-        typing_parts.append(f"SCCmec: {'MRSA' if data['sccmec'].get('mrsa') else 'MSSA'} type {data['sccmec'].get('type', '-')}")
+    if data.get("staphscope"):
+        ss = data["staphscope"]
+        typing_parts.append(f"StaphScope: spa={ss.get('spa_type','-')} SCCmec={ss.get('sccmec_type','-')} "
+                            f"({'MRSA' if ss.get('mrsa') else 'MSSA'})")
     if data.get("emmtyper"):
         typing_parts.append(f"emmtyper: {data['emmtyper'].get('emm_type', '-')}")
     if data.get("seqsero2"):
@@ -514,14 +498,11 @@ if __name__ == "__main__":
     if data.get("hicap"):
         typing_parts.append(f"hicap: {data['hicap'].get('serotype', '-')}")
 
-    # Pasty — parse directly since it's not stored in data{}
-    pasty_path = sp_dir / "Pasty/pasty.tsv"
-    if pasty_path.exists():
-        pasty_txt = safe_read(pasty_path)
-        if pasty_txt:
-            pasty_rows = list(csv.DictReader(pasty_txt.splitlines(), delimiter="\t"))
-            if pasty_rows and pasty_rows[0].get("type") and pasty_rows[0]["type"] != "-":
-                typing_parts.append(f"Pasty: {pasty_rows[0]['type']}")
+    pasty_txt = safe_read(sp_dir / "Pasty/pasty.tsv")
+    if pasty_txt:
+        pasty_rows = list(csv.DictReader(pasty_txt.splitlines(), delimiter="\t"))
+        if pasty_rows and pasty_rows[0].get("type") and pasty_rows[0]["type"] != "-":
+            typing_parts.append(f"Pasty: {pasty_rows[0]['type']}")
 
     row = "\t".join([
         "{nr}",
@@ -535,11 +516,12 @@ if __name__ == "__main__":
         "; ".join(typing_parts) if typing_parts else "-",
         datetime.now().strftime("%Y-%m-%d %H:%M"),
     ])
+
     if log_path.exists():
         lines = log_path.read_text().splitlines()
-        nr = len([l for l in lines if l and not l.startswith("#")])
+        nr    = len([l for l in lines if l and not l.startswith("#")])
     else:
         lines = [header]
-        nr = 0
+        nr    = 0
     lines.append(row.format(nr=nr + 1))
     log_path.write_text("\n".join(lines) + "\n")

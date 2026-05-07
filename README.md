@@ -1,168 +1,60 @@
 # Bakteriell genomikk-pipeline
 
-Snakemake-basert pipeline for helgenomsekvensering av kliniske bakterieisolater.
+Snakemake-pipeline for helgenomsekvensering av kliniske bakterieisolater — trimming, assembly, artsidentifikasjon, resistens, typing og SNP-fylogeni.
 
 ---
 
-## Innhold
-
-```
-genomics/
-├── Snakefile                  # Hovedpipeline (per prøve)
-├── slektskap_Snakefile        # Slektskapsanalyse/utbruddspipeline
-├── config.yaml                # Konfigurasjon
-├── pixi.toml                  # Pixi-miljødefinisjon
-├── report_template.html       # HTML-rapportmal
-├── scripts/
-│   └── make_report.py         # Genererer HTML-rapport per prøve
-└── results/                   # Analyseresultater (ikke i git)
-    └── <dato>/<prøve-id>/
-        ├── Trimmed/           # Trimma reads (fastp)
-        ├── Assembly/          # Genommontering (Shovill/SPAdes)
-        ├── QC/                # FastQC + fastp JSON
-        ├── MultiQC/           # MultiQC-rapport
-        ├── QUAST/             # Assemblystatistikk
-        ├── ID_Kraken2/        # Kraken2 + Bracken artsidentifikasjon
-        ├── ID_GAMBIT/         # GAMBIT artsidentifikasjon (på assembly)
-        ├── ID_Skani/          # skani (kjøres kun ved usikker GAMBIT-match)
-        ├── species.txt        # GAMBIT artsidentifikasjon (styrer DAG-routing)
-        ├── MLST/              # Sekvenstyping (PubMLST)
-        ├── AMRFinder/         # Resistens- og virulensgen
-        ├── MOBSuite/          # Plasmidtyping
-        ├── MEfinder/          # Mobile genetiske element
-        ├── SpaTyper/          # S. aureus spa-typing
-        ├── SCCmec/            # S. aureus SCCmec-kassetttyping
-        ├── AgrVATE/           # S. aureus agr-typing
-        ├── EmmTyper/          # S. pyogenes emm-typing
-        ├── Kleborate/         # Klebsiella/E. coli K/O-type, ESBL, virulens
-        ├── Pasty/             # P. aeruginosa O-antigen serotyping
-        ├── SeqSero2/          # Salmonella serotyping
-        ├── Hicap/             # H. influenzae kapseltype
-        ├── pipeline_summary.html  # HTML-rapport (sluttprodukt)
-        └── logs/
-    └── pipeline_run_<YYYYMMDD_HHMM>.tsv  # Kjøringslogg (én fil per kjøring)
-```
-
----
-
-## Forutsetninger
+## Krav
 
 - Linux (testet på Ubuntu/Fedora)
-- [Pixi](https://pixi.sh) installert
-- Masse diskplass
+- [Pixi](https://pixi.sh) installert (`curl -fsSL https://pixi.sh/install.sh | bash`)
 
 ---
 
 ## Installasjon
 
-### 1. Klon repositoriet
-
 ```bash
 git clone https://github.com/OddAlexander/Genomics-Workflow.git ~/genomics
 cd ~/genomics
-```
-
-### 2. Installer Pixi
-
-```bash
-curl -fsSL https://pixi.sh/install.sh | bash
-source ~/.bashrc
-```
-
-### 3. Installer alle pixi-miljøer
-
-```bash
 pixi install
 ```
 
-### 4. Last ned databaser
+### Databaser
 
-#### GAMBIT
-
+**GAMBIT**
 ```bash
 pixi run --environment identification gambit-db-genomes download -d /databases/gambit_db/
 ```
 
-#### Kraken2
-
-Anbefalt: **PlusPF 8 GB** (~8 GB, passer i RAM på maskiner med ≥16 GB):
-
+**Kraken2** — anbefalt: PlusPF 8 GB (~8 GB, krever ≥16 GB RAM):
 ```bash
-mkdir -p /databases/kraken2_db
-wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_8gb_20240904.tar.gz -P /databases/kraken2_db/
-tar -xzf /databases/kraken2_db/k2_pluspf_8gb_20240904.tar.gz -C /databases/kraken2_db/
+mkdir -p /databases/kraken2_db_light
+wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_8gb_20240904.tar.gz -P /databases/kraken2_db_light/
+tar -xzf /databases/kraken2_db_light/k2_pluspf_8gb_20240904.tar.gz -C /databases/kraken2_db_light/
 ```
 
-Alternativ: **PlusPF full** (~80 GB, krever ≥80 GB RAM for full ytelse):
-
+**skani** (~3 GB ferdig skisse, ~25 GB midlertidig under bygging):
 ```bash
-wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20240904.tar.gz -P /databases/kraken2_db/
-tar -xzf /databases/kraken2_db/k2_pluspf_20240904.tar.gz -C /databases/kraken2_db/
-```
-
-#### skani (~3 GB skisse, ~6 500 komplette RefSeq-referansegenomer)
-
-```bash
-# Last ned genomer fra NCBI (~25 GB midlertidig diskplass)
 sudo mkdir -p /databases/fastani_db /databases/skani_db && sudo chown $USER /databases/fastani_db /databases/skani_db
 pixi run --environment identification datasets download genome taxon bacteria \
     --reference --assembly-source refseq --assembly-level complete \
     --include genome --filename /databases/fastani_db/bacteria_refs.zip
 unzip /databases/fastani_db/bacteria_refs.zip -d /databases/fastani_db/
 find /databases/fastani_db/ncbi_dataset/data -name "*.fna" > /databases/fastani_db/reference_list.txt
-
-# Bygg skani-skissebase (~3 GB, beholder bare denne)
 pixi run --environment identification skani sketch \
-    -l /databases/fastani_db/reference_list.txt \
-    -o /databases/skani_db/bacteria -t 16
-
-# Slett rågenomene etter at skissen er ferdig (~25 GB frigjøres)
+    -l /databases/fastani_db/reference_list.txt -o /databases/skani_db/bacteria -t 16
 rm -rf /databases/fastani_db/ncbi_dataset /databases/fastani_db/bacteria_refs.zip
 ```
 
-#### MOB-suite (~1.5 GB)
+**MOB-suite** (~1.5 GB): `pixi run --environment mobsuite mob_init`
 
-```bash
-pixi run --environment mobsuite mob_init
-```
-
-#### AMRFinder
-
-```bash
-pixi run --environment amrfinder4 amrfinder --update
-```
+**AMRFinder**: `pixi run --environment amrfinder4 amrfinder --update`
 
 ---
 
 ## Bruk
 
-### Hovedpipeline
-
-```bash
-cd ~/genomics
-
-# Tørrkjøring
-pixi run snakemake -n --cores 16
-
-# Én prøve
-pixi run snakemake --cores 16 --resources mem_mb=60000 --config samples=001k
-
-# Alle prøver fra én dato
-pixi run snakemake --cores 16 --resources mem_mb=60000 --config samples=19-03-2026
-
-# Flere spesifikke prøver
-pixi run snakemake --cores 16 --resources mem_mb=60000 --config "samples=[001k,002k]"
-
-# Alle prøver (auto-deteksjon)
-pixi run snakemake --cores 16 --resources mem_mb=60000
-
-# Kjør én spesifikk regel for én prøve
-pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
-```
-
-> **`mem_mb`** skaleres etter tilgjengelig RAM. Standard jobbreservasjoner: Kraken2=12 GB, Shovill=12 GB, skani=4 GB. Sett `mem_mb` til ca. total RAM minus 4 GB (f.eks. `12000` på en 16 GB maskin).
-
-**Forventet mappestruktur for input:**
+### Inputformat
 
 ```
 data/
@@ -175,73 +67,154 @@ data/
         └── 002k_R2.fastq.gz
 ```
 
-Filnavnene kan hete hva som helst så lenge de slutter på `_R1.fastq.gz` / `_R2.fastq.gz`.
+Filnavn kan være hva som helst, men må slutte på `_R1.fastq.gz` / `_R2.fastq.gz`.
 
-### Slektskapsanalyse (utbrudd) — IKKE FERDIG
-
-Kjøres etter hovedpipelinen når du mistenker utbrudd:
+### Hovedpipeline (`Snakefile`)
 
 ```bash
-pixi run snakemake --snakefile slektskap_Snakefile --cores 16 \
-  --config \
-    samples="[001k,002k,003k,004k]" \
-    species="Enterococcus_faecium" \
-    outbreak_name="VRE_Post4_Mars2026"
+# Tørrkjøring
+pixi run snakemake -n --cores 16
+
+# Én prøve / én dato / flere prøver / alle
+pixi run snakemake --cores 16 --resources mem_mb=60000 --config samples=001k
+pixi run snakemake --cores 16 --resources mem_mb=60000 --config samples=19-03-2026
+pixi run snakemake --cores 16 --resources mem_mb=60000 --config "samples=[001k,002k]"
+pixi run snakemake --cores 16 --resources mem_mb=60000
+
+# Én spesifikk fil
+pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
+```
+
+> **`mem_mb`** bør settes til total RAM minus ~4 GB (f.eks. `12000` på 16 GB maskin). Kraken2, Shovill og skani reserverer henholdsvis 12, 12 og 4 GB.
+
+### Slektskapsanalyse (`Snakefile_phylo`)
+
+Kjøres uavhengig av hovedpipelinen — tar råreads direkte som input.
+
+```bash
+# Med ekstern referanse (.gbk fra Prokka — anbefalt)
+pixi run snakemake -s Snakefile_phylo --cores 16 \
+    --config ref=/databases/prokka_refs/19-03-2026_005a/19-03-2026_005a.gbk
+
+# Uten referanse — første sample prokka-annoteres automatisk
+pixi run snakemake -s Snakefile_phylo --cores 16
+
+# Filtrer på dato eller prøve-ID
+pixi run snakemake -s Snakefile_phylo --cores 16 \
+    --config ref=... samples=19-03-2026
+pixi run snakemake -s Snakefile_phylo --cores 16 \
+    --config ref=... "samples=[19-03-2026/005a,19-03-2026/007b]"
+
+# Egendefinert mappenavn (standard: dato+klokkeslett)
+pixi run snakemake -s Snakefile_phylo --cores 16 \
+    --config ref=... run_name=salmonella_utbrudd
+```
+
+Output lagres i `results_phylo/<run_name>/` (standard: `DD-MM-YYYY_HHMM`):
+
+```
+results_phylo/07-05-2026_1621/
+├── <dato>/<prøve-id>/
+│   ├── Trimmed/      fastp
+│   ├── QC/           FastQC + fastp JSON + HTML
+│   ├── Assembly/     Shovill
+│   ├── QUAST/
+│   ├── ID_Skani/     artsidentifikasjon (species.txt)
+│   ├── Prokka/       kun ved auto-referanse (første sample)
+│   └── MultiQC/
+├── Snippy/
+│   └── <prøve-id>/   snippy SNP-kalling mot referanse
+├── Core/             snippy-core — core.aln, core.full.aln
+├── Gubbins/          rekombinasjonsfiltert alignment + tre
+├── SNP_Dists/        snp_dists.tsv
+├── IQtree/           iqtree.treefile  (GTR+G, UFBoot 1000)
+├── RAxML/            raxml.raxml.bestTree  (GTR+G, 100 bootstrap)
+├── MultiQC_run/      multiqc_report.html  (samlet QC for hele kjøringen)
+└── phylo_report.html prøveoversikt, SNP-matrise og fylogenetisk tre
+```
+
+#### Lage egne referanser
+
+```bash
+scripts/pixi/pixi_annotate_prokka.sh 19-03-2026
+scripts/pixi/pixi_annotate_prokka.sh 19-03-2026/005a --genus Staphylococcus --species aureus
 ```
 
 ---
 
 ## Pipeline-flyt
 
+### Hovedpipeline
+
 ```
-FASTQ-filer
-    │
-    ▼
-fastp (trimming) → FastQC
-    │
-    ├── Kraken2 + Bracken (artsidentifikasjon, parallelt)
-    │
-    ▼
-Shovill (Assembly) → QUAST
-    │
-    ├── GAMBIT (artsidentifikasjon på assembly) → species.txt
-    │       └── SJEKKPUNKT: styrer DAG-routing
-    │
-    ├── skani (kun hvis GAMBIT closest.distance > skani_threshold)
-    ├── MLST
-    ├── AMRFinder
-    ├── MOB-suite (plasmid)
-    ├── MEfinder (MGE)
-    ├── [S. aureus]        → spaTyper, SCCmec, AgrVATE
-    ├── [Klebsiella/E.coli]→ Kleborate
-    ├── [S. pyogenes]      → emmtyper
-    ├── [P. aeruginosa]    → Pasty
-    ├── [Salmonella]       → SeqSero2
-    └── [H. influenzae]    → hicap
-    │
-    ▼
-MultiQC
-    │
-    ▼
-HTML-rapport (pipeline_summary.html)
+FASTQ
+  │
+  ▼
+fastp → FastQC
+  │
+  ├── Kraken2 + Bracken
+  ▼
+Shovill → QUAST
+  │
+  ├── GAMBIT → species.txt  ← sjekkpunkt (styrer DAG-routing)
+  ├── skani  (kun ved usikker GAMBIT-match)
+  ├── MLST
+  ├── AMRFinder
+  ├── MOB-suite
+  ├── MEfinder
+  ├── [S. aureus]         → StaphScope
+  ├── [Klebsiella/E.coli] → Kleborate
+  ├── [S. pyogenes]       → emmtyper
+  ├── [P. aeruginosa]     → Pasty
+  ├── [Salmonella]        → SeqSero2
+  └── [H. influenzae]     → hicap
+  │
+  ▼
+MultiQC → HTML-rapport
+```
+
+### Slektskapsanalyse
+
+```
+FASTQ (råreads)
+  │
+  ▼
+fastp → FastQC → Shovill → QUAST → skani
+  │                │
+  │                └── Prokka  (kun ved auto-ref)
+  ▼
+Snippy (per prøve, mot referanse)
+  │
+  ▼
+snippy-core → core.full.aln
+  │
+  ▼
+Gubbins (rekombinasjonsfjerning)
+  │
+  ├── snp-dists  → SNP-avstandsmatrise
+  ├── IQ-TREE2   → ML-tre
+  └── RAxML-NG   → ML-tre (alternativt)
+  │
+  ▼
+MultiQC + HTML-rapport (phylo_report.html)
 ```
 
 ---
 
 ## Artsspesifikk typing
 
-| Art | Verktøy | Resultat |
-|-----|---------|---------|
-| *S. aureus* | spaTyper, SCCmec, AgrVATE | spa-type, SCCmec-type (MRSA/MSSA), agr-gruppe |
-| *Klebsiella* spp. + *E. coli* | Kleborate v3 | K-type, O-type, ESBL, karbapenemase, virulens |
+| Art | Verktøy | Output |
+|-----|---------|--------|
+| *S. aureus* | StaphScope | spa-type, SCCmec, MRSA/MSSA, virulens, lineage |
+| *Klebsiella* spp. + *E. coli* | Kleborate v3 | K/O-type, ESBL, karbapenemase, virulens |
 | *S. pyogenes* | emmtyper | emm-type |
 | *P. aeruginosa* | Pasty | O-antigen serotype |
-| *Salmonella* spp. | SeqSero2 | Serotyping (O- og H-antigen) |
-| *H. influenzae* | hicap | Kapseltype (a–f, ikke-typbar) |
-| Alle | MEfinder | Insertionssekvenser og transposoner |
+| *Salmonella* spp. | SeqSero2 | O- og H-antigen serotyping |
+| *H. influenzae* | hicap | Kapseltype (a–f / ikke-typbar) |
+| Alle | MEfinder | Insersjonssekvenser og transposoner |
 | Alle | MOB-suite | Plasmidtyping (relaxase, konjugasjon) |
 
-ECTyper (E. coli O:H-serotyping) krever MASH-skissen fra Zenodo. Last ned med:
+ECTyper (E. coli O:H-serotyping) krever en MASH-skisse fra Zenodo:
 
 ```bash
 mkdir -p databases/ectyper
@@ -251,36 +224,32 @@ wget -O databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh \
 
 ---
 
-## Konfigurasjon (config.yaml)
+## Konfigurasjon (`config.yaml`)
 
 | Parameter | Standard | Beskrivelse |
-|-----------|---------|-------------|
+|-----------|----------|-------------|
 | `data_dir` | `data/` | Mappe med FASTQ-filer |
 | `results_dir` | `results/` | Utdatamappe |
-| `threads` | `16` | Antall tråder per regel |
-| `kraken2_db` | `/databases/kraken2_db/` | Sti til Kraken2-database |
-| `kraken2_mem_mb` | `25000` | MB RAM per Kraken2-jobb |
-| `gambit_db` | `/databases/gambit_db/` | Sti til GAMBIT-database |
-| `skani_db` | `/databases/skani_db/bacteria` | Sti til skani-skissebase (katalog) |
+| `threads` | `8` | Tråder per regel |
+| `kraken2_db` | `/databases/kraken2_db_light/` | Kraken2-database |
+| `kraken2_mem_mb` | `12000` | MB RAM per Kraken2-jobb |
+| `gambit_db` | `/databases/gambit_db/` | GAMBIT-database |
+| `skani_db` | `/databases/skani_db/bacteria` | skani-skissebase |
 | `skani_threshold` | `0.3` | GAMBIT `closest.distance` over denne utløser skani |
 | `skani_mem_mb` | `4000` | MB RAM per skani-jobb |
-| `skani_threads` | `8` | Antall tråder per skani-jobb |
-| `shovill_mem_mb` | `12000` | MB RAM per Shovill/SPAdes-jobb (SPAdes begrenses til dette / 1024 GB) |
+| `skani_threads` | `8` | Tråder per skani-jobb |
+| `shovill_mem_mb` | `12000` | MB RAM per Shovill-jobb |
 
 ---
 
 ## Feilsøking
 
 ```bash
-# Sjekk logg for en spesifikk regel
+# Se logg
 cat results/26-03-2026/001k/logs/amrfinder.log
 
 # Tving omkjøring av én regel
 pixi run snakemake --cores 16 --forcerun amrfinder
-
-# Tving full omkjøring av én prøve
-pixi run snakemake --cores 16 --resources mem_mb=60000 \
-  results/26-03-2026/001k/pipeline_summary.html --forceall
 
 # Gjenoppta avbrutt kjøring
 pixi run snakemake --cores 16 --resources mem_mb=60000 --rerun-incomplete
@@ -292,26 +261,27 @@ pixi run snakemake --cores 16 --resources mem_mb=60000 --rerun-incomplete
 
 | Verktøy | Versjon | Formål |
 |---------|---------|--------|
-| fastp | ≥0.23 | Trimming og QC |
+| fastp | ≥0.23 | Trimming |
 | FastQC + MultiQC | ≥0.12 | Sekvenskvalitet |
-| Shovill | ≥1.1 | Genommontering (SPAdes) |
+| Shovill | ≥1.1 | Assembly (SPAdes) |
 | QUAST | ≥5.2 | Assemblystatistikk |
-| Kraken2 + Bracken | ≥2.1 | Artsidentifikasjon og renhetskontroll |
-| GAMBIT | ≥0.5 | Artsidentifikasjon på assembly (SJEKKPUNKT — styrer DAG) |
-| skani | ≥0.2 | Rask ANI-beregning ved usikker GAMBIT-match |
+| Kraken2 + Bracken | ≥2.1 | Artsidentifikasjon (reads) |
+| GAMBIT | ≥0.5 | Artsidentifikasjon (assembly) — styrer DAG |
+| skani | ≥0.2 | ANI-basert artsidentifikasjon ved usikker GAMBIT-match |
 | MLST | ≥2.23 | Sekvenstyping (PubMLST) |
-| AMRFinder | v4.x | Resistens- og virulensgen-deteksjon |
+| AMRFinder | v4.x | Resistens- og virulensgener |
 | MOB-suite | ≥3.1 | Plasmidtyping |
-| MobileElementFinder | ≥1.0 | MGE-deteksjon (CGE) |
-| spaTyper | ≥0.3 | *S. aureus* spa-typing |
-| SCCmec | ≥1.0 | MRSA-kassetttyping |
-| AgrVATE | ≥1.0 | *S. aureus* agr-typing |
+| MobileElementFinder | ≥1.0 | MGE-deteksjon |
+| StaphScope | ≥1.0 | *S. aureus*: spa, SCCmec, MRSA, virulens, lineage |
 | emmtyper | ≥0.2 | *S. pyogenes* emm-typing |
-| Kleborate | ≥3.0 | *Klebsiella* K/O-type, ESBL, virulens |
-| Pasty | ≥2.2 | *P. aeruginosa* O-antigen serotyping |
+| Kleborate | ≥3.0 | *Klebsiella* / *E. coli* typing |
+| Pasty | ≥2.2 | *P. aeruginosa* O-antigen |
 | SeqSero2 | ≥1.3 | *Salmonella* serotyping |
 | hicap | ≥1.0 | *H. influenzae* kapseltype |
-| Snippy | ≥4.6 | SNP-kalling mot referansegenom |
-| IQ-TREE | ≥2.2 | Fylogenetisk tre (ML) |
-| snp-dists | ≥0.8 | SNP-avstandsmatrise |
+| Snippy + snippy-core | ≥4.6 | SNP-kalling og core-alignment |
+| Gubbins | ≥3.3 | Rekombinasjonsfjerning |
+| IQ-TREE2 | ≥2.2 | ML-fylogenetisk tre |
+| RAxML-NG | ≥1.2 | ML-fylogenetisk tre (alternativt) |
+| snp-dists | ≥0.8 | Parvise SNP-avstander |
+| Prokka | ≥1.14 | Annotasjon for egne referansegenomer |
 | chewBBACA | ≥3.3 | cgMLST allelkalling |

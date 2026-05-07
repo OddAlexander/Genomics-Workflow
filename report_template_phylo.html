@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fylogeni-rapport</title>
+<style>
+  :root {
+    --blue:   #1a3a5c;
+    --blue2:  #2e6da4;
+    --teal:   #17a2b8;
+    --green:  #28a745;
+    --yellow: #ffc107;
+    --red:    #dc3545;
+    --bg:     #f5f7fa;
+    --card:   #ffffff;
+    --border: #e2e8f0;
+    --text:   #1a1a2e;
+    --muted:  #6c757d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); padding: 24px; font-size: 14px; }
+  h1 { color: var(--blue); font-size: 1.5rem; padding-bottom: 10px;
+       border-bottom: 2px solid var(--blue); margin-bottom: 20px; }
+  h2 { color: var(--blue2); font-size: 1.1rem; margin: 20px 0 8px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+          padding: 16px; margin-bottom: 12px; }
+  .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; }
+  .meta span { margin-right: 24px; }
+  .meta strong { color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { background: var(--blue); color: white; padding: 7px 12px; text-align: left; font-weight: 600; }
+  td { padding: 5px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: #f8fafc; }
+  .snp-wrap { overflow: auto; }
+  .snp-matrix { width: auto; white-space: nowrap; }
+  .snp-matrix th, .snp-matrix td { padding: 4px 8px; text-align: center; font-size: 0.82rem;
+                                    border: 1px solid var(--border); }
+  .snp-matrix th { background: var(--blue); color: white; }
+  .snp-matrix td { font-variant-numeric: tabular-nums; }
+  .tree-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  .tab-btn { padding: 5px 16px; border: 1px solid var(--border); border-radius: 4px;
+             background: var(--bg); cursor: pointer; font-size: 0.88rem; color: var(--blue2); }
+  .tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+  .tree-panel { display: none; overflow: auto; }
+  .tree-panel.active { display: block; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<h1>Fylogeni-rapport</h1>
+<div id="root"></div>
+
+<script>
+const D = __PHYLO_JSON_DATA__;
+
+// ── Newick parser ──────────────────────────────────────────────────────────
+function parseNewick(s) {
+  s = s.trim().replace(/;$/, '');
+  let i = 0;
+
+  function readUntil(chars) {
+    let start = i;
+    while (i < s.length && !chars.includes(s[i])) i++;
+    return s.slice(start, i);
+  }
+
+  function parseNode() {
+    const node = { name: '', length: 0, bootstrap: null, children: [] };
+    if (s[i] === '(') {
+      i++;
+      node.children.push(parseNode());
+      while (i < s.length && s[i] === ',') { i++; node.children.push(parseNode()); }
+      if (s[i] === ')') i++;
+      const label = readUntil([':', ',', ')', ';']).trim();
+      if (label !== '') {
+        const n = parseFloat(label);
+        if (!isNaN(n)) node.bootstrap = n;
+        else node.name = label;
+      }
+    } else {
+      node.name = readUntil([':', ',', ')', ';']);
+    }
+    if (i < s.length && s[i] === ':') {
+      i++;
+      node.length = parseFloat(readUntil([',', ')', ';'])) || 0;
+    }
+    return node;
+  }
+  return parseNode();
+}
+
+// ── Tree layout ────────────────────────────────────────────────────────────
+function layoutTree(root) {
+  function setCumDist(node, d) {
+    node._x = d + (node.length || 0);
+    if (node.children) node.children.forEach(c => setCumDist(c, node._x));
+  }
+  setCumDist(root, 0);
+
+  function getLeaves(node) {
+    if (!node.children || !node.children.length) return [node];
+    return node.children.flatMap(getLeaves);
+  }
+  const leaves = getLeaves(root);
+  leaves.forEach((l, idx) => { l._y = idx; });
+
+  function setY(node) {
+    if (!node.children || !node.children.length) return node._y;
+    const ys = node.children.map(setY);
+    node._y = (Math.min(...ys) + Math.max(...ys)) / 2;
+    return node._y;
+  }
+  setY(root);
+
+  const maxX = Math.max(...leaves.map(l => l._x));
+  return { leaves, maxX };
+}
+
+// ── Canvas renderer ────────────────────────────────────────────────────────
+function drawTree(canvasId, newickStr) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  if (!newickStr || !newickStr.trim()) {
+    canvas.height = 60;
+    ctx.fillStyle = '#888';
+    ctx.font = '13px sans-serif';
+    ctx.fillText('Ingen treefil tilgjengelig', 20, 35);
+    return;
+  }
+
+  const root = parseNewick(newickStr);
+  const { leaves, maxX } = layoutTree(root);
+
+  const ROW_H    = 22;
+  const LABEL_W  = 200;
+  const M        = { top: 15, right: 10, bottom: 40, left: 20 };
+  const CANVAS_W = canvas.width;
+  const TREE_W   = CANVAS_W - M.left - M.right - LABEL_W;
+  const H        = leaves.length * ROW_H + M.top + M.bottom;
+  canvas.height  = H;
+
+  ctx.clearRect(0, 0, CANVAS_W, H);
+
+  const scX = d => M.left + (maxX > 0 ? (d / maxX) * TREE_W : 0);
+  const scY = y => M.top + (y + 0.5) * ROW_H;
+
+  function drawNode(node) {
+    const x2 = scX(node._x);
+    const y  = scY(node._y);
+    const x1 = scX(node._x - (node.length || 0));
+
+    ctx.strokeStyle = '#2e6da4';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+    ctx.stroke();
+
+    if (node.children && node.children.length) {
+      const childYs = node.children.map(c => scY(c._y));
+      ctx.beginPath();
+      ctx.moveTo(x2, Math.min(...childYs));
+      ctx.lineTo(x2, Math.max(...childYs));
+      ctx.stroke();
+
+      if (node.bootstrap !== null) {
+        ctx.fillStyle = '#888';
+        ctx.font = '9px sans-serif';
+        ctx.fillText(Math.round(node.bootstrap), x2 + 2, y - 2);
+      }
+      node.children.forEach(drawNode);
+    } else {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.font = '11px monospace';
+      ctx.fillText(node.name, x2 + 5, y + 4);
+    }
+  }
+
+  drawNode(root);
+
+  // Scale bar
+  if (maxX > 0) {
+    let sbLen = maxX / 4;
+    const mag = Math.pow(10, Math.floor(Math.log10(sbLen)));
+    sbLen = Math.round(sbLen / mag) * mag || mag;
+
+    const sbX1 = M.left;
+    const sbX2 = sbX1 + (sbLen / maxX) * TREE_W;
+    const sbY  = H - 12;
+
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(sbX1, sbY); ctx.lineTo(sbX2, sbY);
+    ctx.moveTo(sbX1, sbY - 4); ctx.lineTo(sbX1, sbY + 4);
+    ctx.moveTo(sbX2, sbY - 4); ctx.lineTo(sbX2, sbY + 4);
+    ctx.stroke();
+
+    ctx.fillStyle  = '#333';
+    ctx.font       = '10px sans-serif';
+    ctx.textAlign  = 'center';
+    ctx.fillText(sbLen < 0.001 ? sbLen.toExponential(1) : sbLen, (sbX1 + sbX2) / 2, sbY - 5);
+    ctx.textAlign  = 'left';
+  }
+}
+
+// ── SNP matrix renderer ────────────────────────────────────────────────────
+function renderSNPMatrix(data) {
+  const { samples, matrix } = data;
+  if (!samples.length) return '<p style="color:var(--muted)">Ingen SNP-distansematrise tilgjengelig.</p>';
+
+  const vals  = matrix.flat().filter(v => v > 0);
+  const maxV  = vals.length ? Math.max(...vals) : 1;
+  const short = samples.map(s => s.split('/').pop());
+
+  function bg(v) {
+    if (v === 0) return '#f8fafc';
+    const t = v / maxV;
+    const r = Math.round(255 - t * 35);
+    const g = Math.round(255 - t * 185);
+    const b = Math.round(255 - t * 185);
+    return `rgb(${r},${g},${b})`;
+  }
+  function fg(v) {
+    return v / maxV > 0.6 ? '#fff' : '#1a1a2e';
+  }
+
+  let html = '<table class="snp-matrix"><thead><tr><th></th>';
+  for (const n of short) html += `<th>${n}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let i = 0; i < matrix.length; i++) {
+    html += `<tr><th style="text-align:left">${short[i]}</th>`;
+    for (let j = 0; j < matrix[i].length; j++) {
+      const v = matrix[i][j];
+      html += `<td style="background:${bg(v)};color:${fg(v)}">${v}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+// ── Page render ────────────────────────────────────────────────────────────
+function fmt(n) { return n ? n.toLocaleString('no-NO') : '-'; }
+
+const refLabel = D.reference !== '-' ? D.reference.split('/').pop() : '-';
+
+document.getElementById('root').innerHTML = `
+<div class="meta">
+  <span><strong>Dato:</strong> ${D.run_date}</span>
+  <span><strong>Referanse:</strong> ${refLabel}</span>
+  <span><strong>Prøver:</strong> ${D.n_samples}</span>
+</div>
+
+<div class="card">
+  <h2>Prøveoversikt</h2>
+  <table>
+    <thead><tr>
+      <th>Prøve-ID</th><th>Art (skani)</th>
+      <th>Contigs</th><th>N50</th><th>Total lengde (bp)</th>
+    </tr></thead>
+    <tbody>
+      ${D.samples.map(s => `<tr>
+        <td style="font-family:monospace">${s.id}</td>
+        <td><em>${s.species}</em></td>
+        <td>${s.contigs}</td>
+        <td>${fmt(s.N50)}</td>
+        <td>${fmt(s.total_length)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>SNP-distansematrise</h2>
+  <div class="snp-wrap">
+    ${renderSNPMatrix(D.snp_dists)}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Fylogenetisk tre</h2>
+  <div class="tree-tabs">
+    <button class="tab-btn active" onclick="showTab('iqtree',this)">IQtree</button>
+    <button class="tab-btn"        onclick="showTab('raxml',this)">RAxML</button>
+  </div>
+  <div id="tab-iqtree" class="tree-panel active">
+    <canvas id="canvas-iqtree" width="1000"></canvas>
+  </div>
+  <div id="tab-raxml" class="tree-panel">
+    <canvas id="canvas-raxml" width="1000"></canvas>
+  </div>
+</div>
+`;
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tree-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+drawTree('canvas-iqtree', D.iqtree);
+drawTree('canvas-raxml',  D.raxml);
+</script>
+</body>
+</html>

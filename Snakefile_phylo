@@ -1,0 +1,317 @@
+# Snakefile_phylo -- Slektsskapsanalyse-pipeline
+#
+# Kjør med (ekstern referanse):
+#   pixi run snakemake -s Snakefile_phylo --cores 16 \
+#       --config ref=/databases/prokka_refs/19-03-2026_005a/19-03-2026_005a.gbk
+#
+# Uten referanse — bruker første sample som referanse (prokka-annotert automatisk):
+#   pixi run snakemake -s Snakefile_phylo --cores 16
+#
+# Egendefinert mappenavn i results_phylo/ (standard: dato+klokkeslett):
+#   --config run_name=salmonella_utbrudd
+#
+# Filtrer på dato eller sample (samme logikk som hoveddpipelinen):
+#   --config ref=... samples=19-03-2026
+#   --config ref=... samples=19-03-2026/005a
+#   --config ref=... samples=[19-03-2026/005a,19-03-2026/007b]
+
+configfile: "config.yaml"
+from datetime import datetime
+
+# --- Konfigurasjon ---
+DATA_DIR     = config.get("data_dir",     "data/").rstrip("/")
+_phylo_base  = config.get("phylo_dir",  "results_phylo").rstrip("/")
+_run_name    = config.get("run_name",   datetime.now().strftime('%d-%m-%Y_%H%M'))
+PHYLO_DIR    = f"{_phylo_base}/{_run_name}"
+THREADS      = config.get("threads", 8)
+SHOVILL_MEM  = config.get("shovill_mem_mb", 12000)
+SKANI_DB     = config.get("skani_db",     "/databases/skani_db/bacteria")
+SKANI_THREADS = config.get("skani_threads", 8)
+CORE_DIR     = f"{PHYLO_DIR}/Core"
+GUBBINS_DIR  = f"{PHYLO_DIR}/Gubbins"
+SNP_DIR      = f"{PHYLO_DIR}/SNP_Dists"
+IQTREE_DIR   = f"{PHYLO_DIR}/IQtree"
+RAXML_DIR    = f"{PHYLO_DIR}/RAxML"
+
+# --- Sample Deteksjon ---
+# {sample} fanger hele den relative stien under DATA_DIR, f.eks. "19-03-2026/005a"
+ALL_SAMPLES, ANY = glob_wildcards(f"{DATA_DIR}/{{sample}}/{{any}}_R1.fastq.gz")
+READS_DICT = {s: f"{DATA_DIR}/{s}/{a}" for s, a in zip(ALL_SAMPLES, ANY)}
+assert len(set(ALL_SAMPLES)) == len(ALL_SAMPLES), \
+    f"Duplikate sample-ID-er oppdaget: {len(ALL_SAMPLES) - len(set(ALL_SAMPLES))} duplikater funnet"
+
+_filter = config.get("samples", None)
+if _filter:
+    _filter = _filter if isinstance(_filter, list) else [_filter]
+    SAMPLES = [s for s in ALL_SAMPLES if any(f in s for f in _filter)]
+    if not SAMPLES:
+        raise ValueError(f"Ingen samples funnet for filter: {_filter}")
+else:
+    SAMPLES = ALL_SAMPLES
+
+if "ref" in config:
+    REFERENCE = config["ref"]
+else:
+    if not SAMPLES:
+        raise ValueError("Ingen samples funnet og ingen referanse oppgitt")
+    REFERENCE = f"{PHYLO_DIR}/{SAMPLES[0]}/Prokka/reference.gbk"
+    print(f"Ingen referanse oppgitt — prokka-annoterer første sample: {SAMPLES[0]}")
+
+print(f"Fylogeni: {len(SAMPLES)}/{len(ALL_SAMPLES)} samples — referanse: {REFERENCE}")
+
+# --- Rules ---
+
+rule all:
+    input:
+        expand(f"{PHYLO_DIR}/{{sample}}/MultiQC/multiqc_report.html", sample=SAMPLES),
+        expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt",        sample=SAMPLES),
+        f"{SNP_DIR}/snp_dists.tsv",
+        f"{IQTREE_DIR}/iqtree.treefile",
+        f"{RAXML_DIR}/raxml.raxml.bestTree",
+        f"{PHYLO_DIR}/MultiQC_run/multiqc_report.html",
+        f"{PHYLO_DIR}/phylo_report.html",
+
+
+# --- Per-prøve ---
+
+rule fastp:
+    input:
+        r1 = lambda wc: f"{READS_DICT[wc.sample]}_R1.fastq.gz",
+        r2 = lambda wc: f"{READS_DICT[wc.sample]}_R2.fastq.gz",
+    output:
+        r1   = f"{PHYLO_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2   = f"{PHYLO_DIR}/{{sample}}/Trimmed/R2.fastq.gz",
+        json = f"{PHYLO_DIR}/{{sample}}/QC/fastp.json",
+        html = f"{PHYLO_DIR}/{{sample}}/QC/fastp.html",
+    log:
+        f"{PHYLO_DIR}/{{sample}}/logs/fastp.log"
+    threads: THREADS
+    shell:
+        "pixi run fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -j {output.json} -h {output.html} --thread {threads} 2>&1 | tee {log}"
+
+
+rule fastqc:
+    input:
+        r1 = f"{PHYLO_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2 = f"{PHYLO_DIR}/{{sample}}/Trimmed/R2.fastq.gz",
+    output:
+        r1 = f"{PHYLO_DIR}/{{sample}}/QC/fastqc/R1_fastqc.html",
+        r2 = f"{PHYLO_DIR}/{{sample}}/QC/fastqc/R2_fastqc.html",
+    log:
+        f"{PHYLO_DIR}/{{sample}}/logs/fastqc.log"
+    params:
+        outdir = lambda wc: f"{PHYLO_DIR}/{wc.sample}/QC/fastqc"
+    threads: 2
+    shell:
+        "pixi run fastqc {input.r1} {input.r2} -o {params.outdir} --threads {threads} 2>&1 | tee {log}"
+
+
+rule assemble:
+    input:
+        r1 = f"{PHYLO_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2 = f"{PHYLO_DIR}/{{sample}}/Trimmed/R2.fastq.gz",
+    output:
+        fa = f"{PHYLO_DIR}/{{sample}}/Assembly/contigs.fa",
+    log:
+        f"{PHYLO_DIR}/{{sample}}/logs/assemble.log"
+    params:
+        outdir = lambda wc: f"{PHYLO_DIR}/{wc.sample}/Assembly"
+    threads: THREADS
+    resources:
+        mem_mb = SHOVILL_MEM
+    shell:
+        "pixi run shovill --R1 {input.r1} --R2 {input.r2} --outdir {params.outdir} --cpus {threads} --ram $(( {resources.mem_mb} / 1024 )) --force 2>&1 | tee {log}"
+
+
+rule prokka:
+    input:
+        fa = f"{PHYLO_DIR}/{{sample}}/Assembly/contigs.fa",
+    output:
+        gbk = f"{PHYLO_DIR}/{{sample}}/Prokka/reference.gbk",
+    log:
+        f"{PHYLO_DIR}/{{sample}}/logs/prokka.log"
+    params:
+        outdir = lambda wc: f"{PHYLO_DIR}/{wc.sample}/Prokka",
+        prefix = "reference",
+    threads: THREADS
+    shell:
+        "pixi run --environment prokka prokka --outdir {params.outdir} --prefix {params.prefix} --cpus {threads} --force {input.fa} 2>&1 | tee {log}"
+
+
+rule quast:
+    input:
+        fa = f"{PHYLO_DIR}/{{sample}}/Assembly/contigs.fa",
+    output:
+        f"{PHYLO_DIR}/{{sample}}/QUAST/report.html",
+    log:
+        f"{PHYLO_DIR}/{{sample}}/logs/quast.log"
+    params:
+        outdir = lambda wc: f"{PHYLO_DIR}/{wc.sample}/QUAST"
+    threads: THREADS
+    shell:
+        "pixi run quast {input.fa} -o {params.outdir} --threads {threads} 2>&1 | tee {log}"
+
+
+rule skani:
+    input:
+        fa = f"{PHYLO_DIR}/{{sample}}/Assembly/contigs.fa",
+    output:
+        tsv     = f"{PHYLO_DIR}/{{sample}}/ID_Skani/skani.tsv",
+        species = f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt",
+    log:
+        f"{PHYLO_DIR}/{{sample}}/logs/skani.log"
+    params:
+        db = SKANI_DB
+    threads: SKANI_THREADS
+    shell:
+        """
+        pixi run --environment identification skani search -q {input.fa} -d {params.db} \
+            -o {output.tsv} -t {threads} 2>&1 | tee {log}
+        awk -F'\\t' 'NR==2{{print $6}}' {output.tsv} | sed 's/ /_/g' > {output.species}
+        """
+
+
+rule multiqc:
+    input:
+        fastp  = f"{PHYLO_DIR}/{{sample}}/QC/fastp.json",
+        fastqc = f"{PHYLO_DIR}/{{sample}}/QC/fastqc/R1_fastqc.html",
+        quast  = f"{PHYLO_DIR}/{{sample}}/QUAST/report.html",
+    output:
+        f"{PHYLO_DIR}/{{sample}}/MultiQC/multiqc_report.html",
+    log:
+        f"{PHYLO_DIR}/{{sample}}/logs/multiqc.log"
+    params:
+        sample_dir = lambda wc: f"{PHYLO_DIR}/{wc.sample}",
+        outdir     = lambda wc: f"{PHYLO_DIR}/{wc.sample}/MultiQC",
+    shell:
+        "pixi run multiqc {params.sample_dir} -o {params.outdir} 2>&1 | tee {log}"
+
+
+# --- Kjøring (alle prøver) ---
+
+rule snippy:
+    input:
+        r1  = f"{PHYLO_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2  = f"{PHYLO_DIR}/{{sample}}/Trimmed/R2.fastq.gz",
+        ref = REFERENCE,
+    output:
+        vcf = f"{PHYLO_DIR}/Snippy/{{sample}}/snps.vcf",
+    log:
+        f"{PHYLO_DIR}/{{sample}}/logs/snippy.log"
+    params:
+        outdir = lambda wc: f"{PHYLO_DIR}/Snippy/{wc.sample}",
+    threads: THREADS
+    shell:
+        "pixi run snippy --cpus {threads} --outdir {params.outdir} --ref {input.ref} --R1 {input.r1} --R2 {input.r2} --force 2>&1 | tee {log}"
+
+
+rule snippy_core:
+    input:
+        vcfs = expand(f"{PHYLO_DIR}/Snippy/{{sample}}/snps.vcf", sample=SAMPLES),
+        ref  = REFERENCE,
+    output:
+        aln      = f"{CORE_DIR}/core.aln",
+        full_aln = f"{CORE_DIR}/core.full.aln",
+    log:
+        f"{PHYLO_DIR}/logs/snippy_core.log"
+    params:
+        dirs   = " ".join(f"{PHYLO_DIR}/Snippy/{s}" for s in SAMPLES),
+        prefix = f"{CORE_DIR}/core",
+    shell:
+        "pixi run snippy-core --ref {input.ref} --prefix {params.prefix} {params.dirs} 2>&1 | tee {log}"
+
+
+rule gubbins:
+    input:
+        aln = f"{CORE_DIR}/core.full.aln",
+    output:
+        fasta = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
+        tree  = f"{GUBBINS_DIR}/gubbins.node_labelled.final_tree.tre",
+    log:
+        f"{PHYLO_DIR}/logs/gubbins.log"
+    params:
+        prefix = f"{GUBBINS_DIR}/gubbins",
+    threads: THREADS
+    shell:
+        "pixi run --environment gubbins run_gubbins.py --threads {threads} --prefix {params.prefix} {input.aln} 2>&1 | tee {log}"
+
+
+rule snp_dists:
+    input:
+        aln = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
+    output:
+        tsv = f"{SNP_DIR}/snp_dists.tsv",
+    log:
+        f"{PHYLO_DIR}/logs/snp_dists.log"
+    shell:
+        "pixi run snp-dists {input.aln} > {output.tsv} 2> {log}"
+
+
+rule iqtree:
+    input:
+        aln = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
+    output:
+        tree = f"{IQTREE_DIR}/iqtree.treefile",
+    log:
+        f"{PHYLO_DIR}/logs/iqtree.log"
+    params:
+        prefix = f"{IQTREE_DIR}/iqtree",
+    threads: THREADS
+    shell:
+        "pixi run iqtree -s {input.aln} --prefix {params.prefix} -T {threads} -m GTR+G -B 1000 --redo 2>&1 | tee {log}"
+
+
+rule raxml:
+    input:
+        aln = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
+    output:
+        tree = f"{RAXML_DIR}/raxml.raxml.bestTree",
+    log:
+        f"{PHYLO_DIR}/logs/raxml.log"
+    params:
+        prefix = f"{RAXML_DIR}/raxml",
+    threads: THREADS
+    shell:
+        "pixi run --environment raxml raxml-ng --msa {input.aln} --model GTR+G --prefix {params.prefix} --threads {threads} --all --bs-trees 100 --redo 2>&1 | tee {log}"
+
+
+rule multiqc_run:
+    input:
+        expand(f"{PHYLO_DIR}/{{sample}}/MultiQC/multiqc_report.html", sample=SAMPLES),
+        expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt",        sample=SAMPLES),
+        f"{SNP_DIR}/snp_dists.tsv",
+    output:
+        f"{PHYLO_DIR}/MultiQC_run/multiqc_report.html",
+    log:
+        f"{PHYLO_DIR}/logs/multiqc_run.log"
+    params:
+        run_dir = PHYLO_DIR,
+        out_dir = f"{PHYLO_DIR}/MultiQC_run",
+    shell:
+        "pixi run multiqc {params.run_dir} -o {params.out_dir} --force 2>&1 | tee {log}"
+
+
+rule phylo_report:
+    input:
+        snp_dists = f"{SNP_DIR}/snp_dists.tsv",
+        iqtree    = f"{IQTREE_DIR}/iqtree.treefile",
+        raxml     = f"{RAXML_DIR}/raxml.raxml.bestTree",
+        species   = expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt", sample=SAMPLES),
+        quast     = expand(f"{PHYLO_DIR}/{{sample}}/QUAST/report.html",    sample=SAMPLES),
+    output:
+        f"{PHYLO_DIR}/phylo_report.html",
+    log:
+        f"{PHYLO_DIR}/logs/phylo_report.log"
+    params:
+        phylo_dir = PHYLO_DIR,
+        samples   = ",".join(SAMPLES),
+        template  = "report_template_phylo.html",
+        ref       = REFERENCE,
+    shell:
+        "python scripts/make_phylo_report.py"
+        " --phylo-dir {params.phylo_dir}"
+        " --samples {params.samples}"
+        " --template {params.template}"
+        " --ref {params.ref}"
+        " --output {output}"
+        " 2>&1 | tee {log}"

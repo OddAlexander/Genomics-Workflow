@@ -208,7 +208,13 @@ function render() {
   const amr_type_label = {AMR:'Resistensgener', VIRULENCE:'Virulensgen', STRESS:'Stressrespons'};
   const amr_type_color = {AMR:'#b02a37', VIRULENCE:'#856404', STRESS:'#495057'};
 
-  h += `<h2>AMRFinder-funn</h2>`;
+  h += `<h2>AMRFinder-funn</h2>
+  <div class="alert alert-blue" style="margin-bottom:10px;font-family:inherit">
+    Resistensgener kobles til plasmider via kontig-ID: MOB-suite klassifiserer hver kontig etter mobilitet (konjugativ / mobiliserbar / ikke-mobiliserbar),
+    og PlasmidFinder identifiserer replikoner på samme kontig. MEfinder detekterer insertionssekvenser og transposoner kontigvis —
+    et resistensgen og et MGE på samme kontig indikerer potensiell mobilisering, men bekrefter ikke at de er funksjonelt koblet.
+    Konjugative plasmider med resistensgener representerer høyest spredningsrisiko mellom isolater og på tvers av arter.
+  </div>`;
   if (!s.amr.details.length) {
     h += `<div class="card"><p style="color:var(--muted)">Ingen funn.</p></div>`;
   } else {
@@ -345,9 +351,9 @@ function render() {
             s.species.includes('Klebsiella_pneumoniae')||s.species.includes('Klebsiella_variicola')||s.species.includes('Klebsiella_quasipneumoniae') ? 'kpsc' :
             s.species.includes('Klebsiella_oxytoca')||s.species.includes('Klebsiella_michiganensis') ? 'kosc' : 'escherichia'} preset)</td></tr>` : ''}
     ${s.species?.includes('Staphylococcus_aureus')
-      ? `<tr><td>spaTyper</td><td>${s.spatyper?.spa_type||'-'} (CC: ${s.spatyper?.CC||'-'})</td><td>SpaTyper-database</td></tr>
-         <tr><td>SCCmec</td><td>Type ${s.sccmec?.type||'-'} &mdash; ${s.sccmec?.mrsa?badge('MRSA','red'):badge('MSSA','green')}</td><td>IWG-SCC-skjema</td></tr>
-         <tr><td>AgrVATE</td><td>agr-gruppe</td><td>Bundlet database</td></tr>` : ''}
+      ? `<tr><td>StaphScope</td>
+           <td>spa: ${s.spatyper?.spa_type||'-'} &nbsp; SCCmec: ${s.sccmec?.type||'-'} &nbsp; ${s.sccmec?.mrsa?badge('MRSA','red'):badge('MSSA','green')}</td>
+           <td>StaphScope (spa, SCCmec, MRSA-status, virulens, lineage)</td></tr>` : ''}
     ${s.species?.includes('Escherichia') || s.species?.includes('Shigella')
       ? `<tr><td>ECTyper</td><td>${s.ectyper?.serotype||'-'}</td><td>ECTyper v2</td></tr>` : ''}
     ${s.species?.includes('Streptococcus_pyogenes')

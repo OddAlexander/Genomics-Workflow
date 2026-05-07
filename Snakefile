@@ -2,11 +2,12 @@
 
 # --- Konfigurasjon ---
 configfile: "config.yaml"
+from datetime import datetime
 
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
-KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db/")
+KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_light/")
 KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reservert per jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
 SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reservert per Shovill/SPAdes-jobb (SPAdes --ram settes til dette / 1024)
 SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reservert per skani-jobb (mye lavere enn fastANI)
@@ -15,6 +16,7 @@ GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
 SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Sti til skani-sketch (katalog) -- tom = skani hoppes over
 SKANI_THRESHOLD  = config.get("skani_threshold", 0.3)      # skani kjøres hvis closest.distance i Gambit > denne
 PLASMIDFINDER_DB = config.get("plasmidfinder_db", "/databases/plasmidfinder_db/")
+RUN_LOG          = f"{RESULTS_DIR}/pipeline_run_{datetime.now().strftime('%Y%m%d_%H%M')}.tsv"
 
 # --- Artsgrupper og skjemaer ---
 SA  = {"Staphylococcus_aureus"}
@@ -75,7 +77,7 @@ ALWAYS_TOOLS = [
 
 SPECIES_TOOLS = [
     (set(KLEB_PRESET.keys()), ["Kleborate/kleborate_output.tsv"]),
-    (SA,                  ["SpaTyper/spatyper.txt", "SCCmec/sccmec.tsv", "AgrVATE/agrvate.txt"]),
+    (SA,                  ["Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv"]),
     (GAS,                 ["EmmTyper/emmtyper.txt"]),
     (EC,                  ["ECTyper/ectyper.tsv"]),
     (PA,                  ["Pasty/pasty.tsv"]),
@@ -129,9 +131,10 @@ rule report:
     params:
         template   = "report_template.html",
         results    = RESULTS_DIR,
-        kraken2_db = KRAKEN2_DB
+        kraken2_db = KRAKEN2_DB,
+        log_path   = RUN_LOG
     shell:
-        "python scripts/make_report.py --sample {wildcards.sample} --results-dir {params.results} --template {params.template} --output {output} --kraken2-db {params.kraken2_db}"
+        "python scripts/make_report.py --sample {wildcards.sample} --results-dir {params.results} --template {params.template} --output {output} --kraken2-db {params.kraken2_db} --log-path {params.log_path}"
 
 rule fastp:
     input:
@@ -140,12 +143,13 @@ rule fastp:
     output:
         r1   = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
         r2   = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz",
-        json = f"{RESULTS_DIR}/{{sample}}/QC/fastp.json"
+        json = f"{RESULTS_DIR}/{{sample}}/QC/fastp.json",
+        html = f"{RESULTS_DIR}/{{sample}}/QC/fastp.html"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/fastp.log"
     threads: THREADS
     shell:
-        "pixi run fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -j {output.json} --thread {threads} 2>&1 | tee {log}"
+        "pixi run fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -j {output.json} -h {output.html} --thread {threads} 2>&1 | tee {log}"
 
 rule kraken2_qc:
     input:
@@ -160,7 +164,7 @@ rule kraken2_qc:
         db = KRAKEN2_DB
     threads: THREADS
     resources:
-        mem_mb = KRAKEN2_MEM
+        mem_mb     = KRAKEN2_MEM
     shell:
         """
         pixi run --environment identification kraken2 --db {params.db} \
@@ -289,46 +293,18 @@ rule kleborate:
         find {params.outdir} -maxdepth 1 -name '*_output.txt' ! -name '*hAMRonization*' -exec mv {{}} {output} \\;
         """)
 
-rule spatyper:
+rule staphscope:
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
     output:
-        f"{RESULTS_DIR}/{{sample}}/SpaTyper/spatyper.txt"
+        f"{RESULTS_DIR}/{{sample}}/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv"
     log:
-        f"{RESULTS_DIR}/{{sample}}/logs/spatyper.log"
-    shell:
-        "pixi run spaTyper -f {input.fa} --output {output} 2>&1 | tee {log}"
-
-rule sccmec:
-    input:
-        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
-    output:
-        f"{RESULTS_DIR}/{{sample}}/SCCmec/sccmec.tsv"
-    log:
-        f"{RESULTS_DIR}/{{sample}}/logs/sccmec.log"
+        f"{RESULTS_DIR}/{{sample}}/logs/staphscope.log"
     params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/SCCmec"
+        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/Staphscope"
+    threads: THREADS
     shell:
-        "pixi run sccmec --input {input.fa} --outdir {params.outdir} --prefix sccmec 2>&1 | tee {log}"
-
-rule agrvate:
-    input:
-        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
-    output:
-        f"{RESULTS_DIR}/{{sample}}/AgrVATE/agrvate.txt"
-    log:
-        f"{RESULTS_DIR}/{{sample}}/logs/agrvate.log"
-    resources:
-        agrvate_jobs = 1  # agrvate writes to contigs-results/ relative to CWD (named after input basename); limit to 1 to avoid collisions
-    shell:
-        """
-        pixi run agrvate -i {input.fa} -m -f 2>&1 | tee {log} || true
-        if [ -f contigs-results/contigs-summary.tab ]; then
-            mv contigs-results/contigs-summary.tab {output}
-        else
-            printf 'filename\tagr_group\tscan_start\tscan_end\tsnp_group\texact_match\tmultiple_agr\tpossible_novel\n%s\tNT\t.\t.\t.\t.\t.\t.\n' {input.fa} > {output}
-        fi
-        """
+        "pixi run --environment staphscope staphscope -i {input.fa} -o {params.outdir} -t {threads} 2>&1 | tee {log}"
 
 rule emmtyper:
     input:
