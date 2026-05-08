@@ -85,9 +85,9 @@ MIN_FRAC="${MIN_FRAC:-0.9}"
 TRIM_DIR="$SAMPLE_DIR/Trimmed"
 [[ -d "$TRIM_DIR" ]] || die "Trimmed directory not found: $TRIM_DIR\nRun bacterial-pipeline.sh first"
 
-R1_FILE=$(find "$TRIM_DIR" -maxdepth 1 -name "*_R1*.fastq.gz" | sort | head -1)
+R1_FILE=$(find "$TRIM_DIR" -maxdepth 1 -name "*R1*.fastq.gz" | sort | head -1)
 [[ -n "$R1_FILE" ]] || die "No R1 fastq.gz found in $TRIM_DIR"
-R2_FILE="${R1_FILE/_R1/_R2}"
+R2_FILE="${R1_FILE/_R1/R2}"
 [[ -f "$R2_FILE" ]] || die "R2 not found: $R2_FILE"
 
 SAMPLE=$(basename "$SAMPLE_DIR")

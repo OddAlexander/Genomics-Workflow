@@ -46,11 +46,12 @@ def parse_snp_dists(path):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--phylo-dir", required=True)
-    ap.add_argument("--samples",   required=True)
-    ap.add_argument("--template",  required=True)
-    ap.add_argument("--output",    required=True)
-    ap.add_argument("--ref",       default="-")
+    ap.add_argument("--phylo-dir",          required=True)
+    ap.add_argument("--samples",            required=True)
+    ap.add_argument("--template",           required=True)
+    ap.add_argument("--output",             required=True)
+    ap.add_argument("--ref",                default="-")
+    ap.add_argument("--snp-dists-gubbins",  default=None)
     args = ap.parse_args()
 
     pd      = Path(args.phylo_dir)
@@ -67,8 +68,9 @@ if __name__ == "__main__":
             **quast,
         })
 
-    snp_data = parse_snp_dists(pd / "SNP_Dists/snp_dists.tsv")
-    iqtree   = safe_read(pd / "IQtree/iqtree.treefile") or ""
+    snp_data         = parse_snp_dists(pd / "SNP_Dists/snp_dists.tsv")
+    snp_data_gubbins = parse_snp_dists(args.snp_dists_gubbins) if args.snp_dists_gubbins else {"samples": [], "matrix": []}
+    iqtree           = safe_read(pd / "IQtree/iqtree.treefile") or ""
 
     ref_path = Path(args.ref)
     if ref_path.name == "reference.gbk":
@@ -86,7 +88,8 @@ if __name__ == "__main__":
         "ref_auto":   ref_auto,
         "n_samples":  len(samples),
         "samples":   sample_data,
-        "snp_dists": snp_data,
+        "snp_dists":        snp_data,
+        "snp_dists_gubbins": snp_data_gubbins,
         "iqtree":    iqtree,
     }
 

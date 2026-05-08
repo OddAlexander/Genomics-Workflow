@@ -65,6 +65,7 @@ rule all:
         expand(f"{PHYLO_DIR}/{{sample}}/MultiQC/multiqc_report.html", sample=SAMPLES),
         expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt",        sample=SAMPLES),
         f"{SNP_DIR}/snp_dists.tsv",
+        f"{SNP_DIR}/snp_dists_gubbins.tsv",
         f"{IQTREE_DIR}/iqtree.treefile",
         f"{PHYLO_DIR}/MultiQC_run/multiqc_report.html",
         f"{PHYLO_DIR}/phylo_report.html",
@@ -254,6 +255,23 @@ rule snp_dists:
         "pixi run snp-dists {input.aln} > {output.tsv} 2> {log}"
 
 
+rule snp_dists_gubbins:
+    input:
+        aln = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
+    output:
+        tsv = f"{SNP_DIR}/snp_dists_gubbins.tsv",
+    log:
+        f"{PHYLO_DIR}/logs/snp_dists_gubbins.log"
+    shell:
+        """
+        if [ -s {input.aln} ]; then
+            pixi run snp-dists {input.aln} > {output.tsv} 2> {log}
+        else
+            touch {output.tsv}
+        fi
+        """
+
+
 rule iqtree:
     input:
         aln = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
@@ -293,10 +311,11 @@ rule multiqc_run:
 
 rule phylo_report:
     input:
-        snp_dists = f"{SNP_DIR}/snp_dists.tsv",
-        iqtree    = f"{IQTREE_DIR}/iqtree.treefile",
-        species   = expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt", sample=SAMPLES),
-        quast     = expand(f"{PHYLO_DIR}/{{sample}}/QUAST/report.html",    sample=SAMPLES),
+        snp_dists        = f"{SNP_DIR}/snp_dists.tsv",
+        snp_dists_gubbins = f"{SNP_DIR}/snp_dists_gubbins.tsv",
+        iqtree           = f"{IQTREE_DIR}/iqtree.treefile",
+        species          = expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt", sample=SAMPLES),
+        quast            = expand(f"{PHYLO_DIR}/{{sample}}/QUAST/report.html",    sample=SAMPLES),
     output:
         f"{PHYLO_DIR}/phylo_report.html",
     log:
@@ -312,5 +331,6 @@ rule phylo_report:
         " --samples {params.samples}"
         " --template {params.template}"
         " --ref {params.ref}"
+        " --snp-dists-gubbins {input.snp_dists_gubbins}"
         " --output {output}"
         " 2>&1 | tee {log}"

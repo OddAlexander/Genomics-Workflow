@@ -135,9 +135,17 @@ document.getElementById('root').innerHTML = `
 </div>
 
 <div class="card">
-  <h2>SNP-distansematrise</h2>
+  <h2>SNP-distansematrise (rå kjernegenom)</h2>
   <div class="snp-wrap">
     ${renderSNPMatrix(D.snp_dists)}
+  </div>
+</div>
+
+<div class="card">
+  <h2>SNP-distansematrise (Gubbins-filtrert)</h2>
+  <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Rekombinante regioner er maskert. Disse SNP-avstandene er mer representative for vertikal evolusjon.</p>
+  <div class="snp-wrap">
+    ${renderSNPMatrix(D.snp_dists_gubbins)}
   </div>
 </div>
 
