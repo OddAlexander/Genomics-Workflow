@@ -231,8 +231,16 @@ rule gubbins:
         prefix = f"{GUBBINS_DIR}/gubbins",
     threads: THREADS
     shell:
-        "pixi run --environment gubbins run_gubbins.py --threads {threads} --prefix {params.prefix} --tree-builder hybrid {input.aln} 2>&1 | tee {log}; "
-        "find . -maxdepth 1 -type d -name 'tmp????????' -exec rm -rf {{}} +"
+        """
+        n=$(grep -c '^>' {input.aln}) || n=0
+        if [ "$n" -lt 4 ]; then
+            echo "Fewer than 4 taxa ($n) — Gubbins skipped" | tee {log}
+            touch {output.fasta} {output.tree}
+        else
+            pixi run --environment gubbins run_gubbins.py --threads {threads} --prefix {params.prefix} --tree-builder hybrid {input.aln} 2>&1 | tee {log}
+            find . -maxdepth 1 -type d -name 'tmp????????' -exec rm -rf {{}} +
+        fi
+        """
 
 
 rule snp_dists:
@@ -258,7 +266,7 @@ rule iqtree:
     threads: THREADS
     shell:
         """
-        n=$(grep -c '^>' {input.aln} || echo 0)
+        n=$(grep -c '^>' {input.aln}) || n=0
         if [ "$n" -lt 3 ]; then
             echo "Fewer than 3 taxa ($n) — IQtree skipped" | tee {log}
             touch {output.tree}
