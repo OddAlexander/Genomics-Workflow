@@ -1,17 +1,17 @@
-# Bakteriell genomikk-pipeline
+# Bacterial Genomics Pipeline
 
-Snakemake-pipeline for helgenomsekvensering av kliniske bakterieisolater — trimming, assembly, artsidentifikasjon, resistens, typing og SNP-fylogeni.
-
----
-
-## Krav
-
-- Linux (testet på Ubuntu/Fedora)
-- [Pixi](https://pixi.sh) installert (`curl -fsSL https://pixi.sh/install.sh | bash`)
+Snakemake pipeline for whole-genome sequencing of clinical bacterial isolates — trimming, assembly, species identification, resistance, typing, and SNP phylogenomics.
 
 ---
 
-## Installasjon
+## Requirements
+
+- Linux (tested on Ubuntu/Fedora)
+- [Pixi](https://pixi.sh) installed (`curl -fsSL https://pixi.sh/install.sh | bash`)
+
+---
+
+## Installation
 
 ```bash
 git clone https://github.com/OddAlexander/Genomics-Workflow.git ~/genomics
@@ -19,21 +19,21 @@ cd ~/genomics
 pixi install
 ```
 
-### Databaser
+### Databases
 
 **GAMBIT**
 ```bash
 pixi run --environment identification gambit-db-genomes download -d /databases/gambit_db/
 ```
 
-**Kraken2** — anbefalt: PlusPF 8 GB (~8 GB, krever ≥16 GB RAM):
+**Kraken2** — recommended: PlusPF 8 GB (~8 GB, requires ≥16 GB RAM):
 ```bash
 mkdir -p /databases/kraken2_db_light
 wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_8gb_20240904.tar.gz -P /databases/kraken2_db_light/
 tar -xzf /databases/kraken2_db_light/k2_pluspf_8gb_20240904.tar.gz -C /databases/kraken2_db_light/
 ```
 
-**skani** (~3 GB ferdig skisse, ~25 GB midlertidig under bygging):
+**skani** (~3 GB sketch, ~25 GB temporary during build):
 ```bash
 sudo mkdir -p /databases/fastani_db /databases/skani_db && sudo chown $USER /databases/fastani_db /databases/skani_db
 pixi run --environment identification datasets download genome taxon bacteria \
@@ -52,9 +52,9 @@ rm -rf /databases/fastani_db/ncbi_dataset /databases/fastani_db/bacteria_refs.zi
 
 ---
 
-## Bruk
+## Usage
 
-### Inputformat
+### Input format
 
 ```
 data/
@@ -67,73 +67,80 @@ data/
         └── 002k_R2.fastq.gz
 ```
 
-Filnavn kan være hva som helst, men må slutte på `_R1.fastq.gz` / `_R2.fastq.gz`.
+Filenames can be anything, but must end with `_R1.fastq.gz` / `_R2.fastq.gz`.
 
-### Hovedpipeline (`Snakefile`)
+### Main pipeline (`Snakefile`)
 
 ```bash
-# Tørrkjøring
+# Dry run
 pixi run snakemake -n --cores 16
 
-# Én prøve / én dato / flere prøver / alle
+# One sample / one date / multiple samples / all
 pixi run snakemake --cores 16 --resources mem_mb=60000 --config samples=001k
 pixi run snakemake --cores 16 --resources mem_mb=60000 --config samples=19-03-2026
 pixi run snakemake --cores 16 --resources mem_mb=60000 --config "samples=[001k,002k]"
 pixi run snakemake --cores 16 --resources mem_mb=60000
 
-# Én spesifikk fil
+# One specific file
 pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
 ```
 
-> **`mem_mb`** bør settes til total RAM minus ~4 GB (f.eks. `12000` på 16 GB maskin). Kraken2, Shovill og skani reserverer henholdsvis 12, 12 og 4 GB.
+> **`mem_mb`** should be set to total RAM minus ~4 GB (e.g. `12000` on a 16 GB machine). Kraken2, Shovill, and skani reserve 12, 12, and 4 GB respectively.
 
-### Slektskapsanalyse (`Snakefile_phylo`)
+### Phylogenomics pipeline (`Snakefile_phylo`)
 
-Kjøres uavhengig av hovedpipelinen — tar råreads direkte som input.
+Runs independently of the main pipeline — takes raw reads directly as input.
 
 ```bash
-# Med ekstern referanse (.gbk fra Prokka — anbefalt)
+# With an external reference (.gbk from Prokka — recommended)
 pixi run snakemake -s Snakefile_phylo --cores 16 \
     --config ref=/databases/prokka_refs/19-03-2026_005a/19-03-2026_005a.gbk
 
-# Uten referanse — første sample prokka-annoteres automatisk
+# Without reference — first sample is auto-annotated with Prokka
 pixi run snakemake -s Snakefile_phylo --cores 16
 
-# Filtrer på dato eller prøve-ID
+# Filter by date or sample ID
 pixi run snakemake -s Snakefile_phylo --cores 16 \
     --config ref=... samples=19-03-2026
 pixi run snakemake -s Snakefile_phylo --cores 16 \
     --config ref=... "samples=[19-03-2026/005a,19-03-2026/007b]"
 
-# Egendefinert mappenavn (standard: dato+klokkeslett)
+# Custom run name (default: date+time)
 pixi run snakemake -s Snakefile_phylo --cores 16 \
-    --config ref=... run_name=salmonella_utbrudd
+    --config ref=... run_name=salmonella_outbreak
+
+# SNP threshold for outbreak cluster coloring in the report
+pixi run snakemake -s Snakefile_phylo --cores 16 \
+    --config ref=... snp_threshold=20
 ```
 
-Output lagres i `results_phylo/<run_name>/` (standard: `DD-MM-YYYY_HHMM`):
+Output is written to `results_phylo/<run_name>/` (default: `DD-MM-YYYY_HHMM`):
 
 ```
 results_phylo/07-05-2026_1621/
-├── <dato>/<prøve-id>/
+├── <date>/<sample-id>/
 │   ├── Trimmed/      fastp
 │   ├── QC/           FastQC + fastp JSON + HTML
 │   ├── Assembly/     Shovill
 │   ├── QUAST/
-│   ├── ID_Skani/     artsidentifikasjon (species.txt)
-│   ├── Prokka/       kun ved auto-referanse (første sample)
+│   ├── ID_Skani/     species identification (species.txt)
+│   ├── Prokka/       only for auto-reference (first sample)
 │   └── MultiQC/
 ├── Snippy/
-│   └── <prøve-id>/   snippy SNP-kalling mot referanse
-├── Core/             snippy-core — core.aln, core.full.aln
-├── Gubbins/          rekombinasjonsfiltert alignment + tre
-├── SNP_Dists/        snp_dists.tsv
-├── IQtree/           iqtree.treefile  (GTR+G, UFBoot 1000)
-├── RAxML/            raxml.raxml.bestTree  (GTR+G, 100 bootstrap)
-├── MultiQC_run/      multiqc_report.html  (samlet QC for hele kjøringen)
-└── phylo_report.html prøveoversikt, SNP-matrise og fylogenetisk tre
+│   └── <sample-id>/  snippy SNP calling against reference
+├── Core/             snippy-core — core.full.aln
+├── Gubbins/          recombination-filtered alignment + tree (hybrid: FastTree/RAxML)
+│                     gubbins.recombination_predictions.gff
+├── SNP_Dists/        snp_dists.tsv (raw core genome) + snp_dists_gubbins.tsv
+├── IQtree/           iqtree.treefile (GTR+G, UFBoot 1000; skipped if < 3 taxa)
+├── MultiQC_run/      multiqc_report.html (aggregated QC for the full run)
+└── phylo_report.html sample overview, reference, SNP matrices, recombination summary,
+                      tree download, and tool versions
 ```
 
-#### Lage egne referanser
+The phylo report SNP matrices support threshold-based cluster coloring when `snp_threshold` is set: cells ≤ threshold are shaded green (same cluster), cells > threshold are shaded red (different cluster).
+
+#### Creating custom references
 
 ```bash
 scripts/pixi/pixi_annotate_prokka.sh 19-03-2026
@@ -142,9 +149,9 @@ scripts/pixi/pixi_annotate_prokka.sh 19-03-2026/005a --genus Staphylococcus --sp
 
 ---
 
-## Pipeline-flyt
+## Pipeline overview
 
-### Hovedpipeline
+### Main pipeline
 
 ```
 FASTQ
@@ -156,65 +163,65 @@ fastp → FastQC
   ▼
 Shovill → QUAST
   │
-  ├── GAMBIT → species.txt  ← sjekkpunkt (styrer DAG-routing)
-  ├── skani  (kun ved usikker GAMBIT-match)
+  ├── GAMBIT → species.txt  ← checkpoint (controls DAG routing)
+  ├── skani  (only on uncertain GAMBIT match)
   ├── MLST
   ├── AMRFinder
   ├── MOB-suite
   ├── MEfinder
-  ├── [S. aureus]         → StaphScope
-  ├── [Klebsiella/E.coli] → Kleborate
-  ├── [S. pyogenes]       → emmtyper
-  ├── [P. aeruginosa]     → Pasty
-  ├── [Salmonella]        → SeqSero2
-  └── [H. influenzae]     → hicap
+  ├── [S. aureus]          → StaphScope
+  ├── [Klebsiella/E. coli] → Kleborate
+  ├── [S. pyogenes]        → emmtyper
+  ├── [P. aeruginosa]      → Pasty
+  ├── [Salmonella]         → SeqSero2
+  └── [H. influenzae]      → hicap
   │
   ▼
-MultiQC → HTML-rapport
+MultiQC → HTML report
 ```
 
-### Slektskapsanalyse
+### Phylogenomics pipeline
 
 ```
-FASTQ (råreads)
+FASTQ (raw reads)
   │
   ▼
 fastp → FastQC → Shovill → QUAST → skani
   │                │
-  │                └── Prokka  (kun ved auto-ref)
+  │                └── Prokka  (auto-reference only)
   ▼
-Snippy (per prøve, mot referanse)
+Snippy (per sample, against reference)
   │
   ▼
 snippy-core → core.full.aln
+  │                │
+  │                └── snp-dists  → SNP distance matrix (raw)
+  ▼
+Gubbins (recombination removal, hybrid tree builder)
+  │                │
+  │                └── snp-dists  → SNP distance matrix (filtered)
+  └── IQ-TREE2  → ML tree  (skipped if < 3 taxa)
   │
   ▼
-Gubbins (rekombinasjonsfjerning)
-  │
-  ├── snp-dists  → SNP-avstandsmatrise
-  ├── IQ-TREE2   → ML-tre
-  └── RAxML-NG   → ML-tre (alternativt)
-  │
-  ▼
-MultiQC + HTML-rapport (phylo_report.html)
+MultiQC + HTML report (phylo_report.html)
 ```
 
 ---
 
-## Artsspesifikk typing
+## Species-specific typing
 
-| Art | Verktøy | Output |
-|-----|---------|--------|
-| *S. aureus* | StaphScope | spa-type, SCCmec, MRSA/MSSA, virulens, lineage |
-| *Klebsiella* spp. + *E. coli* | Kleborate v3 | K/O-type, ESBL, karbapenemase, virulens |
-| *S. pyogenes* | emmtyper | emm-type |
+| Species | Tool | Output |
+|---------|------|--------|
+| *S. aureus* | StaphScope | spa type, SCCmec, MRSA/MSSA, virulence, lineage |
+| *Klebsiella* spp. + *E. coli* | Kleborate v3 | K/O type, ESBL, carbapenemase, virulence |
+| *S. pyogenes* | emmtyper | emm type |
 | *P. aeruginosa* | Pasty | O-antigen serotype |
-| *Salmonella* spp. | SeqSero2 | O- og H-antigen serotyping |
-| *H. influenzae* | hicap | Kapseltype (a–f / ikke-typbar) |
-| Alle | MEfinder | Insersjonssekvenser og transposoner |
-| Alle | MOB-suite | Plasmidtyping (relaxase, konjugasjon) |
+| *Salmonella* spp. | SeqSero2 | O and H antigen serotyping |
+| *H. influenzae* | hicap | Capsule type (a–f / non-typeable) |
+| All | MEfinder | Insertion sequences and transposons |
+| All | MOB-suite | Plasmid typing (relaxase, conjugation) |
 
-ECTyper (E. coli O:H-serotyping) krever en MASH-skisse fra Zenodo:
+ECTyper (*E. coli* O:H serotyping) requires a MASH sketch from Zenodo:
 
 ```bash
 mkdir -p databases/ectyper
@@ -224,64 +231,73 @@ wget -O databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh \
 
 ---
 
-## Konfigurasjon (`config.yaml`)
+## Configuration (`config.yaml`)
 
-| Parameter | Standard | Beskrivelse |
-|-----------|----------|-------------|
-| `data_dir` | `data/` | Mappe med FASTQ-filer |
-| `results_dir` | `results/` | Utdatamappe |
-| `threads` | `8` | Tråder per regel |
-| `kraken2_db` | `/databases/kraken2_db_light/` | Kraken2-database |
-| `kraken2_mem_mb` | `12000` | MB RAM per Kraken2-jobb |
-| `gambit_db` | `/databases/gambit_db/` | GAMBIT-database |
-| `skani_db` | `/databases/skani_db/bacteria` | skani-skissebase |
-| `skani_threshold` | `0.3` | GAMBIT `closest.distance` over denne utløser skani |
-| `skani_mem_mb` | `4000` | MB RAM per skani-jobb |
-| `skani_threads` | `8` | Tråder per skani-jobb |
-| `shovill_mem_mb` | `12000` | MB RAM per Shovill-jobb |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `data_dir` | `data/` | Directory containing FASTQ files |
+| `results_dir` | `results/` | Output directory |
+| `threads` | `8` | Threads per rule |
+| `kraken2_db` | `/databases/kraken2_db_light/` | Kraken2 database |
+| `kraken2_mem_mb` | `12000` | MB RAM per Kraken2 job |
+| `gambit_db` | `/databases/gambit_db/` | GAMBIT database |
+| `skani_db` | `/databases/skani_db/bacteria` | skani sketch database |
+| `skani_threshold` | `0.3` | GAMBIT `closest.distance` above this triggers skani |
+| `skani_mem_mb` | `4000` | MB RAM per skani job |
+| `skani_threads` | `8` | Threads per skani job |
+| `shovill_mem_mb` | `12000` | MB RAM per Shovill job |
+
+**Phylogenomics-only options** (passed via `--config`):
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `ref` | *(first sample)* | Path to reference `.gbk` (Prokka-annotated) |
+| `run_name` | `DD-MM-YYYY_HHMM` | Output subdirectory name under `results_phylo/` |
+| `snp_threshold` | `0` (disabled) | SNP cutoff for cluster coloring in the report |
+| `mincov` | `10` | Snippy minimum read coverage |
+| `minfrac` | `0.9` | Snippy minimum allele frequency |
 
 ---
 
-## Feilsøking
+## Troubleshooting
 
 ```bash
-# Se logg
+# View log
 cat results/26-03-2026/001k/logs/amrfinder.log
 
-# Tving omkjøring av én regel
+# Force rerun of one rule
 pixi run snakemake --cores 16 --forcerun amrfinder
 
-# Gjenoppta avbrutt kjøring
+# Resume an interrupted run
 pixi run snakemake --cores 16 --resources mem_mb=60000 --rerun-incomplete
 ```
 
 ---
 
-## Verktøy
+## Tools
 
-| Verktøy | Versjon | Formål |
-|---------|---------|--------|
-| fastp | ≥0.23 | Trimming |
-| FastQC + MultiQC | ≥0.12 | Sekvenskvalitet |
+| Tool | Version | Purpose |
+|------|---------|---------|
+| fastp | ≥0.23 | Read trimming |
+| FastQC + MultiQC | ≥0.12 | Sequence quality |
 | Shovill | ≥1.1 | Assembly (SPAdes) |
-| QUAST | ≥5.2 | Assemblystatistikk |
-| Kraken2 + Bracken | ≥2.1 | Artsidentifikasjon (reads) |
-| GAMBIT | ≥0.5 | Artsidentifikasjon (assembly) — styrer DAG |
-| skani | ≥0.2 | ANI-basert artsidentifikasjon ved usikker GAMBIT-match |
-| MLST | ≥2.23 | Sekvenstyping (PubMLST) |
-| AMRFinder | v4.x | Resistens- og virulensgener |
-| MOB-suite | ≥3.1 | Plasmidtyping |
-| MobileElementFinder | ≥1.0 | MGE-deteksjon |
-| StaphScope | ≥1.0 | *S. aureus*: spa, SCCmec, MRSA, virulens, lineage |
-| emmtyper | ≥0.2 | *S. pyogenes* emm-typing |
+| QUAST | ≥5.2 | Assembly statistics |
+| Kraken2 + Bracken | ≥2.1 | Species identification (reads) |
+| GAMBIT | ≥0.5 | Species identification (assembly) — controls DAG routing |
+| skani | ≥0.2 | ANI-based species ID when GAMBIT match is uncertain |
+| MLST | ≥2.23 | Sequence typing (PubMLST) |
+| AMRFinder | v4.x | Resistance and virulence genes |
+| MOB-suite | ≥3.1 | Plasmid typing |
+| MobileElementFinder | ≥1.0 | MGE detection |
+| StaphScope | ≥1.0 | *S. aureus*: spa, SCCmec, MRSA, virulence, lineage |
+| emmtyper | ≥0.2 | *S. pyogenes* emm typing |
 | Kleborate | ≥3.0 | *Klebsiella* / *E. coli* typing |
 | Pasty | ≥2.2 | *P. aeruginosa* O-antigen |
 | SeqSero2 | ≥1.3 | *Salmonella* serotyping |
-| hicap | ≥1.0 | *H. influenzae* kapseltype |
-| Snippy + snippy-core | ≥4.6 | SNP-kalling og core-alignment |
-| Gubbins | ≥3.3 | Rekombinasjonsfjerning |
-| IQ-TREE2 | ≥2.2 | ML-fylogenetisk tre |
-| RAxML-NG | ≥1.2 | ML-fylogenetisk tre (alternativt) |
-| snp-dists | ≥0.8 | Parvise SNP-avstander |
-| Prokka | ≥1.14 | Annotasjon for egne referansegenomer |
-| chewBBACA | ≥3.3 | cgMLST allelkalling |
+| hicap | ≥1.0 | *H. influenzae* capsule type |
+| Snippy + snippy-core | ≥4.6 | SNP calling and core alignment |
+| Gubbins | ≥3.3 | Recombination removal |
+| IQ-TREE2 | ≥2.2 | ML phylogenetic tree |
+| snp-dists | ≥0.8 | Pairwise SNP distances |
+| Prokka | ≥1.14 | Annotation for custom reference genomes |
+| chewBBACA | ≥3.3 | cgMLST allele calling |

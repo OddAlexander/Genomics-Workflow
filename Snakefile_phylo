@@ -23,13 +23,16 @@ DATA_DIR     = config.get("data_dir",     "data/").rstrip("/")
 _phylo_base  = config.get("phylo_dir",  "results_phylo").rstrip("/")
 _run_name    = config.get("run_name",   datetime.now().strftime('%d-%m-%Y_%H%M'))
 PHYLO_DIR    = f"{_phylo_base}/{_run_name}"
-THREADS      = config.get("threads", 8)
-SHOVILL_MEM  = config.get("shovill_mem_mb", 12000)
-SKANI_DB     = config.get("skani_db",     "/databases/skani_db/bacteria")
+THREADS       = config.get("threads", 8)
+SHOVILL_MEM   = config.get("shovill_mem_mb", 12000)
+SKANI_DB      = config.get("skani_db",     "/databases/skani_db/bacteria")
 SKANI_THREADS = config.get("skani_threads", 8)
+SNIPPY_MINCOV = config.get("mincov",  10)
+SNIPPY_MINFRAC = config.get("minfrac", 0.9)
 CORE_DIR     = f"{PHYLO_DIR}/Core"
 GUBBINS_DIR  = f"{PHYLO_DIR}/Gubbins"
-SNP_DIR      = f"{PHYLO_DIR}/SNP_Dists"
+SNP_DIR       = f"{PHYLO_DIR}/SNP_Dists"
+SNP_THRESHOLD = int(config.get("snp_threshold", 0))
 IQTREE_DIR   = f"{PHYLO_DIR}/IQtree"
 
 # --- Sample Deteksjon ---
@@ -198,10 +201,12 @@ rule snippy:
     log:
         f"{PHYLO_DIR}/{{sample}}/logs/snippy.log"
     params:
-        outdir = lambda wc: f"{PHYLO_DIR}/Snippy/{wc.sample}",
+        outdir  = lambda wc: f"{PHYLO_DIR}/Snippy/{wc.sample}",
+        mincov  = SNIPPY_MINCOV,
+        minfrac = SNIPPY_MINFRAC,
     threads: THREADS
     shell:
-        "pixi run snippy --cpus {threads} --outdir {params.outdir} --ref {input.ref} --R1 {input.r1} --R2 {input.r2} --force 2>&1 | tee {log}"
+        "pixi run snippy --cpus {threads} --outdir {params.outdir} --ref {input.ref} --R1 {input.r1} --R2 {input.r2} --mincov {params.mincov} --minfrac {params.minfrac} --force 2>&1 | tee {log}"
 
 
 rule snippy_core:
@@ -210,6 +215,8 @@ rule snippy_core:
         ref  = REFERENCE,
     output:
         full_aln = f"{CORE_DIR}/core.full.aln",
+        core_txt = f"{CORE_DIR}/core.txt",
+        core_tab = f"{CORE_DIR}/core.tab",
     log:
         f"{PHYLO_DIR}/logs/snippy_core.log"
     params:
@@ -226,6 +233,7 @@ rule gubbins:
     output:
         fasta = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
         tree  = f"{GUBBINS_DIR}/gubbins.node_labelled.final_tree.tre",
+        gff   = f"{GUBBINS_DIR}/gubbins.recombination_predictions.gff",
     log:
         f"{PHYLO_DIR}/logs/gubbins.log"
     params:
@@ -236,7 +244,7 @@ rule gubbins:
         n=$(grep -c '^>' {input.aln}) || n=0
         if [ "$n" -lt 4 ]; then
             echo "Fewer than 4 taxa ($n) — Gubbins skipped" | tee {log}
-            touch {output.fasta} {output.tree}
+            touch {output.fasta} {output.tree} {output.gff}
         else
             pixi run --environment gubbins run_gubbins.py --threads {threads} --prefix {params.prefix} --tree-builder hybrid {input.aln} 2>&1 | tee {log}
             find . -maxdepth 1 -type d -name 'tmp????????' -exec rm -rf {{}} +
@@ -311,26 +319,40 @@ rule multiqc_run:
 
 rule phylo_report:
     input:
-        snp_dists        = f"{SNP_DIR}/snp_dists.tsv",
+        snp_dists         = f"{SNP_DIR}/snp_dists.tsv",
         snp_dists_gubbins = f"{SNP_DIR}/snp_dists_gubbins.tsv",
-        iqtree           = f"{IQTREE_DIR}/iqtree.treefile",
-        species          = expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt", sample=SAMPLES),
-        quast            = expand(f"{PHYLO_DIR}/{{sample}}/QUAST/report.html",    sample=SAMPLES),
+        iqtree            = f"{IQTREE_DIR}/iqtree.treefile",
+        core_txt          = f"{CORE_DIR}/core.txt",
+        core_tab          = f"{CORE_DIR}/core.tab",
+        gubbins_fasta     = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
+        gubbins_gff       = f"{GUBBINS_DIR}/gubbins.recombination_predictions.gff",
+        species           = expand(f"{PHYLO_DIR}/{{sample}}/ID_Skani/species.txt", sample=SAMPLES),
+        quast             = expand(f"{PHYLO_DIR}/{{sample}}/QUAST/report.html",    sample=SAMPLES),
     output:
         f"{PHYLO_DIR}/phylo_report.html",
     log:
         f"{PHYLO_DIR}/logs/phylo_report.log"
     params:
-        phylo_dir = PHYLO_DIR,
-        samples   = ",".join(SAMPLES),
-        template  = "report_template_phylo.html",
-        ref       = REFERENCE,
+        phylo_dir     = PHYLO_DIR,
+        samples       = ",".join(SAMPLES),
+        template      = "report_template_phylo.html",
+        ref           = REFERENCE,
+        mincov        = SNIPPY_MINCOV,
+        minfrac       = SNIPPY_MINFRAC,
+        snp_threshold = SNP_THRESHOLD,
     shell:
         "python scripts/make_phylo_report.py"
         " --phylo-dir {params.phylo_dir}"
         " --samples {params.samples}"
         " --template {params.template}"
         " --ref {params.ref}"
+        " --mincov {params.mincov}"
+        " --minfrac {params.minfrac}"
+        " --snp-threshold {params.snp_threshold}"
         " --snp-dists-gubbins {input.snp_dists_gubbins}"
+        " --core-txt {input.core_txt}"
+        " --core-tab {input.core_tab}"
+        " --gubbins-fasta {input.gubbins_fasta}"
+        " --gubbins-gff {input.gubbins_gff}"
         " --output {output}"
         " 2>&1 | tee {log}"

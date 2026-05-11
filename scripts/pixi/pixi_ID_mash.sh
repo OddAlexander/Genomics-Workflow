@@ -69,7 +69,7 @@ MASH_MIN_IDENTITY="${MASH_MIN_IDENTITY:-0.90}"
 TRIM_DIR="$SAMPLE_DIR/Trimmed"
 [[ -d "$TRIM_DIR" ]] || die "Trimmed directory not found: $TRIM_DIR"
 
-R1_FILE=$(find "$TRIM_DIR" -maxdepth 1 -name "*_R1*.fastq.gz" | sort | head -1)
+R1_FILE=$(find "$TRIM_DIR" -maxdepth 1 -name "*R1.fastq.gz" | sort | head -1)
 [[ -n "$R1_FILE" ]] || die "No R1 fastq.gz found in $TRIM_DIR"
 [[ -f "$R1_FILE" ]]  || die "R1 file not found: $R1_FILE"
 

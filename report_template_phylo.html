@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="no">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fylogeni-rapport</title>
+<title>Phylogenomics Report</title>
 <style>
   :root {
     --blue:   #1a3a5c;
@@ -49,41 +49,65 @@
 </style>
 </head>
 <body>
-<h1>Fylogeni-rapport</h1>
+<h1>Phylogenomics Report</h1>
 <div id="root"></div>
 
 <script>
 const D = __PHYLO_JSON_DATA__;
 
 // ── SNP matrix renderer ────────────────────────────────────────────────────
-function renderSNPMatrix(data) {
+function renderSNPMatrix(data, threshold) {
   const { samples, matrix } = data;
-  if (!samples.length) return '<p style="color:var(--muted)">Ingen SNP-distansematrise tilgjengelig.</p>';
+  if (!samples.length) return '<p style="color:var(--muted)">No SNP distance matrix available.</p>';
 
   const vals  = matrix.flat().filter(v => v > 0);
   const maxV  = vals.length ? Math.max(...vals) : 1;
   const short = samples.map(s => s.split('/').pop());
 
-  function bg(v) {
+  function cellBg(v) {
     if (v === 0) return '#f8fafc';
+    if (threshold != null) {
+      if (v <= threshold) {
+        const t = v / threshold;
+        return `rgb(${Math.round(255 - t*215)},${Math.round(255 - t*88)},${Math.round(255 - t*186)})`;
+      } else {
+        const t = Math.min((v - threshold) / (maxV - threshold || 1), 1);
+        return `rgb(${Math.round(255 - t*75)},${Math.round(200 - t*170)},${Math.round(200 - t*170)})`;
+      }
+    }
     const t = v / maxV;
-    const r = Math.round(255 - t * 35);
-    const g = Math.round(255 - t * 185);
-    const b = Math.round(255 - t * 185);
-    return `rgb(${r},${g},${b})`;
+    return `rgb(${Math.round(255 - t*35)},${Math.round(255 - t*185)},${Math.round(255 - t*185)})`;
   }
-  function fg(v) {
+  function luma(r,g,b) { return 0.299*r + 0.587*g + 0.114*b; }
+  function cellFg(v) {
+    if (v === 0) return '#1a1a2e';
+    if (threshold != null) {
+      if (v <= threshold) {
+        const t = v / threshold;
+        return luma(255-t*215, 255-t*88, 255-t*186) < 140 ? '#fff' : '#1a1a2e';
+      } else {
+        const t = Math.min((v - threshold) / (maxV - threshold || 1), 1);
+        return luma(255-t*75, 200-t*170, 200-t*170) < 140 ? '#fff' : '#1a1a2e';
+      }
+    }
     return v / maxV > 0.6 ? '#fff' : '#1a1a2e';
   }
 
-  let html = '<table class="snp-matrix"><thead><tr><th></th>';
+  let html = '';
+  if (threshold != null) {
+    html += `<p style="font-size:0.82rem;margin-bottom:8px">
+      <span style="display:inline-block;width:12px;height:12px;background:#28a745;border-radius:2px;vertical-align:middle;margin-right:5px"></span>≤${threshold} SNPs (same cluster)
+      &ensp;<span style="display:inline-block;width:12px;height:12px;background:#dc3545;border-radius:2px;vertical-align:middle;margin-right:5px"></span>&gt;${threshold} SNPs (different cluster)
+    </p>`;
+  }
+  html += '<table class="snp-matrix"><thead><tr><th></th>';
   for (const n of short) html += `<th>${n}</th>`;
   html += '</tr></thead><tbody>';
   for (let i = 0; i < matrix.length; i++) {
     html += `<tr><th style="text-align:left">${short[i]}</th>`;
     for (let j = 0; j < matrix[i].length; j++) {
       const v = matrix[i][j];
-      html += `<td style="background:${bg(v)};color:${fg(v)}">${v}</td>`;
+      html += `<td style="background:${cellBg(v)};color:${cellFg(v)}">${v}</td>`;
     }
     html += '</tr>';
   }
@@ -92,35 +116,66 @@ function renderSNPMatrix(data) {
 }
 
 // ── Page render ────────────────────────────────────────────────────────────
-function fmt(n) { return n ? n.toLocaleString('no-NO') : '-'; }
+function fmt(n) { return n ? n.toLocaleString('en-GB') : '-'; }
 
 const refLabel = D.reference || '-';
 
 document.getElementById('root').innerHTML = `
 <div class="meta">
-  <span><strong>Dato:</strong> ${D.run_date}</span>
-  <span><strong>Referanse:</strong> ${refLabel}</span>
-  <span><strong>Prøver:</strong> ${D.n_samples}</span>
+  <span><strong>Date:</strong> ${D.run_date}</span>
+  <span><strong>Reference:</strong> ${refLabel}</span>
+  <span><strong>Samples:</strong> ${D.n_samples}</span>
 </div>
 
 <div class="card">
-  <h2>Referanse</h2>
+  <h2>Reference</h2>
   <table>
-    <thead><tr><th>Parameter</th><th>Verdi</th></tr></thead>
+    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
     <tbody>
-      <tr><td>Navn</td><td><strong>${D.reference}</strong></td></tr>
-      <tr><td>Kilde</td><td>${D.ref_auto ? 'Auto-generert (Prokka på første prøve)' : 'Ekstern'}</td></tr>
-      <tr><td>Sti</td><td style="font-family:monospace;font-size:0.82rem">${D.ref_path}</td></tr>
+      <tr><td>Name</td><td><strong>${D.reference}</strong></td></tr>
+      <tr><td>Source</td><td>${D.ref_auto ? 'Auto-generated (Prokka on first sample)' : 'External'}</td></tr>
+      <tr><td>Path</td><td style="font-family:monospace;font-size:0.82rem">${D.ref_path}</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="card">
-  <h2>Prøveoversikt</h2>
+  <h2>Snippy settings</h2>
+  <table>
+    <thead><tr><th>Parameter</th><th>Value</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>--mincov</code></td><td><strong>${D.snippy_mincov}</strong></td><td>Minimum read coverage for calling a variant</td></tr>
+      <tr><td><code>--minfrac</code></td><td><strong>${D.snippy_minfrac}</strong></td><td>Minimum allele frequency for calling a variant</td></tr>
+      ${D.core_snp_count != null ? `<tr><td>Core SNPs (core.tab)</td><td><strong>${D.core_snp_count.toLocaleString('en-GB')}</strong></td><td>Variant positions in core alignment (all samples)</td></tr>` : ''}
+      ${D.gubbins_snp_count != null ? `<tr><td>SNPs after Gubbins</td><td><strong>${D.gubbins_snp_count.toLocaleString('en-GB')}</strong></td><td>Polymorphic positions after masking recombination</td></tr>` : ''}
+    </tbody>
+  </table>
+  ${D.core_coverage && D.core_coverage.length ? `
+  <h3 style="margin-top:1.2rem;font-size:0.95rem">Per-sample core statistics (snippy-core)</h3>
   <table>
     <thead><tr>
-      <th>Prøve-ID</th><th>Art (skani)</th>
-      <th>Contigs</th><th>N50</th><th>Total lengde (bp)</th>
+      <th>Sample ID</th><th>Ref. length</th><th>Aligned</th><th>Unaligned</th><th>Variants</th><th>Het</th><th>Low coverage</th>
+    </tr></thead>
+    <tbody>
+      ${D.core_coverage.map(r => `<tr>
+        <td style="font-family:monospace">${r.id}</td>
+        <td>${fmt(r.length)}</td>
+        <td>${fmt(r.aligned)}</td>
+        <td>${fmt(r.unaligned)}</td>
+        <td><strong>${fmt(r.variant)}</strong></td>
+        <td>${fmt(r.het)}</td>
+        <td>${fmt(r.lowcov)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>` : ''}
+</div>
+
+<div class="card">
+  <h2>Sample overview</h2>
+  <table>
+    <thead><tr>
+      <th>Sample ID</th><th>Species (Skani)</th>
+      <th>Contigs</th><th>N50</th><th>Total length (bp)</th>
     </tr></thead>
     <tbody>
       ${D.samples.map(s => `<tr>
@@ -135,27 +190,46 @@ document.getElementById('root').innerHTML = `
 </div>
 
 <div class="card">
-  <h2>SNP-distansematrise (rå kjernegenom)</h2>
+  <h2>SNP distance matrix (raw core genome)</h2>
   <div class="snp-wrap">
-    ${renderSNPMatrix(D.snp_dists)}
+    ${renderSNPMatrix(D.snp_dists, D.snp_threshold)}
   </div>
 </div>
 
 <div class="card">
-  <h2>SNP-distansematrise (Gubbins-filtrert)</h2>
-  <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Rekombinante regioner er maskert. Disse SNP-avstandene er mer representative for vertikal evolusjon.</p>
+  <h2>SNP distance matrix (Gubbins-filtered)</h2>
+  <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Recombinant regions have been masked. These SNP distances are more representative of vertical evolution.</p>
+  ${D.gubbins_recomb != null ? `
+  <div style="font-size:0.85rem;margin-bottom:12px;padding:8px 12px;background:#f8fafc;border-radius:6px;border:1px solid var(--border)">
+    <strong>Gubbins recombination:</strong>
+    ${D.gubbins_recomb.regions} regions masked,
+    total <strong>${fmt(D.gubbins_recomb.bases_masked)}</strong> bp
+    ${D.core_snp_count && D.gubbins_snp_count != null
+      ? ` — SNP positions reduced from <strong>${D.core_snp_count.toLocaleString('en-GB')}</strong> to <strong>${D.gubbins_snp_count.toLocaleString('en-GB')}</strong>`
+      : ''}
+  </div>` : ''}
   <div class="snp-wrap">
-    ${renderSNPMatrix(D.snp_dists_gubbins)}
+    ${renderSNPMatrix(D.snp_dists_gubbins, D.snp_threshold)}
   </div>
 </div>
 
 <div class="card">
-  <h2>Treefiler</h2>
-  <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Last opp til <a href="https://itol.embl.de/upload.cgi" target="_blank">iTOL</a>, <a href="https://microreact.org/upload" target="_blank">Microreact</a> eller åpne i FigTree.</p>
+  <h2>Tools and versions</h2>
+  <table>
+    <thead><tr><th>Tool</th><th>Version</th></tr></thead>
+    <tbody>
+      ${Object.entries(D.tool_versions).map(([k,v]) => `<tr><td>${k}</td><td style="font-family:monospace">${v}</td></tr>`).join('')}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Tree files</h2>
+  <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Upload to <a href="https://itol.embl.de/upload.cgi" target="_blank">iTOL</a>, <a href="https://microreact.org/upload" target="_blank">Microreact</a>, or open in FigTree.</p>
   ${D.iqtree ? `<div class="tree-row">
-    <span class="tree-label">IQtree</span>
+    <span class="tree-label">IQ-TREE</span>
     <a class="dl-btn" download="iqtree.treefile"
-       href="data:text/plain;charset=utf-8,${encodeURIComponent(D.iqtree)}">Last ned</a>
+       href="data:text/plain;charset=utf-8,${encodeURIComponent(D.iqtree)}">Download</a>
     <span class="tree-note">GTR+G, UFBoot 1000</span>
   </div>` : ''}
 </div>
