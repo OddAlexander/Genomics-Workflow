@@ -1,0 +1,268 @@
+# Snakefile_cgmlst -- cgMLST pipeline
+#
+# Reads assemblies from results/ (main pipeline must run first) and auto-detects
+# the cgMLST schema from results/{sample}/species.txt. All samples in a single
+# run must resolve to the same schema -- filter with --config samples=... otherwise.
+#
+# Usage:
+#   pixi run snakemake -s Snakefile_cgmlst --cores 16 --config samples=19-03-2026
+#
+# Options:
+#   --config cgmlst_schema=/path        explicit schema (skips auto-detection)
+#   --config cgmlst_threshold=7         allele-distance cutoff for cluster naming
+#   --config run_name=my_run            output folder under results_cgmlst/
+#   --config samples=19-03-2026         filter by date / sample (same syntax as main pipeline)
+#   --config results_dir=results        path to main pipeline results
+
+configfile: "config.yaml"
+from pathlib import Path
+from datetime import datetime
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+RESULTS_DIR      = config.get("results_dir",        "results/").rstrip("/")
+_cgmlst_base     = config.get("cgmlst_dir",         "results_cgmlst").rstrip("/")
+_run_name        = config.get("run_name",           datetime.now().strftime('%d-%m-%Y_%H%M'))
+CGMLST_DIR       = f"{_cgmlst_base}/{_run_name}"
+THREADS          = config.get("threads",            8)
+
+# Accept either a single threshold ("7") or a comma-separated list ("5,10,24").
+# ReporTree expects single-linkage thresholds prefixed with "single-".
+_threshold_raw   = str(config.get("cgmlst_threshold", 7))
+CGMLST_THRESHOLDS = [int(t.strip()) for t in _threshold_raw.split(",") if t.strip()]
+REPORTREE_THRESHOLD_ARG = ",".join(f"single-{t}" for t in CGMLST_THRESHOLDS)
+
+# Local clone of ReporTree (not on conda/PyPI). The fetch rule clones it once.
+REPORTREE_DIR = config.get("reportree_dir", ".reportree").rstrip("/")
+
+# Default schema paths per species. Override per-species in config.yaml under
+# cgmlst_schemas:, or pass --config cgmlst_schema=/path to apply one schema to all samples.
+_DEFAULT_SCHEMAS = {
+    "Staphylococcus_aureus":        "/databases/cgmlst/staph_aureus",
+    "Staphylococcus_epidermidis":   "/databases/cgmlst/staph_epidermidis",
+    "Klebsiella_pneumoniae":        "/databases/cgmlst/kleb_pneumo",
+    "Klebsiella_variicola":         "/databases/cgmlst/kleb_pneumo",
+    "Klebsiella_quasipneumoniae":   "/databases/cgmlst/kleb_pneumo",
+    "Klebsiella_quasivariicola":    "/databases/cgmlst/kleb_pneumo",
+    "Klebsiella_oxytoca":           "/databases/cgmlst/kleb_oxytoca",
+    "Klebsiella_michiganensis":     "/databases/cgmlst/kleb_oxytoca",
+    "Escherichia_coli":             "/databases/cgmlst/ecoli",
+    "Shigella_sonnei":              "/databases/cgmlst/ecoli",
+    "Shigella_flexneri":            "/databases/cgmlst/ecoli",
+    "Pseudomonas_aeruginosa":       "/databases/cgmlst/p_aeruginosa",
+    "Enterococcus_faecium":         "/databases/cgmlst/e_faecium",
+    "Enterococcus_faecalis":        "/databases/cgmlst/e_faecalis",
+    "Clostridioides_difficile":     "/databases/cgmlst/c_difficile",
+    "Salmonella_enterica":          "/databases/cgmlst/salmonella",
+    "Streptococcus_pneumoniae":     "/databases/cgmlst/s_pneumoniae",
+    "Streptococcus_pyogenes":       "/databases/cgmlst/s_pyogenes",
+    "Acinetobacter_baumannii":      "/databases/cgmlst/a_baumannii",
+    "Haemophilus_influenzae":       "/databases/cgmlst/h_influenzae",
+    "Campylobacter_jejuni":         "/databases/cgmlst/campylobacter",
+    "Campylobacter_coli":           "/databases/cgmlst/campylobacter",
+    "Neisseria_gonorrhoeae":        "/databases/cgmlst/n_gonorrhoeae",
+    "Neisseria_meningitidis":       "/databases/cgmlst/n_meningitidis",
+    "Enterobacter_cloacae":         "/databases/cgmlst/e_cloacae",
+    "Enterobacter_hormaechei":      "/databases/cgmlst/e_cloacae",
+}
+SCHEMA_MAP = config.get("cgmlst_schemas", _DEFAULT_SCHEMAS)
+
+# ── Sample detection ──────────────────────────────────────────────────────────
+# Reads assemblies written by the main pipeline -- run that first.
+ALL_SAMPLES = glob_wildcards(f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa").sample
+assert len(set(ALL_SAMPLES)) == len(ALL_SAMPLES), \
+    f"Duplicate sample IDs: {[s for s in set(ALL_SAMPLES) if ALL_SAMPLES.count(s) > 1]}"
+
+if not ALL_SAMPLES:
+    raise ValueError(
+        f"No assembled samples found under {RESULTS_DIR}/. "
+        "Run the main pipeline first: pixi run snakemake --cores 16"
+    )
+
+_filter = config.get("samples", None)
+if _filter:
+    _filter = _filter if isinstance(_filter, list) else [_filter]
+    SAMPLES = [s for s in ALL_SAMPLES if any(f in s for f in _filter)]
+    if not SAMPLES:
+        raise ValueError(f"No samples found for filter: {_filter}")
+else:
+    SAMPLES = ALL_SAMPLES
+
+# ── Schema auto-detection ─────────────────────────────────────────────────────
+def _schema_for(sample):
+    if "cgmlst_schema" in config:
+        return config["cgmlst_schema"]
+    sp_file = Path(f"{RESULTS_DIR}/{sample}/species.txt")
+    if not sp_file.exists():
+        raise FileNotFoundError(
+            f"Species file not found: {sp_file}\n"
+            "Run the main pipeline first: pixi run snakemake --cores 16"
+        )
+    sp = sp_file.read_text().strip()
+    if sp not in SCHEMA_MAP:
+        raise ValueError(
+            f"No cgMLST schema configured for '{sp}' (sample: {sample})\n"
+            "Add it to cgmlst_schemas in config.yaml, or pass --config cgmlst_schema=/path/to/schema"
+        )
+    return SCHEMA_MAP[sp]
+
+_sample_schemas = {s: _schema_for(s) for s in SAMPLES}
+_unique_schemas = set(_sample_schemas.values())
+
+if len(_unique_schemas) > 1:
+    detail = "\n".join(f"  {s}: {v}" for s, v in _sample_schemas.items())
+    raise ValueError(
+        f"Samples span {len(_unique_schemas)} cgMLST schemas -- "
+        "chewBBACA requires a single schema per run.\n"
+        "Filter to one species with --config samples=<date> or --config samples=<date/id>\n\n"
+        f"Detected schemas:\n{detail}"
+    )
+
+SCHEMA = next(iter(_unique_schemas))
+print(f"cgMLST: {len(SAMPLES)}/{len(ALL_SAMPLES)} samples -- schema: {SCHEMA} -- thresholds: {CGMLST_THRESHOLDS}")
+
+# ── Rules ─────────────────────────────────────────────────────────────────────
+
+rule all:
+    input:
+        f"{CGMLST_DIR}/allele_profiles.tsv",
+        f"{CGMLST_DIR}/cgmlst_dists.tsv",
+        f"{CGMLST_DIR}/grapetree.nwk",
+        f"{CGMLST_DIR}/cluster_partitions.tsv",
+        f"{CGMLST_DIR}/cgmlst_report.html",
+
+
+rule chewbbaca:
+    input:
+        assemblies = expand(f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa", sample=SAMPLES),
+    output:
+        tsv = f"{CGMLST_DIR}/allele_profiles.tsv",
+    log:
+        f"{CGMLST_DIR}/logs/chewbbaca.log"
+    params:
+        asm_dir = f"{CGMLST_DIR}/assemblies",
+        chw_dir = f"{CGMLST_DIR}/chewbbaca",
+        schema  = SCHEMA,
+    threads: THREADS
+    shell:
+        # Copies are named 19-03-2026_005a.fasta so chewBBACA sample IDs match the
+        # flat-underscore form used by the report script (normalised back to leaf names).
+        """
+        mkdir -p {params.asm_dir}
+        rm -f {params.asm_dir}/*.fasta
+        for f in {input.assemblies}; do
+            sname=$(echo "$f" | sed 's|{RESULTS_DIR}/||' | sed 's|/Assembly/contigs.fa||' | tr '/' '_')
+            cp "$f" "{params.asm_dir}/$sname.fasta"
+        done
+        rm -rf {params.chw_dir}
+        pixi run --environment cgmlst chewBBACA.py AlleleCall \
+            -i {params.asm_dir} \
+            -g {params.schema} \
+            -o {params.chw_dir} \
+            --cpu {threads} \
+            --no-inferred \
+            2>&1 | tee {log}
+        find {params.chw_dir} -name 'results_alleles.tsv' | head -1 | xargs -I{{}} cp {{}} {output.tsv}
+        """
+
+
+rule cgmlst_dists:
+    input:
+        tsv = f"{CGMLST_DIR}/allele_profiles.tsv",
+    output:
+        tsv = f"{CGMLST_DIR}/cgmlst_dists.tsv",
+    log:
+        f"{CGMLST_DIR}/logs/cgmlst_dists.log"
+    shell:
+        "pixi run --environment cgmlst cgmlst-dists {input.tsv} > {output.tsv} 2> {log}"
+
+
+rule grapetree:
+    input:
+        tsv = f"{CGMLST_DIR}/allele_profiles.tsv",
+    output:
+        nwk = f"{CGMLST_DIR}/grapetree.nwk",
+    log:
+        f"{CGMLST_DIR}/logs/grapetree.log"
+    shell:
+        "pixi run --environment grapetree grapetree -p {input.tsv} -m MSTreeV2 > {output.nwk} 2> {log}"
+
+
+rule fetch_reportree:
+    # ReporTree isn't on conda or PyPI -- clone the github repo once.
+    # Marker file prevents repeated cloning on subsequent runs.
+    output:
+        marker = f"{REPORTREE_DIR}/reportree.py",
+    log:
+        f"{CGMLST_DIR}/logs/fetch_reportree.log"
+    params:
+        repo = "https://github.com/insapathogenomics/ReporTree.git",
+        dir  = REPORTREE_DIR,
+    shell:
+        """
+        if [ ! -d {params.dir}/.git ]; then
+            rm -rf {params.dir}
+            pixi run --environment reportree git clone --depth 1 {params.repo} {params.dir} 2>&1 | tee {log}
+        else
+            echo "ReporTree already present at {params.dir}" | tee {log}
+        fi
+        """
+
+
+rule reportree:
+    # Hierarchical single-linkage clustering at one or more allele thresholds.
+    # Threshold list comes from --config cgmlst_threshold=N or N,M,... -- the
+    # output partitions table has one cluster_<N> column per threshold.
+    input:
+        alleles  = f"{CGMLST_DIR}/allele_profiles.tsv",
+        rt       = f"{REPORTREE_DIR}/reportree.py",
+    output:
+        tsv = f"{CGMLST_DIR}/cluster_partitions.tsv",
+    log:
+        f"{CGMLST_DIR}/logs/reportree.log"
+    params:
+        prefix     = f"{CGMLST_DIR}/cluster",
+        thresholds = REPORTREE_THRESHOLD_ARG,
+    threads: THREADS
+    shell:
+        """
+        pixi run --environment reportree python {input.rt} \
+            -a {input.alleles} \
+            -out {params.prefix} \
+            --analysis HC \
+            --HC-threshold {params.thresholds} \
+            --site-inclusion 0 \
+            2>&1 | tee {log}
+        """
+
+
+rule cgmlst_report:
+    input:
+        alleles    = f"{CGMLST_DIR}/allele_profiles.tsv",
+        dists      = f"{CGMLST_DIR}/cgmlst_dists.tsv",
+        grapetree  = f"{CGMLST_DIR}/grapetree.nwk",
+        partitions = f"{CGMLST_DIR}/cluster_partitions.tsv",
+        # QC inputs (read directly by the report script from the main pipeline's results/)
+        fastp      = expand(f"{RESULTS_DIR}/{{sample}}/QC/fastp.json",       sample=SAMPLES),
+        quast      = expand(f"{RESULTS_DIR}/{{sample}}/QUAST/report.tsv",    sample=SAMPLES),
+    output:
+        f"{CGMLST_DIR}/cgmlst_report.html",
+    log:
+        f"{CGMLST_DIR}/logs/cgmlst_report.log"
+    params:
+        samples    = ",".join(SAMPLES),
+        thresholds = ",".join(str(t) for t in CGMLST_THRESHOLDS),
+    shell:
+        """
+        python scripts/make_cgmlst_report.py \
+            --alleles {input.alleles} \
+            --dists {input.dists} \
+            --grapetree {input.grapetree} \
+            --partitions {input.partitions} \
+            --template report_template_cgmlst.html \
+            --samples {params.samples} \
+            --schema {SCHEMA} \
+            --thresholds {params.thresholds} \
+            --results-dir {RESULTS_DIR} \
+            --output {output} \
+            2>&1 | tee {log}
+        """

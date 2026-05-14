@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cgMLST Report</title>
+<style>
+  :root {
+    --blue:   #1a3a5c;
+    --blue2:  #2e6da4;
+    --green:  #28a745;
+    --yellow: #ffc107;
+    --red:    #dc3545;
+    --bg:     #f5f7fa;
+    --card:   #ffffff;
+    --border: #e2e8f0;
+    --text:   #1a1a2e;
+    --muted:  #6c757d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); padding: 24px; font-size: 14px; }
+  h1 { color: var(--blue); font-size: 1.5rem; padding-bottom: 10px;
+       border-bottom: 2px solid var(--blue); margin-bottom: 20px; }
+  h2 { color: var(--blue2); font-size: 1.1rem; margin: 20px 0 8px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+          padding: 16px; margin-bottom: 12px; }
+  .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; }
+  .meta span { margin-right: 24px; }
+  .meta strong { color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { background: var(--blue); color: white; padding: 7px 12px; text-align: left; font-weight: 600; }
+  td { padding: 5px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: #f8fafc; }
+  .snp-wrap { overflow: auto; }
+  .snp-matrix { width: auto; white-space: nowrap; }
+  .snp-matrix th, .snp-matrix td { padding: 4px 8px; text-align: center; font-size: 0.82rem;
+                                    border: 1px solid var(--border); }
+  .snp-matrix th { background: var(--blue); color: white; }
+  .snp-matrix td { font-variant-numeric: tabular-nums; }
+  .dl-btn { display: inline-block; padding: 7px 18px; border-radius: 5px;
+            background: var(--blue2); color: white; text-decoration: none;
+            font-size: 0.88rem; font-weight: 600; margin-right: 10px; cursor: pointer;
+            border: none; }
+  .dl-btn:hover { background: var(--blue); }
+  #mst-container { position: relative; width: 100%; }
+  #mst-svg { width: 100%; height: 500px; border: 1px solid var(--border);
+             border-radius: 4px; background: #fafbfc; cursor: grab; }
+  #mst-svg:active { cursor: grabbing; }
+  .mst-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .mst-legend-item { display: flex; align-items: center; gap: 5px;
+                     font-size: 0.82rem; color: var(--text); }
+  .mst-legend-dot { width: 12px; height: 12px; border-radius: 50%;
+                    border: 1.5px solid rgba(0,0,0,0.25); flex-shrink: 0; }
+  code { font-family: monospace; font-size: 0.85em; background: #f0f4f8;
+         padding: 1px 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>cgMLST Report</h1>
+<div id="root"></div>
+
+<script>
+const D = __CGMLST_JSON_DATA__;
+
+// ── Colour palette for clusters ──────────────────────────────────────────────
+const PALETTE = [
+  '#2e6da4','#28a745','#e05c2a','#9b59b6','#17a2b8',
+  '#e8851b','#c0392b','#27ae60','#2980b9','#8e44ad',
+  '#16a085','#d35400','#2471a3','#1e8449','#7d3c98',
+];
+function clusterColor(name) {
+  // ReporTree emits "singleton_1", "singleton_2", ... -- render all of them grey.
+  if (!name || name === '-' || name.startsWith('singleton')) return '#adb5bd';
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  return PALETTE[h % PALETTE.length];
+}
+
+// ── Distance matrix renderer ─────────────────────────────────────────────────
+// Colour ramp: 0 = blank, ≤threshold = green→darker green, >threshold = pink→red.
+// Without a threshold, ramps from pale to red across the matrix's max value.
+function luma(r, g, b) { return 0.299*r + 0.587*g + 0.114*b; }
+
+function renderDistMatrix(data, threshold) {
+  const { samples, matrix } = data;
+  if (!samples.length) return '<p style="color:var(--muted)">No distance matrix available.</p>';
+
+  const vals = matrix.flat().filter(v => v > 0);
+  const maxV = vals.length ? Math.max(...vals) : 1;
+
+  function rampRGB(v) {
+    if (threshold) {
+      if (v <= threshold) {
+        const t = v / threshold;
+        return [255 - t*215, 255 - t*88, 255 - t*186];
+      }
+      const t = Math.min((v - threshold) / (maxV - threshold || 1), 1);
+      return [255 - t*75, 200 - t*170, 200 - t*170];
+    }
+    const t = v / maxV;
+    return [255 - t*35, 255 - t*185, 255 - t*185];
+  }
+  function cellBg(v) {
+    if (v === 0) return '#f8fafc';
+    const [r, g, b] = rampRGB(v);
+    return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+  }
+  function cellFg(v) {
+    if (v === 0) return '#1a1a2e';
+    const [r, g, b] = rampRGB(v);
+    return luma(r, g, b) < 140 ? '#fff' : '#1a1a2e';
+  }
+
+  let html = '';
+  if (threshold) {
+    html += `<p style="font-size:0.82rem;margin-bottom:8px">
+      <span style="display:inline-block;width:12px;height:12px;background:#28a745;border-radius:2px;vertical-align:middle;margin-right:5px"></span>≤${threshold} alleles (same cluster)
+      &ensp;<span style="display:inline-block;width:12px;height:12px;background:#dc3545;border-radius:2px;vertical-align:middle;margin-right:5px"></span>&gt;${threshold} alleles (different cluster)
+    </p>`;
+  }
+  html += '<table class="snp-matrix"><thead><tr><th></th>';
+  for (const n of samples) html += `<th>${n}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let i = 0; i < matrix.length; i++) {
+    html += `<tr><th style="text-align:left">${samples[i]}</th>`;
+    for (let j = 0; j < matrix[i].length; j++) {
+      const v = matrix[i][j];
+      html += `<td style="background:${cellBg(v)};color:${cellFg(v)}">${v}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+// ── MST SVG renderer ─────────────────────────────────────────────────────────
+function renderMST() {
+  const nodes  = D.mst_nodes;
+  const edges  = D.mst_edges;
+  const labels = D.dists.samples;
+  if (!nodes || !nodes.length) {
+    document.getElementById('mst-container').innerHTML =
+      '<p style="color:var(--muted)">MST not available.</p>';
+    return;
+  }
+
+  // Cluster assignment for each node (matched by leaf name)
+  const sampleMap = {};
+  for (const s of D.samples) sampleMap[s.id] = s.cluster || '-';
+  // Build unique cluster list for legend
+  const clusters = [...new Set(D.samples.map(s => s.cluster || '-'))].sort();
+
+  const W = 800, H = 500, R = 9;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const svg = document.getElementById('mst-svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = '';
+
+  // Pan / zoom state
+  let vx = 0, vy = 0, vscale = 1, dragging = false, dragStart = null, dragOrigin = null;
+  const g = document.createElementNS(NS, 'g');
+  svg.appendChild(g);
+
+  function applyTransform() {
+    g.setAttribute('transform', `translate(${vx},${vy}) scale(${vscale})`);
+  }
+  svg.addEventListener('mousedown', e => {
+    dragging = true;
+    dragStart = {x: e.clientX, y: e.clientY};
+    dragOrigin = {x: vx, y: vy};
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    vx = dragOrigin.x + (e.clientX - dragStart.x);
+    vy = dragOrigin.y + (e.clientY - dragStart.y);
+    applyTransform();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.91;
+    const rect   = svg.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / rect.width  * W;
+    const my = (e.clientY - rect.top)  / rect.height * H;
+    vx = mx + (vx - mx) * factor;
+    vy = my + (vy - my) * factor;
+    vscale *= factor;
+    applyTransform();
+  }, {passive: false});
+
+  // Track elements so node-drag can move them
+  const nodeEls = [];   // [{circle, label}]
+  const edgeEls = [];   // [{line, label, from, to}]
+
+  // Draw edges
+  for (const e of edges) {
+    const a = nodes[e.from], b = nodes[e.to];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+    line.setAttribute('stroke', '#c8d6e5'); line.setAttribute('stroke-width', '1.5');
+    g.appendChild(line);
+    let elabel = null;
+    if (e.dist > 0) {
+      elabel = document.createElementNS(NS, 'text');
+      elabel.setAttribute('x', mx); elabel.setAttribute('y', my - 4);
+      elabel.setAttribute('text-anchor', 'middle');
+      elabel.setAttribute('font-size', '9'); elabel.setAttribute('fill', '#888');
+      elabel.textContent = e.dist;
+      g.appendChild(elabel);
+    }
+    edgeEls.push({ line, label: elabel, from: e.from, to: e.to });
+  }
+
+  // Node-drag state + helpers
+  let nodeDragIdx = -1;
+  function svgToGroupCoords(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    const sx = (clientX - rect.left) / rect.width  * W;
+    const sy = (clientY - rect.top)  / rect.height * H;
+    return { x: (sx - vx) / vscale, y: (sy - vy) / vscale };
+  }
+  function updateNodePosition(i) {
+    const n  = nodes[i];
+    const el = nodeEls[i];
+    el.circle.setAttribute('cx', n.x);
+    el.circle.setAttribute('cy', n.y);
+    el.label.setAttribute('x', n.x);
+    el.label.setAttribute('y', n.y + R + 11);
+    for (const eel of edgeEls) {
+      if (eel.from !== i && eel.to !== i) continue;
+      const a = nodes[eel.from], b = nodes[eel.to];
+      eel.line.setAttribute('x1', a.x); eel.line.setAttribute('y1', a.y);
+      eel.line.setAttribute('x2', b.x); eel.line.setAttribute('y2', b.y);
+      if (eel.label) {
+        eel.label.setAttribute('x', (a.x + b.x) / 2);
+        eel.label.setAttribute('y', (a.y + b.y) / 2 - 4);
+      }
+    }
+  }
+  window.addEventListener('mousemove', e => {
+    if (nodeDragIdx < 0) return;
+    const p = svgToGroupCoords(e.clientX, e.clientY);
+    nodes[nodeDragIdx].x = p.x;
+    nodes[nodeDragIdx].y = p.y;
+    updateNodePosition(nodeDragIdx);
+  });
+  window.addEventListener('mouseup', () => {
+    if (nodeDragIdx >= 0) {
+      nodeEls[nodeDragIdx].circle.style.cursor = 'grab';
+      nodeDragIdx = -1;
+    }
+  });
+
+  // Draw nodes
+  for (let i = 0; i < nodes.length; i++) {
+    const n   = nodes[i];
+    const lbl = labels[i] || String(i);
+    const col = clusterColor(sampleMap[lbl] || '-');
+
+    const circle = document.createElementNS(NS, 'circle');
+    circle.setAttribute('cx', n.x); circle.setAttribute('cy', n.y); circle.setAttribute('r', R);
+    circle.setAttribute('fill', col); circle.setAttribute('stroke', '#fff');
+    circle.setAttribute('stroke-width', '1.5');
+    circle.style.cursor = 'grab';
+    circle.setAttribute('title', `${lbl}\nCluster: ${sampleMap[lbl] || '-'}`);
+    g.appendChild(circle);
+
+    const txt = document.createElementNS(NS, 'text');
+    txt.setAttribute('x', n.x); txt.setAttribute('y', n.y + R + 11);
+    txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('font-size', '10');
+    txt.setAttribute('font-family', 'monospace'); txt.setAttribute('fill', '#2d3748');
+    txt.textContent = lbl;
+    g.appendChild(txt);
+
+    nodeEls.push({ circle, label: txt });
+
+    const idx = i;
+    circle.addEventListener('mousedown', ev => {
+      ev.stopPropagation();      // don't start a pan
+      nodeDragIdx = idx;
+      circle.style.cursor = 'grabbing';
+    });
+  }
+
+  // Legend
+  const legendEl = document.getElementById('mst-legend');
+  legendEl.innerHTML = clusters.map(c =>
+    `<span class="mst-legend-item">
+       <span class="mst-legend-dot" style="background:${clusterColor(c)}"></span>
+       ${c}
+     </span>`
+  ).join('');
+}
+
+// ── Download helper ───────────────────────────────────────────────────────────
+function dlText(text, filename, mimetype) {
+  const blob = new Blob([text], {type: mimetype || 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+// ── Page render ───────────────────────────────────────────────────────────────
+function fmt(n) { return n != null ? n.toLocaleString('en-GB') : '-'; }
+function qcCell(val, text, warn, bad) {
+  if (val == null) return '<td>-</td>';
+  const s = val < bad  ? 'color:var(--red);font-weight:600'
+          : val < warn ? 'color:var(--yellow);font-weight:600'
+          : '';
+  return `<td style="${s}">${text}</td>`;
+}
+function pctCell(v, warn, bad) {
+  return qcCell(v, v != null ? v + '%' : '-', warn, bad);
+}
+
+const schemaShort = D.schema.split('/').pop();
+
+document.getElementById('root').innerHTML = `
+<div class="meta">
+  <span><strong>Date:</strong> ${D.run_date}</span>
+  <span><strong>Schema:</strong> ${schemaShort}</span>
+  <span><strong>Loci:</strong> ${fmt(D.n_loci)}</span>
+  <span><strong>Samples:</strong> ${D.n_samples}</span>
+  <span><strong>Threshold(s):</strong> ${(D.thresholds||[D.threshold]).join(', ')} alleles</span>
+</div>
+
+<div class="card">
+  <h2>Run parameters</h2>
+  <table>
+    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Schema</td><td style="font-family:monospace;font-size:0.82rem">${D.schema}</td></tr>
+      <tr><td>Cluster threshold(s)</td><td><strong>${(D.thresholds||[D.threshold]).join(', ')} alleles</strong></td></tr>
+      <tr><td>Loci in schema</td><td><strong>${fmt(D.n_loci)}</strong></td></tr>
+      <tr><td>Samples</td><td><strong>${D.n_samples}</strong></td></tr>
+      <tr><td>Clustering</td><td>ReporTree (single-linkage hierarchical)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Sample summary</h2>
+  <table>
+    <thead><tr>
+      <th>Sample ID</th>
+      <th>Species</th>
+      <th>Reads</th>
+      <th>Q30%</th>
+      <th title="Estimated mean coverage = trimmed bases / assembly length">Depth (est.)</th>
+      <th title="Bracken top-species fraction — purity check">Top sp.%</th>
+      <th>Contigs</th>
+      <th>N50</th>
+      <th>Loci called</th>
+      <th>% called</th>
+      ${(D.thresholds||[D.threshold]).map(t => `<th>Cluster (thr=${t})</th>`).join('')}
+    </tr></thead>
+    <tbody>
+      ${D.samples.map(s => {
+        const ths = D.thresholds || [D.threshold];
+        return `<tr>
+          <td style="font-family:monospace">${s.id}</td>
+          <td><em>${s.species}</em></td>
+          <td>${fmt(s.reads)}</td>
+          ${pctCell(s.q30_pct, 90, 80)}
+          ${qcCell(s.est_depth, s.est_depth != null ? s.est_depth + '×' : '-', 40, 20)}
+          ${pctCell(s.kraken_primary_pct, 90, 80)}
+          <td>${s.contigs != null ? s.contigs : '-'}</td>
+          <td>${s.N50 != null ? fmt(s.N50) : '-'}</td>
+          <td>${s.n_called != null ? fmt(s.n_called) + ' / ' + fmt(s.n_loci) : '-'}</td>
+          ${pctCell(s.pct_called, 95, 85)}
+          ${ths.map(t => {
+            const cl = (s.clusters && s.clusters[t]) || s.cluster || '-';
+            const clr = clusterColor(cl);
+            return `<td>
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+                           background:${clr};vertical-align:middle;margin-right:5px"></span>
+              ${cl}
+            </td>`;
+          }).join('')}
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+  <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
+    <span style="color:var(--yellow);font-weight:600">■</span> warn
+    &ensp;<span style="color:var(--red);font-weight:600">■</span> flag
+    &ensp;Thresholds: Q30 &lt;80% / &lt;90%, depth &lt;20× / &lt;40×, top sp.% &lt;80% / &lt;90%, % called &lt;85% / &lt;95%
+    <br>Depth estimated as fastp trimmed bases &divide; QUAST assembled length (no remapping).
+  </p>
+
+  <details style="margin-top:10px;font-size:0.82rem">
+    <summary style="cursor:pointer;color:var(--blue);font-weight:600">What does &ldquo;% called&rdquo; mean?</summary>
+    <div style="margin-top:8px;line-height:1.55">
+      <p style="margin:0 0 6px 0">
+        The fraction of cgMLST loci that chewBBACA resolved to a clean integer allele for this sample.
+        Same number as <strong>Loci called</strong>, expressed as a percentage.
+      </p>
+      <p style="margin:0 0 6px 0">
+        Loci that fail to call are tagged with one of:
+      </p>
+      <table style="font-size:0.78rem;margin:4px 0">
+        <thead><tr><th>Tag</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>LNF</code></td><td>Locus not found — no BLAST hit above the identity/coverage threshold. Usually low coverage or the locus is genuinely absent.</td></tr>
+          <tr><td><code>LOTSC</code></td><td>Locus on tip of contig — incomplete; ran off the edge of an assembly fragment.</td></tr>
+          <tr><td><code>NIPH</code> / <code>NIPHEM</code></td><td>Non-informative paralogous hit — multiple equally good matches, no unambiguous allele.</td></tr>
+          <tr><td><code>PLOT3</code> / <code>PLOT5</code></td><td>Hit runs off the 3&prime; / 5&prime; end of the contig.</td></tr>
+          <tr><td><code>ASM</code> / <code>ALM</code></td><td>Allele shorter / longer than expected — possible truncation or fusion.</td></tr>
+          <tr><td><code>INF-N</code></td><td>Inferred new allele &mdash; <em>counted as called</em> (chewBBACA assigns an integer ID).</td></tr>
+        </tbody>
+      </table>
+      <p style="margin:6px 0 0 0">
+        High <code>LNF</code> / <code>LOTSC</code> rates usually mean a <strong>fragmented assembly</strong> (too many contig edges) or <strong>low depth</strong> (sequence missing entirely).
+        Below ~85% called, typing is unreliable &mdash; re-sequence rather than override.
+      </p>
+    </div>
+  </details>
+</div>
+
+<div class="card" style="background:#e8f4f8;border-left:4px solid var(--blue2)">
+  <h2 style="margin-top:0;color:var(--blue);font-size:0.95rem">Coverage requirements for cgMLST-grade typing</h2>
+  <ul style="font-size:0.85rem;margin:6px 0 0 18px;line-height:1.6">
+    <li><strong>&ge;40&times;</strong> mean coverage, with <strong>&ge;20&times;</strong> on every contig &mdash; Ridom / SeqSphere official floor</li>
+    <li><strong>&ge;50&times;</strong> preferred for outbreak reporting (PulseNet, cgMLST.org submissions)</li>
+    <li>CT assignment at cgMLST.org requires <strong>&gt;95% good targets</strong> (i.e. &lt;5% missing loci) &mdash; enforced server-side</li>
+    <li>Below 40&times; mean coverage, re-sequence rather than override: allele calls become unreliable as LNF (locus not found) rate climbs</li>
+  </ul>
+  <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
+    Sources: Ridom SeqSphere+ NGS QC guide; cgMLST.org nomenclature server submission criteria.
+  </p>
+</div>
+
+<div class="card">
+  <h2>Allele distance matrix</h2>
+  <div class="snp-wrap">
+    ${renderDistMatrix(D.dists, D.threshold)}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Minimum spanning tree</h2>
+  <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px">
+    Built with Prim's algorithm on the cgMLST allele distance matrix.
+    Edge labels = allele differences. Node colours = cluster assignments.
+    Drag to pan · scroll to zoom.
+  </p>
+  <div id="mst-container">
+    <svg id="mst-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="mst-legend" id="mst-legend"></div>
+  <div style="margin-top:12px">
+    ${D.grapetree
+      ? `<button class="dl-btn" onclick="dlText(D.grapetree,'grapetree.nwk','text/plain')">
+           ⬇ Download GrapeTree Newick
+         </button>
+         <span style="font-size:0.8rem;color:var(--muted)">
+           Open in <a href="https://achtman-lab.github.io/GrapeTree/" target="_blank"
+           style="color:var(--blue2)">GrapeTree web app</a> for interactive exploration.
+         </span>`
+      : '<span style="color:var(--muted);font-size:0.82rem">GrapeTree Newick not available.</span>'}
+  </div>
+</div>
+
+${D.partitions.headers.length ? `
+<div class="card">
+  <h2>Cluster assignments</h2>
+  <div class="snp-wrap">
+  <table>
+    <thead><tr>
+      ${D.partitions.headers.map(h => `<th>${h}</th>`).join('')}
+    </tr></thead>
+    <tbody>
+      ${D.partitions.rows.map(row => `<tr>
+        ${D.partitions.headers.map((h, i) => {
+          const v = row[h] || '-';
+          if (i === 0) return `<td style="font-family:monospace">${v}</td>`;
+          const clr = clusterColor(v);
+          return `<td>
+            <span style="display:inline-block;width:9px;height:9px;border-radius:50%;
+                         background:${clr};vertical-align:middle;margin-right:4px"></span>${v}
+          </td>`;
+        }).join('')}
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  </div>
+</div>` : ''}
+
+<div class="card">
+  <h2>Tool versions</h2>
+  <table>
+    <thead><tr><th>Tool</th><th>Version</th></tr></thead>
+    <tbody>
+      ${Object.entries(D.tool_versions).map(([k,v]) =>
+        `<tr><td>${k}</td><td style="font-family:monospace">${v}</td></tr>`
+      ).join('')}
+    </tbody>
+  </table>
+</div>
+`;
+
+renderMST();
+</script>
+</body>
+</html>

@@ -45,6 +45,28 @@ def parse_quast(report_html):
     }
 
 
+def parse_fastp(json_path):
+    """Read totals from a fastp JSON; returns reads/bases/q30/dup_pct or Nones."""
+    if not nonempty(json_path):
+        return {"reads": None, "bases": None, "q30_pct": None, "dup_pct": None}
+    summary = json.loads(Path(json_path).read_text()).get("summary", {})
+    before  = summary.get("before_filtering", {})
+    after   = summary.get("after_filtering",  {})
+    return {
+        "reads":   after.get("total_reads"),
+        "bases":   after.get("total_bases"),
+        "q30_pct": round(after.get("q30_rate",          0) * 100, 1),
+        "dup_pct": round(before.get("duplication_rate", 0) * 100, 1),
+    }
+
+
+def estimate_depth(bases, genome_size):
+    """Approximate mean coverage = trimmed bases / assembled length."""
+    if not bases or not genome_size:
+        return None
+    return round(bases / genome_size, 1)
+
+
 def parse_bracken(path):
     txt = safe_read(path)
     empty = {"primary_species": "-", "primary_pct": 0.0, "secondary_species": "-", "secondary_pct": 0.0}
@@ -217,7 +239,7 @@ def parse_skani(path):
     if not txt:
         return empty
     rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
-    if not rows or rows[0].get("status") == "hoppet_over":
+    if not rows or rows[0].get("status") == "skipped":
         return empty
     r   = rows[0]
     ani = r.get("ANI")
@@ -357,6 +379,8 @@ if __name__ == "__main__":
 
     mlst_data    = parse_mlst(sp_dir / "MLST/mlst.tsv")
     quast_data   = parse_quast(sp_dir / "QUAST/report.html")
+    fastp_data   = parse_fastp(sp_dir / "QC/fastp.json")
+    est_depth    = estimate_depth(fastp_data["bases"], quast_data["total_length"])
     bracken_data = parse_bracken(sp_dir / "ID_Kraken2/bracken_species.txt")
     uncl_pct     = parse_kraken2_unclassified(sp_dir / "ID_Kraken2/kraken2_report.txt")
     amr_raw      = parse_amrfinder(sp_dir / "AMRFinder/amrfinder.tsv")
@@ -390,6 +414,12 @@ if __name__ == "__main__":
         "completed": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "mlst":      mlst_data,
         "assembly":  quast_data,
+        "qc": {
+            "reads":     fastp_data["reads"],
+            "q30_pct":   fastp_data["q30_pct"],
+            "dup_pct":   fastp_data["dup_pct"],
+            "est_depth": est_depth,
+        },
         "amr": {
             "total_amr_genes":       amr_raw["total_amr_genes"],
             "total_virulence_genes": amr_raw["total_virulence_genes"],

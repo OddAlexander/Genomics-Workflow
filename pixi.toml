@@ -143,6 +143,9 @@ prokka = ">=1.14"
 [feature.gubbins.dependencies]
 gubbins = ">=3.3"
 
+[feature.parsnp.dependencies]
+parsnp = ">=2.0"
+
 [feature.clonalframeml.dependencies]
 clonalframeml = ">=1.12"
 
@@ -150,7 +153,25 @@ clonalframeml = ">=1.12"
 raxml-ng = ">=1.2"
 
 [feature.grapetree.dependencies]
+python    = "3.11.*"          # ete3 still imports `cgi`, removed from stdlib in 3.13
 grapetree = ">=2.1"
+
+# ReporTree runs from a cloned github repo (insapathogenomics/ReporTree);
+# this env provides the runtime deps from its reportree_env.yml, with version
+# pins relaxed so they resolve on current channels and on Python 3.11
+# (their original 3.8 + numpy 1.19 stack no longer solves).
+[feature.reportree.dependencies]
+python       = "3.11.*"          # same cgi-stdlib avoidance as grapetree
+biopython    = ">=1.80"
+ete3         = "*"
+grapetree    = ">=2.1"
+pandas       = ">=1.5"
+numpy        = ">=1.21"
+scikit-learn = ">=1.0"
+treecluster  = ">=1.0"
+snp-sites    = ">=2.5"
+cgmlst-dists = ">=0.4"
+git          = "*"                # used by rule fetch_reportree to clone the repo
 
 [environments]
 default        = { solve-group = "main" }
@@ -167,6 +188,8 @@ hicap          = { features = ["hicap"],           solve-group = "hicap",       
 plasmidfinder  = { features = ["plasmidfinder"],   solve-group = "plasmidfinder",   no-default-feature = true }
 prokka         = { features = ["prokka"],          solve-group = "prokka",          no-default-feature = true }
 gubbins        = { features = ["gubbins"],         solve-group = "gubbins",         no-default-feature = true }
+parsnp         = { features = ["parsnp"],          solve-group = "parsnp",          no-default-feature = true }
 clonalframeml  = { features = ["clonalframeml"],   solve-group = "clonalframeml",   no-default-feature = true }
 raxml          = { features = ["raxml"],            solve-group = "raxml",           no-default-feature = true }
 grapetree      = { features = ["grapetree"],        solve-group = "grapetree",       no-default-feature = true }
+reportree      = { features = ["reportree"],        solve-group = "reportree",       no-default-feature = true }

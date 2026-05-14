@@ -1,6 +1,6 @@
-# Snakefile -- Bakteriell genomikk-pipeline
+# Snakefile -- bacterial genomics pipeline
 
-# --- Konfigurasjon ---
+# --- Configuration ---
 configfile: "config.yaml"
 from datetime import datetime
 
@@ -8,17 +8,17 @@ DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
 KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_light/")
-KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reservert per jobb -- begrenser antall samtidige jobber via --resources mem_mb=<tilgjengelig RAM>
-SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reservert per Shovill/SPAdes-jobb (SPAdes --ram settes til dette / 1024)
-SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reservert per skani-jobb (mye lavere enn fastANI)
+KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reserved per job -- caps parallel jobs via --resources mem_mb=<available RAM>
+SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reserved per Shovill/SPAdes job (SPAdes --ram is set to this / 1024)
+SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reserved per skani job (much lower than fastANI)
 SKANI_THREADS    = config.get("skani_threads", 8)
 GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
-SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Sti til skani-sketch (katalog) -- tom = skani hoppes over
-SKANI_THRESHOLD  = config.get("skani_threshold", 0.3)      # skani kjøres hvis closest.distance i Gambit > denne
+SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Path to skani sketch (directory) -- empty = skani is skipped
+SKANI_THRESHOLD  = config.get("skani_threshold", 0.3)      # skani runs when GAMBIT closest.distance exceeds this
 PLASMIDFINDER_DB = config.get("plasmidfinder_db", "/databases/plasmidfinder_db/")
 RUN_LOG          = f"{RESULTS_DIR}/pipeline_run_{datetime.now().strftime('%Y%m%d_%H%M')}.tsv"
 
-# --- Artsgrupper og skjemaer ---
+# --- Species groups and schemes ---
 SA  = {"Staphylococcus_aureus"}
 EC  = {"Escherichia_coli", "Shigella_sonnei", "Shigella_flexneri", "Shigella_dysenteriae", "Shigella_boydii"}
 GAS = {"Streptococcus_pyogenes"}
@@ -60,8 +60,9 @@ AMR_ORG = {
     "Neisseria_gonorrhoeae":"Neisseria_gonorrhoeae", "Neisseria_meningitidis":"Neisseria_meningitidis",
 }
 
-# --- Verktøy per artsgruppe ---
+# --- Tools per species group ---
 ALWAYS_TOOLS = [
+    "QC/fastp.json",
     "QUAST/report.html",
     "MultiQC/multiqc_report.html",
     "MLST/mlst.tsv",
@@ -85,7 +86,7 @@ SPECIES_TOOLS = [
     (HI,                  ["Hicap/hicap.tsv"]),
 ]
 
-# --- Hjelpefunksjoner ---
+# --- Helper functions ---
 def read_species(sample):
     sp_path = checkpoints.identify_species.get(sample=sample).output.sp
     with open(sp_path, "r") as f:
@@ -101,22 +102,23 @@ def get_all_outputs(wildcards):
             tools += outputs
     return [f"{RESULTS_DIR}/{s}/{t}" for t in tools]
 
-# --- Sample Deteksjon ---
-# {sample} fanger hele den relative stien under DATA_DIR, f.eks. "19-03-2026/005a" slik at mappestrukturen i results/ speiler data/
+# --- Sample detection ---
+# {sample} captures the full relative path under DATA_DIR, e.g. "19-03-2026/005a",
+# so the results/ tree mirrors the data/ tree.
 ALL_SAMPLES, ANY = glob_wildcards(f"{DATA_DIR}/{{sample}}/{{any}}_R1.fastq.gz")
 READS_DICT = {s: f"{DATA_DIR}/{s}/{a}" for s, a in zip(ALL_SAMPLES, ANY)}
 assert len(set(ALL_SAMPLES)) == len(ALL_SAMPLES), \
-    f"Duplikate sample-ID-er oppdaget: {len(ALL_SAMPLES) - len(set(ALL_SAMPLES))} duplikater funnet"
+    f"Duplicate sample IDs: {[s for s in set(ALL_SAMPLES) if ALL_SAMPLES.count(s) > 1]}"
 
 _filter = config.get("samples", None)
 if _filter:
     _filter = _filter if isinstance(_filter, list) else [_filter]
     SAMPLES = [s for s in ALL_SAMPLES if any(f in s for f in _filter)]
     if not SAMPLES:
-        raise ValueError(f"Ingen samples funnet for filter: {_filter}")
+        raise ValueError(f"No samples found for filter: {_filter}")
 else:
     SAMPLES = ALL_SAMPLES
-print(f"Kjører {len(SAMPLES)}/{len(ALL_SAMPLES)} samples.")
+print(f"Running {len(SAMPLES)}/{len(ALL_SAMPLES)} samples.")
 
 # --- Rules ---
 rule all:
@@ -375,22 +377,46 @@ rule plasmidfinder:
     shell:
         "pixi run --environment plasmidfinder plasmidfinder.py -i {input.fa} -o {params.outdir} -p {params.db} -x 2>&1 | tee {log}"
 
+rule mefinder_db:
+    # mefinder's default --db-path is /tmp/mge_finder/database, shared across all
+    # parallel jobs -- two jobs racing on makeblastdb corrupt each other's DB.
+    # Build it once into a stable per-results location and point every job there.
+    output:
+        marker = f"{RESULTS_DIR}/.mefinder_db/mge_records.nhr"
+    log:
+        f"{RESULTS_DIR}/.mefinder_db/build.log"
+    params:
+        db_dir = f"{RESULTS_DIR}/.mefinder_db"
+    shell:
+        """
+        mkdir -p {params.db_dir}
+        pixi run --environment mefinder bash -c '
+            FNA=$(python -c "import mgedb, os; print(os.path.join(os.path.dirname(mgedb.__file__), \"data/sequences.d/mge_records.fna\"))")
+            makeblastdb -in "$FNA" -dbtype nucl -title mge_records -out {params.db_dir}/mge_records
+        ' 2>&1 | tee {log}
+        """
+
+
 rule mefinder:
     input:
-        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
+        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
+        db = f"{RESULTS_DIR}/.mefinder_db/mge_records.nhr"
     output:
         f"{RESULTS_DIR}/{{sample}}/MEfinder/mefinder.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/mefinder.log"
     params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/MEfinder"
+        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/MEfinder",
+        db_dir = f"{RESULTS_DIR}/.mefinder_db"
     shell:
-        # Shovill legger til metadata i FASTA-headers som mefinder ikke takler - strippes med sed.
-        # --temp-dir per sample unngår konflikter mellom parallelle jobber på /tmp/mge_finder.
+        # Shovill appends metadata to FASTA headers that mefinder can't parse -- strip with sed.
+        # --db-path points at a pre-built shared BLAST DB to avoid the race on /tmp/mge_finder.
+        # --temp-dir per sample isolates the per-job working directory.
         """
         sed '/^>/s/ .*//' {input.fa} > {params.outdir}/contigs.fa
         pixi run --environment mefinder mefinder find {params.outdir}/mefinder \
-            -c {params.outdir}/contigs.fa --temp-dir {params.outdir}/tmp 2>&1 | tee {log}
+            -c {params.outdir}/contigs.fa --db-path {params.db_dir} \
+            --temp-dir {params.outdir}/tmp 2>&1 | tee {log}
         rm -f {params.outdir}/contigs.fa
         rm -rf {params.outdir}/tmp
         [ -f {params.outdir}/mefinder.tsv ] || mv {params.outdir}/mefinder.csv {output}
