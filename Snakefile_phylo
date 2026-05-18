@@ -326,7 +326,22 @@ rule parsnp:
     threads: THREADS
     shell:
         # Copies are named 19-03-2026_005a.fasta so Parsnp labels match Snippy flat dirs.
+        # n<2 → nothing to compare, write stubs.
+        # 2 ≤ n < 4 → run Parsnp with --skip-phylogeny (RAxML refuses <4 taxa); SNPs produced, tree empty.
+        # n ≥ 4 → run Parsnp normally with the RAxML tree.
         """
+        n=$(echo {input.assemblies} | wc -w)
+        if [ "$n" -lt 2 ]; then
+            echo "Fewer than 2 taxa ($n) — Parsnp skipped" | tee {log}
+            mkdir -p {PARSNP_DIR}
+            touch {output.tree} {output.ggr} {output.vcf} {output.snps_fasta}
+            exit 0
+        fi
+        skip_phylo=""
+        if [ "$n" -lt 4 ]; then
+            echo "Fewer than 4 taxa ($n) — running Parsnp with --skip-phylogeny (no tree)" | tee {log}
+            skip_phylo="--skip-phylogeny"
+        fi
         mkdir -p {params.query_dir}
         rm -f {params.query_dir}/*.fasta
         for f in {input.assemblies}; do
@@ -336,9 +351,11 @@ rule parsnp:
         rm -f {output.tree} {output.ggr} {output.vcf}
         pixi run --environment parsnp parsnp \
             -r ! -d {params.query_dir}/*.fasta \
-            -o {PARSNP_DIR} -p {threads} -c --vcf --fo 2>&1 | tee {log}
+            -o {PARSNP_DIR} -p {threads} -c --vcf --fo $skip_phylo 2>&1 | tee -a {log}
         pixi run --environment parsnp harvesttools \
             -i {output.ggr} -S {output.snps_fasta} 2>> {log}
+        # Parsnp omits parsnp.tree when --skip-phylogeny is set; create empty stub so the DAG completes.
+        [ -f {output.tree} ] || touch {output.tree}
         """
 
 
