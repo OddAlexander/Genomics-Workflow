@@ -184,6 +184,8 @@ document.getElementById('root').innerHTML = `
       <th>Depth</th><th>Breadth%</th>
       <th title="Bracken top-species fraction — purity check">Top sp.%</th>
       <th>Contigs</th><th>N50</th><th>Largest contig</th><th>GC%</th>
+      <th title="CheckM lineage_wf: % single-copy markers detected">Compl.%</th>
+      <th title="CheckM lineage_wf: % duplicate markers (contamination proxy)">Contam.%</th>
       <th>ANI%</th><th style="text-align:left">Species</th>
     </tr></thead>
     <tbody>
@@ -200,6 +202,13 @@ document.getElementById('root').innerHTML = `
         <td>${fmt(s.N50)}</td>
         <td>${fmt(s.largest_contig)}</td>
         <td>${s.gc_pct != null ? s.gc_pct + '%' : '-'}</td>
+        ${qcCell(s.completeness, s.completeness != null ? s.completeness.toFixed(1) + '%' : '-', 95, 90)}
+        ${(() => {
+          if (s.contamination == null) return '<td>-</td>';
+          const c = s.contamination >= 5 ? 'color:var(--red);font-weight:600'
+                  : s.contamination >= 2 ? 'color:var(--yellow);font-weight:600' : '';
+          return `<td style="${c}">${s.contamination.toFixed(1)}%</td>`;
+        })()}
         <td>${s.ani != null ? s.ani + '%' : '-'}</td>
         <td style="text-align:left"><em>${s.species}</em></td>
       </tr>`).join('')}
@@ -209,7 +218,7 @@ document.getElementById('root').innerHTML = `
   <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
     <span style="color:var(--yellow);font-weight:600">■</span> warn &ensp;
     <span style="color:var(--red);font-weight:600">■</span> flag &ensp;
-    Thresholds: Q30 &lt;80%/90%, depth &lt;20×/40×, breadth &lt;80%/90%, top sp.% &lt;80%/90%
+    Thresholds: Q30 &lt;80%/90%, depth &lt;20×/40×, breadth &lt;80%/90%, top sp.% &lt;80%/90%, compl. &lt;90%/95%, contam. &ge;2%/5%
     <br>Depth/breadth from <code>samtools coverage</code> on the Snippy reference-mapped BAM (length-weighted mean).
   </p>
 </div>

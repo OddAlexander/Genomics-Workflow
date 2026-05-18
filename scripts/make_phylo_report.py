@@ -16,6 +16,26 @@ def safe_read(path):
     return Path(path).read_text().strip() if nonempty(path) else None
 
 
+def parse_checkm(path):
+    """Read CheckM lineage_wf --tab_table; return completeness/contamination/strain_het or Nones."""
+    txt = safe_read(path)
+    empty = {"completeness": None, "contamination": None, "strain_het": None}
+    if not txt:
+        return empty
+    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
+    if not rows:
+        return empty
+    r = rows[0]
+    def _f(k):
+        try: return float(r.get(k, "") or "")
+        except (TypeError, ValueError): return None
+    return {
+        "completeness":  _f("Completeness"),
+        "contamination": _f("Contamination"),
+        "strain_het":    _f("Strain heterogeneity"),
+    }
+
+
 def parse_quast(quast_dir):
     tsv = Path(quast_dir) / "report.tsv"
     if not tsv.exists():
@@ -264,6 +284,7 @@ def main():
             "kraken_primary_pct": kraken_pct(s),
             **parse_quast(pd / s / "QUAST"),
             **parse_fastp(pd / s / "QC/fastp.json"),
+            **parse_checkm(pd / s / "CheckM/quality.tsv"),
         })
 
     core_coverage = parse_core_txt(args.core_txt)

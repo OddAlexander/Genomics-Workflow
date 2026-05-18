@@ -355,6 +355,8 @@ document.getElementById('root').innerHTML = `
       <th title="Bracken top-species fraction — purity check">Top sp.%</th>
       <th>Contigs</th>
       <th>N50</th>
+      <th title="CheckM lineage_wf: % single-copy markers detected">Compl.%</th>
+      <th title="CheckM lineage_wf: % duplicate markers (contamination proxy)">Contam.%</th>
       <th>Loci called</th>
       <th>% called</th>
       ${(D.thresholds||[D.threshold]).map(t => `<th>Cluster (thr=${t})</th>`).join('')}
@@ -362,6 +364,10 @@ document.getElementById('root').innerHTML = `
     <tbody>
       ${D.samples.map(s => {
         const ths = D.thresholds || [D.threshold];
+        const contClr = s.contamination == null ? null
+                      : s.contamination >= 5    ? 'color:var(--red);font-weight:600'
+                      : s.contamination >= 2    ? 'color:var(--yellow);font-weight:600'
+                                                : '';
         return `<tr>
           <td style="font-family:monospace">${s.id}</td>
           <td><em>${s.species}</em></td>
@@ -371,6 +377,8 @@ document.getElementById('root').innerHTML = `
           ${pctCell(s.kraken_primary_pct, 90, 80)}
           <td>${s.contigs != null ? s.contigs : '-'}</td>
           <td>${s.N50 != null ? fmt(s.N50) : '-'}</td>
+          ${qcCell(s.completeness, s.completeness != null ? s.completeness.toFixed(1) + '%' : '-', 95, 90)}
+          ${contClr == null ? '<td>-</td>' : `<td style="${contClr}">${s.contamination.toFixed(1)}%</td>`}
           <td>${s.n_called != null ? fmt(s.n_called) + ' / ' + fmt(s.n_loci) : '-'}</td>
           ${pctCell(s.pct_called, 95, 85)}
           ${ths.map(t => {
@@ -389,7 +397,7 @@ document.getElementById('root').innerHTML = `
   <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
     <span style="color:var(--yellow);font-weight:600">■</span> warn
     &ensp;<span style="color:var(--red);font-weight:600">■</span> flag
-    &ensp;Thresholds: Q30 &lt;80% / &lt;90%, depth &lt;20× / &lt;40×, top sp.% &lt;80% / &lt;90%, % called &lt;85% / &lt;95%
+    &ensp;Thresholds: Q30 &lt;80% / &lt;90%, depth &lt;20× / &lt;40×, top sp.% &lt;80% / &lt;90%, % called &lt;85% / &lt;95%, compl. &lt;90% / &lt;95%, contam. &ge;2% / &ge;5%
     <br>Depth estimated as fastp trimmed bases &divide; QUAST assembled length (no remapping).
   </p>
 

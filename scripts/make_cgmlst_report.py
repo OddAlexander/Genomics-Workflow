@@ -73,6 +73,26 @@ def get_sample_species(results_dir, sample):
     return p.read_text().strip().replace("_", " ") if p.exists() else "-"
 
 
+def parse_checkm(path):
+    """Read CheckM lineage_wf --tab_table; return completeness/contamination/strain_het or Nones."""
+    txt = safe_read(path)
+    empty = {"completeness": None, "contamination": None, "strain_het": None}
+    if not txt:
+        return empty
+    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
+    if not rows:
+        return empty
+    r = rows[0]
+    def _f(k):
+        try: return float(r.get(k, "") or "")
+        except (TypeError, ValueError): return None
+    return {
+        "completeness":  _f("Completeness"),
+        "contamination": _f("Contamination"),
+        "strain_het":    _f("Strain heterogeneity"),
+    }
+
+
 def parse_fastp(json_path):
     """Read totals from a fastp JSON; returns dict with reads/bases/q30/dup_pct or Nones."""
     if not nonempty(json_path):
@@ -118,20 +138,6 @@ def parse_bracken_primary_pct(path):
         return round(float(top["fraction_total_reads"]) * 100, 1)
     except (ValueError, KeyError):
         return None
-
-
-def parse_quast_total_length(quast_dir):
-    """Return Total length (assembly size in bp) from QUAST's report.tsv, or None."""
-    tsv = Path(quast_dir) / "report.tsv"
-    if not tsv.exists():
-        return None
-    for line in tsv.read_text().splitlines():
-        if line.startswith("Total length\t"):
-            try:
-                return int(line.split("\t")[1].replace(",", ""))
-            except (IndexError, ValueError):
-                return None
-    return None
 
 
 def estimate_depth(bases, genome_size):
@@ -336,6 +342,7 @@ def main():
             "contigs":            quast_stats["contigs"],
             "N50":                quast_stats["N50"],
             "kraken_primary_pct": kraken_pct,
+            **parse_checkm(results_dir / s / "CheckM/quality.tsv"),
         })
 
     # MST positions, pre-computed so the HTML renderer just draws them.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate HTML report for a single sample from pipeline outputs."""
-import argparse, csv, json
+import argparse, csv, fcntl, json
 from datetime import datetime
 from pathlib import Path
 
@@ -29,6 +29,26 @@ def parse_mlst(path):
     parts = txt.split("\t")
     return {"ST":     parts[2] if len(parts) > 2 else "-",
             "scheme": parts[1] if len(parts) > 1 else "-"}
+
+
+def parse_checkm(path):
+    """Read CheckM lineage_wf --tab_table; return completeness/contamination/strain_het or Nones."""
+    txt = safe_read(path)
+    empty = {"completeness": None, "contamination": None, "strain_het": None}
+    if not txt:
+        return empty
+    rows = list(csv.DictReader(txt.splitlines(), delimiter="\t"))
+    if not rows:
+        return empty
+    r = rows[0]
+    def _f(k):
+        try: return float(r.get(k, "") or "")
+        except (TypeError, ValueError): return None
+    return {
+        "completeness":  _f("Completeness"),
+        "contamination": _f("Contamination"),
+        "strain_het":    _f("Strain heterogeneity"),
+    }
 
 
 def parse_quast(report_html):
@@ -379,6 +399,7 @@ if __name__ == "__main__":
 
     mlst_data    = parse_mlst(sp_dir / "MLST/mlst.tsv")
     quast_data   = parse_quast(sp_dir / "QUAST/report.html")
+    quast_data.update(parse_checkm(sp_dir / "CheckM/quality.tsv"))
     fastp_data   = parse_fastp(sp_dir / "QC/fastp.json")
     est_depth    = estimate_depth(fastp_data["bases"], quast_data["total_length"])
     bracken_data = parse_bracken(sp_dir / "ID_Kraken2/bracken_species.txt")
@@ -478,8 +499,9 @@ if __name__ == "__main__":
     )
 
     # --- Cumulative run log ---
+    # Static, single TSV — re-running a sample upserts (replaces) its row.
     log_path = Path(args.log_path) if args.log_path else \
-               Path(args.results_dir) / f"pipeline_run_{datetime.now().strftime('%Y%m%d_%H%M')}.tsv"
+               Path(args.results_dir) / "run_log.tsv"
     header = "\t".join(["#", "Sample", "GAMBIT", "Bracken", "Skani hit", "Skani ANI",
                          "ST", "MLST tool", "Species-specific typing", "Date"])
     skani  = data["species_id"]["skani"]
@@ -527,11 +549,30 @@ if __name__ == "__main__":
         datetime.now().strftime("%Y-%m-%d %H:%M"),
     ])
 
-    if log_path.exists():
-        lines = log_path.read_text().splitlines()
-        nr    = len([l for l in lines if l and not l.startswith("#")])
-    else:
-        lines = [header]
-        nr    = 0
-    lines.append(row.format(nr=nr + 1))
-    log_path.write_text("\n".join(lines) + "\n")
+    # Parallel report jobs all write to the same TSV; flock serialises the
+    # read-modify-write so rows don't clobber each other. Re-runs of the same
+    # sample overwrite the prior row (matched by column 1 = sample ID).
+    log_path.touch()
+    with open(log_path, "r+") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            existing = f.read().splitlines()
+            if existing and existing[0].startswith("#"):
+                head, body = existing[0], existing[1:]
+            else:
+                head, body = header, existing
+            # Drop any prior row for this sample, then append the fresh one.
+            data = [l for l in body
+                    if l.strip() and (l.split("\t") + [""])[1] != args.sample]
+            data.append(row)
+            # Renumber column 0 (#) so the file stays 1..N after deletions.
+            renumbered = []
+            for i, l in enumerate(data, 1):
+                parts    = l.split("\t")
+                parts[0] = str(i)
+                renumbered.append("\t".join(parts))
+            f.seek(0)
+            f.truncate()
+            f.write("\n".join([head] + renumbered) + "\n")
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)

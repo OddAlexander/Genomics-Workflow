@@ -2,7 +2,7 @@
 
 # --- Configuration ---
 configfile: "config.yaml"
-from datetime import datetime
+from pathlib import Path
 
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
@@ -12,11 +12,12 @@ KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reserved per jo
 SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reserved per Shovill/SPAdes job (SPAdes --ram is set to this / 1024)
 SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reserved per skani job (much lower than fastANI)
 SKANI_THREADS    = config.get("skani_threads", 8)
+CHECKM_MEM       = config.get("checkm_mem_mb", 22000)   # MB RAM per CheckM job (lineage_wf --reduced_tree, pplacer peaks ~14-18 GB; 22 GB allows 1 job per 30 GB host)
 GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
 SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Path to skani sketch (directory) -- empty = skani is skipped
 SKANI_THRESHOLD  = config.get("skani_threshold", 0.3)      # skani runs when GAMBIT closest.distance exceeds this
 PLASMIDFINDER_DB = config.get("plasmidfinder_db", "/databases/plasmidfinder_db/")
-RUN_LOG          = f"{RESULTS_DIR}/pipeline_run_{datetime.now().strftime('%Y%m%d_%H%M')}.tsv"
+RUN_LOG          = f"{RESULTS_DIR}/run_log.tsv"
 
 # --- Species groups and schemes ---
 SA  = {"Staphylococcus_aureus"}
@@ -64,6 +65,7 @@ AMR_ORG = {
 ALWAYS_TOOLS = [
     "QC/fastp.json",
     "QUAST/report.html",
+    "CheckM/quality.tsv",
     "MultiQC/multiqc_report.html",
     "MLST/mlst.tsv",
     "AMRFinder/amrfinder.tsv",
@@ -92,6 +94,14 @@ def read_species(sample):
     with open(sp_path, "r") as f:
         species = f.read().strip().replace(" ", "_")
     return species if species else "unknown_species"
+
+def species_flag(mapping, fmt="{}"):
+    """Make a params function: reads input.sp, looks it up in mapping, formats with fmt.
+    Returns '' on miss so the flag is silently dropped from the shell command."""
+    def fn(wildcards, input):
+        sp = Path(input.sp).read_text().strip()
+        return fmt.format(mapping[sp]) if sp in mapping else ""
+    return fn
 
 def get_all_outputs(wildcards):
     sp    = read_species(wildcards.sample)
@@ -226,13 +236,11 @@ rule assemble:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/assemble.log"
-    params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/Assembly"
     threads: THREADS
     resources:
         mem_mb = SHOVILL_MEM
     shell:
-        "pixi run shovill --R1 {input.r1} --R2 {input.r2} --outdir {params.outdir} --cpus {threads} --ram $(( {resources.mem_mb} / 1024 )) --force 2>&1 | tee {log}"
+        "pixi run shovill --R1 {input.r1} --R2 {input.r2} --outdir $(dirname {output.fa}) --cpus {threads} --ram $(( {resources.mem_mb} / 1024 )) --force 2>&1 | tee {log}"
 
 rule fastqc:
     input:
@@ -243,11 +251,9 @@ rule fastqc:
         r2 = f"{RESULTS_DIR}/{{sample}}/QC/fastqc/R2_fastqc.html"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/fastqc.log"
-    params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/QC/fastqc"
     threads: 2
     shell:
-        "pixi run fastqc {input.r1} {input.r2} -o {params.outdir} --threads {threads} 2>&1 | tee {log}"
+        "pixi run fastqc {input.r1} {input.r2} -o $(dirname {output.r1}) --threads {threads} 2>&1 | tee {log}"
 
 rule quast:
     input:
@@ -256,11 +262,35 @@ rule quast:
         f"{RESULTS_DIR}/{{sample}}/QUAST/report.html"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/quast.log"
-    params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/QUAST"
     threads: THREADS
     shell:
-        "pixi run quast {input.fa} -o {params.outdir} --threads {threads} 2>&1 | tee {log}"
+        "pixi run quast {input.fa} -o $(dirname {output}) --threads {threads} 2>&1 | tee {log}"
+
+rule checkm:
+    # CheckM expects a directory of FASTAs, one per genome/bin. Symlink the
+    # assembly under a private input/ so the run produces a single-row report.
+    # --reduced_tree drops memory from ~40 GB to ~14 GB for marginal accuracy loss.
+    # Requires CheckM data root set once: `pixi run --environment checkm checkm data setRoot /databases/checkm_data`.
+    input:
+        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
+    output:
+        tsv = f"{RESULTS_DIR}/{{sample}}/CheckM/quality.tsv"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/checkm.log"
+    threads: THREADS
+    resources:
+        mem_mb = CHECKM_MEM
+    shell:
+        """
+        outdir=$(dirname {output.tsv})
+        rm -rf "$outdir/input" "$outdir/bins" "$outdir/storage"
+        mkdir -p "$outdir/input"
+        ln -sf "$(readlink -f {input.fa})" "$outdir/input/contigs.fasta"
+        pixi run --environment checkm checkm lineage_wf \
+            "$outdir/input" "$outdir" -t {threads} -x fasta \
+            --reduced_tree --tab_table -f {output.tsv} 2>&1 | tee {log}
+        rm -rf "$outdir/input" "$outdir/bins" "$outdir/storage" "$outdir/lineage.ms"
+        """
 
 rule mlst:
     input:
@@ -270,11 +300,10 @@ rule mlst:
         f"{RESULTS_DIR}/{{sample}}/MLST/mlst.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/mlst.log"
-    run:
-        with open(input.sp) as f:
-            sp = f.read().strip()
-        scheme = f"--scheme {MLST_SCHEME[sp]}" if sp in MLST_SCHEME else ""
-        shell("pixi run mlst " + scheme + " {input.fa} > {output} 2>{log}")
+    params:
+        scheme = species_flag(MLST_SCHEME, "--scheme {}")
+    shell:
+        "pixi run mlst {params.scheme} {input.fa} > {output} 2>{log}"
 
 rule kleborate:
     input:
@@ -285,15 +314,13 @@ rule kleborate:
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/kleborate.log"
     params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/Kleborate"
-    run:
-        with open(input.sp) as f:
-            sp = f.read().strip()
-        preset = KLEB_PRESET.get(sp, "kpsc")
-        shell("""
-        pixi run --environment identification kleborate -a {input.fa} -o {params.outdir} -p """ + preset + """ 2>&1 | tee {log}
-        find {params.outdir} -maxdepth 1 -name '*_output.txt' ! -name '*hAMRonization*' -exec mv {{}} {output} \\;
-        """)
+        preset = lambda wc, input: KLEB_PRESET.get(Path(input.sp).read_text().strip(), "kpsc")
+    shell:
+        """
+        outdir=$(dirname {output})
+        pixi run --environment identification kleborate -a {input.fa} -o "$outdir" -p {params.preset} 2>&1 | tee {log}
+        find "$outdir" -maxdepth 1 -name '*_output.txt' ! -name '*hAMRonization*' -exec mv {{}} {output} \\;
+        """
 
 rule staphscope:
     input:
@@ -326,12 +353,11 @@ rule amrfinder:
         f"{RESULTS_DIR}/{{sample}}/AMRFinder/amrfinder.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/amrfinder.log"
+    params:
+        organism = species_flag(AMR_ORG, "--organism {}")
     threads: THREADS
-    run:
-        with open(input.sp) as f:
-            sp = f.read().strip()
-        org = f"--organism {AMR_ORG[sp]}" if sp in AMR_ORG else ""
-        shell("pixi run --environment amrfinder4 amrfinder --nucleotide {input.fa} " + org + " --output {output} --threads {threads} --plus 2>&1 | tee {log}")
+    shell:
+        "pixi run --environment amrfinder4 amrfinder --nucleotide {input.fa} {params.organism} --output {output} --threads {threads} --plus 2>&1 | tee {log}"
 
 ECTYPER_MASH = config.get("ectyper_mash",
               "/databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh")
@@ -344,14 +370,14 @@ rule ectyper:
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/ectyper.log"
     params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/ECTyper",
-        mash   = ECTYPER_MASH,
+        mash = ECTYPER_MASH,
     shell:
         """
+        outdir=$(dirname {output})
         ref_flag=""
         [ -f {params.mash} ] && [ "$(stat -c%s {params.mash})" -gt 1000000 ] && ref_flag="-r {params.mash}"
-        pixi run ectyper -i {input.fa} -o {params.outdir} $ref_flag 2>&1 | tee {log}
-        mv {params.outdir}/output.tsv {output}
+        pixi run ectyper -i {input.fa} -o "$outdir" $ref_flag 2>&1 | tee {log}
+        mv "$outdir/output.tsv" {output}
         """
 
 rule mob_typer:
@@ -372,10 +398,9 @@ rule plasmidfinder:
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/plasmidfinder.log"
     params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/PlasmidFinder",
-        db     = PLASMIDFINDER_DB
+        db = PLASMIDFINDER_DB
     shell:
-        "pixi run --environment plasmidfinder plasmidfinder.py -i {input.fa} -o {params.outdir} -p {params.db} -x 2>&1 | tee {log}"
+        "pixi run --environment plasmidfinder plasmidfinder.py -i {input.fa} -o $(dirname {output}) -p {params.db} -x 2>&1 | tee {log}"
 
 rule mefinder_db:
     # mefinder's default --db-path is /tmp/mge_finder/database, shared across all
@@ -412,6 +437,8 @@ rule mefinder:
         # Shovill appends metadata to FASTA headers that mefinder can't parse -- strip with sed.
         # --db-path points at a pre-built shared BLAST DB to avoid the race on /tmp/mge_finder.
         # --temp-dir per sample isolates the per-job working directory.
+        # mefinder versions differ in output format: older writes mefinder.csv, newer mefinder.tsv.
+        # The prefix passed to `mefinder find` is {params.outdir}/mefinder, so the .tsv path equals {output}.
         """
         sed '/^>/s/ .*//' {input.fa} > {params.outdir}/contigs.fa
         pixi run --environment mefinder mefinder find {params.outdir}/mefinder \
@@ -419,7 +446,7 @@ rule mefinder:
             --temp-dir {params.outdir}/tmp 2>&1 | tee {log}
         rm -f {params.outdir}/contigs.fa
         rm -rf {params.outdir}/tmp
-        [ -f {params.outdir}/mefinder.tsv ] || mv {params.outdir}/mefinder.csv {output}
+        [ -f {output} ] || mv {params.outdir}/mefinder.csv {output}
         """
 
 rule seqsero2:
@@ -448,12 +475,11 @@ rule hicap:
         f"{RESULTS_DIR}/{{sample}}/Hicap/hicap.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/hicap.log"
-    params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/Hicap"
     shell:
         """
-        pixi run --environment hicap hicap -q {input.fa} -o {params.outdir} 2>&1 | tee {log}
-        mv {params.outdir}/contigs.tsv {output}
+        outdir=$(dirname {output})
+        pixi run --environment hicap hicap -q {input.fa} -o "$outdir" 2>&1 | tee {log}
+        mv "$outdir/contigs.tsv" {output}
         """
 
 rule pasty:
@@ -463,10 +489,8 @@ rule pasty:
         f"{RESULTS_DIR}/{{sample}}/Pasty/pasty.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/pasty.log"
-    params:
-        outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/Pasty"
     shell:
-        "pixi run pasty -i {input.fa} -o {params.outdir} -p pasty --force 2>&1 | tee {log}"
+        "pixi run pasty -i {input.fa} -o $(dirname {output}) -p pasty --force 2>&1 | tee {log}"
 
 rule multiqc:
     input:
@@ -478,8 +502,5 @@ rule multiqc:
         f"{RESULTS_DIR}/{{sample}}/MultiQC/multiqc_report.html"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/multiqc.log"
-    params:
-        sample_dir = lambda wc: f"{RESULTS_DIR}/{wc.sample}",
-        outdir     = lambda wc: f"{RESULTS_DIR}/{wc.sample}/MultiQC"
     shell:
-        "pixi run multiqc {params.sample_dir} -o {params.outdir} 2>&1 | tee {log}"
+        "pixi run multiqc $(dirname $(dirname {output})) -o $(dirname {output}) 2>&1 | tee {log}"

@@ -200,12 +200,23 @@ function render() {
   </div>`;
 
   // -- Assembly + species ID
+  const cmpl = s.assembly.completeness, cont = s.assembly.contamination;
+  const cmplColor = cmpl == null ? 'inherit' : cmpl < 90 ? '#b02a37' : cmpl < 95 ? '#856404' : 'inherit';
+  const contColor = cont == null ? 'inherit' : cont >= 5 ? '#b02a37' : cont >= 2 ? '#856404' : 'inherit';
   h += `<div class="two-col">`;
   h += `<div><h2>Assembly</h2><div class="card"><div class="grid">
     <div class="stat"><div class="val">${s.assembly.contigs}</div><div class="lbl">Contigs</div></div>
     <div class="stat"><div class="val">${(s.assembly.total_length/1e6).toFixed(2)}</div><div class="lbl">Mb total</div></div>
     <div class="stat"><div class="val">${(s.assembly.N50/1e3).toFixed(0)}</div><div class="lbl">N50 (kb)</div></div>
     <div class="stat"><div class="val">${(s.assembly.largest_contig/1e3).toFixed(0)}</div><div class="lbl">Largest contig (kb)</div></div>
+    <div class="stat" title="CheckM lineage_wf: % of single-copy marker genes detected">
+      <div class="val" style="color:${cmplColor}">${cmpl != null ? cmpl.toFixed(1) + '%' : '-'}</div>
+      <div class="lbl">Completeness</div>
+    </div>
+    <div class="stat" title="CheckM lineage_wf: % duplicate single-copy markers (proxy for contamination)">
+      <div class="val" style="color:${contColor}">${cont != null ? cont.toFixed(1) + '%' : '-'}</div>
+      <div class="lbl">Contamination</div>
+    </div>
   </div></div></div>`;
 
   const sid = s.species_id;
