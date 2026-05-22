@@ -12,8 +12,14 @@
 # Expected structure: data/<sample>/<sample>_R1.fastq.gz
 data_dir: data/
 
-# Output directory
+# Output directory (main pipeline)
 results_dir: results
+
+# Shared output root for the phylogenomics and cgMLST pipelines.
+# Resolved as <results_base>/<run_name>, where run_name defaults to DD-MM-YYYY_HHMM
+# (override with --config run_name=salmonella_outbreak).
+# Default expands $USER to the current user; uncomment / override to point elsewhere.
+# results_base: /srv/phylo_results/${USER}
 
 # Directory containing pipeline scripts (from install-scripts.sh)
 scripts_dir: ~/bin

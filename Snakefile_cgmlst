@@ -15,14 +15,18 @@
 #   --config results_dir=results        path to main pipeline results
 
 configfile: "config.yaml"
+import os
 from pathlib import Path
 from datetime import datetime
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 RESULTS_DIR      = config.get("results_dir",        "results/").rstrip("/")
-_cgmlst_base     = config.get("cgmlst_dir",         "results_cgmlst").rstrip("/")
+# Shared output root (override in config.yaml or --config results_base=...).
+# Default: /srv/phylo_results/$USER -- per-user dir on a shared host.
+_results_base    = config.get("results_base",
+                              f"/srv/phylo_results/{os.environ.get('USER', 'unknown')}").rstrip("/")
 _run_name        = config.get("run_name",           datetime.now().strftime('%d-%m-%Y_%H%M'))
-CGMLST_DIR       = f"{_cgmlst_base}/{_run_name}"
+CGMLST_DIR       = f"{_results_base}/{_run_name}"
 THREADS          = config.get("threads",            8)
 
 # Accept either a single threshold ("7") or a comma-separated list ("5,10,24").
@@ -81,7 +85,14 @@ if not ALL_SAMPLES:
 _filter = config.get("samples", None)
 if _filter:
     _filter = _filter if isinstance(_filter, list) else [_filter]
-    SAMPLES = [s for s in ALL_SAMPLES if any(f in s for f in _filter)]
+    # Filter order is preserved (consistent with Snakefile / Snakefile_phylo).
+    seen = set()
+    SAMPLES = []
+    for f in _filter:
+        for s in ALL_SAMPLES:
+            if f in s and s not in seen:
+                SAMPLES.append(s)
+                seen.add(s)
     if not SAMPLES:
         raise ValueError(f"No samples found for filter: {_filter}")
 else:

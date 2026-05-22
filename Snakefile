@@ -123,7 +123,16 @@ assert len(set(ALL_SAMPLES)) == len(ALL_SAMPLES), \
 _filter = config.get("samples", None)
 if _filter:
     _filter = _filter if isinstance(_filter, list) else [_filter]
-    SAMPLES = [s for s in ALL_SAMPLES if any(f in s for f in _filter)]
+    # Filter order is preserved: samples=[a,b,c] yields SAMPLES in that order
+    # (handy for downstream tooling that depends on the first sample, e.g. the
+    # phylo pipeline's auto-reference picker).
+    seen = set()
+    SAMPLES = []
+    for f in _filter:
+        for s in ALL_SAMPLES:
+            if f in s and s not in seen:
+                SAMPLES.append(s)
+                seen.add(s)
     if not SAMPLES:
         raise ValueError(f"No samples found for filter: {_filter}")
 else:
