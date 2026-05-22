@@ -16,10 +16,17 @@ data_dir: data/
 results_dir: results
 
 # Shared output root for the phylogenomics and cgMLST pipelines.
-# Resolved as <results_base>/<run_name>, where run_name defaults to DD-MM-YYYY_HHMM
-# (override with --config run_name=salmonella_outbreak).
-# Default expands $USER to the current user; uncomment / override to point elsewhere.
-# results_base: /srv/phylo_results/${USER}
+# Each pipeline appends its own subdir + run_name, so the same run_name is safe
+# for both:
+#   phylo  -> <results_base>/phylo/<run_name>/
+#   cgmlst -> <results_base>/cgmlst/<run_name>/
+# run_name defaults to DD-MM-YYYY_HHMM (override with --config run_name=outbreak_x).
+#
+# If left unset, the Snakefile defaults to /srv/phylo_results/$USER -- the $USER
+# expansion happens in Python (os.environ["USER"]), not in YAML. To override,
+# uncomment and use a literal path (YAML does NOT expand env vars):
+#   results_base: /srv/phylo_results/odd
+#   results_base: /scratch/projects/outbreak_2026
 
 # Directory containing pipeline scripts (from install-scripts.sh)
 scripts_dir: ~/bin

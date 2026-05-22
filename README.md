@@ -139,10 +139,11 @@ pixi run snakemake -s Snakefile_phylo --cores 16 \
     --config ref=... snp_threshold=20
 ```
 
-Output is written to `results_phylo/<run_name>/` (default: `DD-MM-YYYY_HHMM`):
+Output is written to `<results_base>/phylo/<run_name>/` (default: `/srv/phylo_results/$USER/phylo/DD-MM-YYYY_HHMM`).
+Override either piece with `--config results_base=/path/to/parent run_name=salmonella_outbreak`.
 
 ```
-results_phylo/07-05-2026_1621/
+/srv/phylo_results/odd/phylo/07-05-2026_1621/
 ├── <date>/<sample-id>/
 │   ├── Trimmed/      fastp
 │   ├── QC/           FastQC + fastp JSON + HTML
@@ -203,10 +204,12 @@ pixi run snakemake -s Snakefile_cgmlst --cores 16 \
     --config samples=19-03-2026 cgmlst_schema=/databases/cgmlst/staph_aureus
 ```
 
-Output is written to `results_cgmlst/<run_name>/` (default: `DD-MM-YYYY_HHMM`):
+Output is written to `<results_base>/cgmlst/<run_name>/` (default: `/srv/phylo_results/$USER/cgmlst/DD-MM-YYYY_HHMM`).
+Shares the `results_base` key with the phylo pipeline; the `cgmlst/` / `phylo/` segments
+keep their outputs in separate trees so the same `run_name` is safe for both.
 
 ```text
-results_cgmlst/14-05-2026_1851/
+/srv/phylo_results/odd/cgmlst/14-05-2026_1851/
 ├── allele_profiles.tsv         chewBBACA per-sample allele calls
 ├── cgmlst_dists.tsv            pairwise allele distance matrix
 ├── grapetree.nwk               Newick tree (GrapeTree-compatible)
@@ -346,12 +349,18 @@ wget -O databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh \
 | `shovill_mem_mb` | `12000` | MB RAM per Shovill job |
 | `checkm_mem_mb` | `16000` | MB RAM per CheckM job (lineage_wf `--reduced_tree`) |
 
+**Shared options for the phylo + cgMLST pipelines** (set in `config.yaml` or via `--config`):
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `results_base` | `/srv/phylo_results/$USER` | Parent for phylo + cgMLST. Each pipeline auto-appends `phylo/` or `cgmlst/` underneath, so the same `run_name` is safe for both. |
+| `run_name` | `DD-MM-YYYY_HHMM` | Subdirectory under `<results_base>/phylo/` and `<results_base>/cgmlst/` |
+
 **Phylogenomics-only options** (passed via `--config`):
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `ref` | *(first sample)* | Path to reference `.gbk` (Prokka-annotated) |
-| `run_name` | `DD-MM-YYYY_HHMM` | Output subdirectory name under `results_phylo/` |
 | `snp_threshold` | `0` (disabled) | SNP cutoff for cluster coloring in the report |
 | `mincov` | `10` | Snippy minimum read coverage |
 | `minfrac` | `0.9` | Snippy minimum allele frequency |
@@ -363,8 +372,6 @@ wget -O databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh \
 | `cgmlst_threshold` | `7` | Allele-distance cutoff(s) for ReporTree clustering (single int or comma-separated list, e.g. `5,10,24`) |
 | `cgmlst_schema` | *(auto)* | Override schema for the whole run (skips per-sample auto-detection) |
 | `cgmlst_schemas` | *(built-in)* | YAML dict mapping species → schema path (see [Snakefile_cgmlst](Snakefile_cgmlst)) |
-| `run_name` | `DD-MM-YYYY_HHMM` | Output subdirectory name under `results_cgmlst/` |
-| `cgmlst_dir` | `results_cgmlst` | Parent directory for cgMLST runs |
 
 ---
 

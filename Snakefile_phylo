@@ -25,7 +25,8 @@ DATA_DIR       = config.get("data_dir",       "data/").rstrip("/")
 _results_base  = config.get("results_base",
                             f"/srv/phylo_results/{os.environ.get('USER', 'unknown')}").rstrip("/")
 _run_name      = config.get("run_name",       datetime.now().strftime('%d-%m-%Y_%H%M'))
-PHYLO_DIR      = f"{_results_base}/{_run_name}"
+# Auto-separated from cgMLST so both pipelines can share the same run_name safely.
+PHYLO_DIR      = f"{_results_base}/phylo/{_run_name}"
 THREADS        = config.get("threads",        8)
 SHOVILL_MEM    = config.get("shovill_mem_mb", 12000)
 SKANI_DB       = config.get("skani_db",       "/databases/skani_db/bacteria")
