@@ -21,11 +21,6 @@ pixi install
 
 ### Databases
 
-**GAMBIT**
-```bash
-pixi run --environment identification gambit-db-genomes download -d /databases/gambit_db/
-```
-
 **Kraken2** — recommended: PlusPF 8 GB (~8 GB, requires ≥16 GB RAM):
 ```bash
 mkdir -p /databases/kraken2_db_light
@@ -75,6 +70,34 @@ pixi run --environment chewbbaca chewBBACA.py PrepExternalSchema \
 
 ---
 
+## Repository layout
+
+```text
+.
+├── Snakefile              main pipeline (QC, assembly, ID, AMR, typing)
+├── Snakefile_phylo        phylogenomics (Snippy → Gubbins → IQ-TREE + Parsnp)
+├── Snakefile_varcall      reference mapping + bcftools variant calling
+├── Snakefile_cgmlst       cgMLST allele calling + ReporTree clustering
+├── config.yaml            shared configuration for all four pipelines
+├── refseq_list.json       species → reference FASTA/GFF map (varcall)
+├── rules/
+│   └── common.smk         shared helpers: filter_samples, assert_unique_samples
+└── scripts/
+    ├── make_report.py             per-sample report (main pipeline)
+    ├── make_phylo_report.py       multi-sample report (phylo)
+    ├── make_cgmlst_report.py      multi-sample report (cgMLST)
+    ├── make_varcall_report.py     per-sample report (varcall)
+    ├── build_refseq_list.py       auto-generates refseq_list.json from /databases/refseq/
+    ├── pixi/                      pixi convenience wrappers (e.g. Prokka annotation)
+    └── templates/                 Jinja-style HTML templates consumed by the make_*_report.py scripts
+        ├── report_template.html
+        ├── report_template_phylo.html
+        ├── report_template_cgmlst.html
+        └── report_template_varcall.html
+```
+
+---
+
 ## Usage
 
 ### Input format
@@ -110,7 +133,7 @@ pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
 
 > **`mem_mb`** should be set to total RAM minus ~4 GB (e.g. `12000` on a 16 GB machine). Kraken2, Shovill, and skani reserve 12, 12, and 4 GB respectively.
 
-Each run appends one row per sample to `results/run_log.tsv` (sample ID, GAMBIT/Bracken species, skani hit + ANI, MLST ST, species-specific typing, date). Re-running a sample replaces its prior row, so the file always reflects the latest call per sample — a single, cumulative summary across all runs.
+Each run appends one row per sample to `results/run_log.tsv` (sample ID, SKANI species, skani hit + ANI, Bracken top, MLST ST, species-specific typing, date). Re-running a sample replaces its prior row, so the file always reflects the latest call per sample — a single, cumulative summary across all runs.
 
 ### Phylogenomics pipeline (`Snakefile_phylo`)
 
@@ -177,6 +200,77 @@ scripts/pixi/pixi_annotate_prokka.sh 19-03-2026
 scripts/pixi/pixi_annotate_prokka.sh 19-03-2026/005a --genus Staphylococcus --species aureus
 ```
 
+### Variant-calling pipeline (`Snakefile_varcall`)
+
+Reference-based read mapping and bcftools variant calling against an NCBI reference
+picked automatically via Mash screen on the trimmed reads — no assembly required,
+species ID is available pre-mapping. Outputs sit alongside the main pipeline's
+per-sample tree at `results/<sample>/VarCall/`.
+
+Requires a `refseq_list.json` in the project root (next to the Snakefile)
+that maps each supported species (underscored "Genus_species") to a FASTA
+(and optionally a GFF for variant annotation):
+
+```json
+{
+  "Klebsiella_pneumoniae": {
+    "fasta": "/databases/refseq/kpneumo/GCF_000240185.1.fna",
+    "gff":   "/databases/refseq/kpneumo/GCF_000240185.1.gff"
+  },
+  "Staphylococcus_aureus": {
+    "fasta": "/databases/refseq/saureus/GCF_000013425.1.fna",
+    "gff":   "/databases/refseq/saureus/GCF_000013425.1.gff"
+  }
+}
+```
+
+If Mash screen's top hit isn't in the JSON, the pipeline fails loudly for that
+sample. Omit the `gff` to skip `bcftools csq` annotation for that species.
+
+```bash
+# All samples
+pixi run snakemake -s Snakefile_varcall --cores 16 --resources mem_mb=60000
+
+# Filter by date / sample / list (same syntax as the main pipeline)
+pixi run snakemake -s Snakefile_varcall --cores 16 --config samples=19-03-2026
+pixi run snakemake -s Snakefile_varcall --cores 16 --config "samples=[001k,002k]"
+
+# Point at a different refseq_list.json
+pixi run snakemake -s Snakefile_varcall --cores 16 \
+    --config refseq_list=/path/to/my_refseqs.json
+```
+
+Per-sample output (relative to `results/<sample>/`):
+
+```text
+VarCall/
+├── Mash/
+│   ├── screen.tsv             top-N Mash screen hits (sorted by containment)
+│   └── reference.tsv          chosen species + paths to FASTA & GFF
+├── Bowtie2/
+│   ├── aligned.bam            coordinate-sorted, duplicate-marked
+│   └── aligned.bam.bai
+├── QC/
+│   ├── coverage.tsv           samtools coverage (per-contig depth/breadth)
+│   ├── flagstat.txt           samtools flagstat (mapping rate, properly paired)
+│   └── samtools_stats.txt     full samtools stats (consumed by MultiQC)
+├── VCF/
+│   ├── variants.vcf.gz        bcftools call -mv → filter (QUAL, DP, MQ)
+│   └── variants.annotated.vcf.gz   bcftools csq if GFF available
+├── MultiQC/multiqc_report.html
+└── varcall_report.html        per-sample HTML report
+```
+
+The varcall report shows **real** mapping-based depth/breadth (from
+`samtools coverage`) and mapping rate (from `samtools flagstat`) — not the
+assembly-length estimate used in the main per-sample report. It also surfaces
+the Mash screen top hits (useful for spotting contamination), variant counts
+broken down by PASS/filtered, Ts/Tv ratio, and a top-N variant table annotated
+with gene + consequence when the reference GFF is available.
+
+A bowtie2 index per unique reference is built once and cached under
+`results/.bowtie2_indices/`, shared across samples.
+
 ### cgMLST pipeline (`Snakefile_cgmlst`)
 
 Allele-based outbreak typing — reads assemblies produced by the main pipeline
@@ -230,81 +324,82 @@ mean.
 
 ## Pipeline overview
 
-### Main pipeline
+Diagrams below use Mermaid; GitHub and most Markdown viewers render them as
+visual flowcharts. Decision nodes (parallelograms) mark the Snakemake checkpoint
+that routes the DAG based on species ID.
 
-```
-FASTQ
-  │
-  ▼
-fastp → FastQC
-  │
-  ├── Kraken2 + Bracken
-  ▼
-Shovill → QUAST → CheckM (completeness / contamination)
-  │
-  ├── GAMBIT → species.txt  ← checkpoint (controls DAG routing)
-  ├── skani  (only on uncertain GAMBIT match)
-  ├── MLST
-  ├── AMRFinder
-  ├── MOB-suite
-  ├── MEfinder
-  ├── [S. aureus]          → StaphScope
-  ├── [Klebsiella/E. coli] → Kleborate
-  ├── [S. pyogenes]        → emmtyper
-  ├── [P. aeruginosa]      → Pasty
-  ├── [Salmonella]         → SeqSero2
-  └── [H. influenzae]      → hicap
-  │
-  ▼
-MultiQC → HTML report
+### Main pipeline — DAG
+
+```mermaid
+flowchart TD
+    raw[FASTQ reads] --> fastp
+    fastp --> fastqc[FastQC]
+    fastp --> kraken[Kraken2 + Bracken<br/>read-level species ID]
+    fastp --> shovill[Shovill assembly]
+    shovill --> quast[QUAST]
+    shovill --> checkm[CheckM<br/>completeness · contamination]
+    shovill --> skani[/skani<br/>species checkpoint<br/>writes species.txt/]
+    skani --> mlst[MLST]
+    skani --> amr[AMRFinder]
+    skani --> mob[MOB-suite]
+    skani --> me[MEfinder]
+    skani --> plf[PlasmidFinder]
+    skani --> sp[Species-specific:<br/>StaphScope · Kleborate · ECTyper<br/>emmtyper · Pasty · SeqSero2 · hicap]
+    fastqc & kraken & quast & checkm & mlst & amr & mob & me & plf & sp --> multiqc[MultiQC]
+    multiqc --> report[pipeline_summary.html]
 ```
 
-### Phylogenomics pipeline
+### Phylogenomics pipeline — DAG
 
-```
-FASTQ (raw reads)
-  │
-  ▼
-fastp → FastQC → Shovill → QUAST → CheckM → skani
-  │                │
-  │                ├── Prokka  (auto-reference only)
-  │                └── Parsnp  → parsnp.tree, parsnp.vcf, parsnp.snps.fasta
-  │                              (reference-free core SNP from assemblies)
-  │                                  │
-  │                                  └── snp-dists  → snp_dists_parsnp.tsv
-  ▼
-Snippy (per sample, against reference)
-  │
-  ▼
-snippy-core → core.full.aln
-  │                │
-  │                └── snp-dists  → SNP distance matrix (raw)
-  ▼
-Gubbins (recombination removal, hybrid tree builder)
-  │                │
-  │                └── snp-dists  → SNP distance matrix (filtered)
-  └── IQ-TREE2  → ML tree  (skipped if < 3 taxa)
-  │
-  ▼
-MultiQC + HTML report (phylo_report.html)
+```mermaid
+flowchart TD
+    raw[FASTQ reads] --> fastp
+    fastp --> fastqc[FastQC]
+    fastp --> shovill[Shovill assembly]
+    shovill --> quast[QUAST]
+    shovill --> checkm[CheckM]
+    shovill --> skani[skani<br/>species ID]
+    shovill -. no --config ref= .-> prokka[Prokka<br/>annotate auto-reference]
+    shovill --> parsnp[Parsnp<br/>reference-free core SNP<br/>from assemblies]
+    parsnp --> snpdistsP[snp-dists<br/>parsnp]
+    fastp --> snippy[Snippy<br/>per-sample SNP calls<br/>vs reference]
+    prokka --> snippy
+    snippy --> core[snippy-core<br/>core.full.aln]
+    core --> snpdistsC[snp-dists<br/>core]
+    core --> gubbins[Gubbins<br/>recombination removal]
+    gubbins --> snpdistsG[snp-dists<br/>gubbins]
+    gubbins --> iqtree[IQ-TREE2<br/>ML tree]
+    fastqc & quast & checkm --> multiqc[MultiQC_run]
+    snpdistsC & snpdistsG & snpdistsP & iqtree & parsnp & multiqc --> report[phylo_report.html]
 ```
 
-### cgMLST pipeline
+### Variant-calling pipeline — DAG
 
+```mermaid
+flowchart TD
+    raw[FASTQ reads] --> fastp
+    fastp --> fastqc[FastQC]
+    fastp --> kraken[Kraken2 + Bracken<br/>purity check]
+    fastp --> mash[Mash screen<br/>top species from reads]
+    mash --> pick[/pick_reference<br/>look up species<br/>in refseq_list.json/]
+    pick --> bowtie[bowtie2 align<br/>+ samtools sort + markdup<br/>per-reference index cached]
+    bowtie --> sstats[samtools coverage<br/>flagstat · stats]
+    bowtie --> bcfcall[bcftools mpileup<br/>+ call -mv --ploidy 1<br/>+ filter QUAL/DP/MQ]
+    bcfcall --> bcfcsq[bcftools csq<br/>consequence annotation<br/>from GFF]
+    fastqc & kraken & sstats & bcfcsq --> multiqc[MultiQC]
+    multiqc --> report[varcall_report.html]
 ```
-results/<sample>/Assembly/contigs.fa   (from main pipeline)
-  │
-  ▼
-chewBBACA  →  allele_profiles.tsv         (per-locus allele IDs)
-  │
-  ├── cgmlst-dists  →  cgmlst_dists.tsv   (pairwise allele distance)
-  ├── GrapeTree     →  grapetree.nwk
-  ▼
-ReporTree  →  cluster_partitions.tsv      (single-linkage at thr=N[,M,...])
-  │
-  ▼
-make_cgmlst_report.py  →  cgmlst_report.html
-                          (interactive MST + QC table + cluster summary)
+
+### cgMLST pipeline — DAG
+
+```mermaid
+flowchart TD
+    asm[results/&lt;sample&gt;/Assembly/contigs.fa<br/>from main pipeline] --> chew[chewBBACA AlleleCall<br/>vs species-specific schema]
+    chew --> profiles[allele_profiles.tsv<br/>per-locus integer IDs]
+    profiles --> dists[cgmlst-dists<br/>pairwise allele distance]
+    profiles --> grape[GrapeTree MSTreeV2<br/>Newick]
+    profiles --> reportree[ReporTree HC<br/>single-linkage clusters<br/>at thr=N,M,...]
+    dists & grape & reportree --> report[cgmlst_report.html<br/>interactive MST · QC table<br/>cluster summary]
 ```
 
 ---
@@ -341,9 +436,7 @@ wget -O databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh \
 | `threads` | `8` | Threads per rule |
 | `kraken2_db` | `/databases/kraken2_db_light/` | Kraken2 database |
 | `kraken2_mem_mb` | `12000` | MB RAM per Kraken2 job |
-| `gambit_db` | `/databases/gambit_db/` | GAMBIT database |
-| `skani_db` | `/databases/skani_db/bacteria` | skani sketch database |
-| `skani_threshold` | `0.3` | GAMBIT `closest.distance` above this triggers skani |
+| `skani_db` | `/databases/skani_db/bacteria` | skani sketch database (drives species ID checkpoint) |
 | `skani_mem_mb` | `4000` | MB RAM per skani job |
 | `skani_threads` | `8` | Threads per skani job |
 | `shovill_mem_mb` | `12000` | MB RAM per Shovill job |
@@ -400,8 +493,7 @@ pixi run snakemake --cores 16 --resources mem_mb=60000 --rerun-incomplete
 | QUAST | ≥5.2 | Assembly statistics |
 | CheckM | ≥1.2 | Assembly completeness and contamination (lineage-based marker genes) |
 | Kraken2 + Bracken | ≥2.1 | Species identification (reads) |
-| GAMBIT | ≥0.5 | Species identification (assembly) — controls DAG routing |
-| skani | ≥0.2 | ANI-based species ID when GAMBIT match is uncertain |
+| skani | ≥0.2 | ANI-based species identification (assembly) — controls DAG routing |
 | MLST | ≥2.23 | Sequence typing (PubMLST) |
 | AMRFinder | v4.x | Resistance and virulence genes |
 | MOB-suite | ≥3.1 | Plasmid typing |
@@ -417,6 +509,10 @@ pixi run snakemake --cores 16 --resources mem_mb=60000 --rerun-incomplete
 | IQ-TREE2 | ≥2.2 | ML phylogenetic tree |
 | Parsnp | ≥2.0 | Reference-free core SNP analysis from assemblies (parallel to Snippy + Gubbins) |
 | snp-dists | ≥0.8 | Pairwise SNP distances |
+| Mash | ≥2.3 | Reads-based species ID (Snakefile_varcall) |
+| Bowtie2 | ≥2.5 | Read alignment for variant calling |
+| samtools | ≥1.19 | BAM sort/index/markdup, coverage, flagstat |
+| bcftools | ≥1.19 | Variant calling, filtering, consequence annotation (csq) |
 | Prokka | ≥1.14 | Annotation for custom reference genomes |
 | chewBBACA | ≥3.3 | cgMLST allele calling |
 | cgmlst-dists | ≥0.4 | Pairwise allele-distance matrix |
