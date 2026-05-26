@@ -15,6 +15,7 @@
 #   --config results_dir=results        path to main pipeline results
 
 configfile: "config.yaml"
+include: "rules/common.smk"
 import os
 from pathlib import Path
 from datetime import datetime
@@ -74,30 +75,13 @@ SCHEMA_MAP = config.get("cgmlst_schemas", _DEFAULT_SCHEMAS)
 # ── Sample detection ──────────────────────────────────────────────────────────
 # Reads assemblies written by the main pipeline -- run that first.
 ALL_SAMPLES = glob_wildcards(f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa").sample
-assert len(set(ALL_SAMPLES)) == len(ALL_SAMPLES), \
-    f"Duplicate sample IDs: {[s for s in set(ALL_SAMPLES) if ALL_SAMPLES.count(s) > 1]}"
-
+assert_unique_samples(ALL_SAMPLES)
 if not ALL_SAMPLES:
     raise ValueError(
         f"No assembled samples found under {RESULTS_DIR}/. "
         "Run the main pipeline first: pixi run snakemake --cores 16"
     )
-
-_filter = config.get("samples", None)
-if _filter:
-    _filter = _filter if isinstance(_filter, list) else [_filter]
-    # Filter order is preserved (consistent with Snakefile / Snakefile_phylo).
-    seen = set()
-    SAMPLES = []
-    for f in _filter:
-        for s in ALL_SAMPLES:
-            if f in s and s not in seen:
-                SAMPLES.append(s)
-                seen.add(s)
-    if not SAMPLES:
-        raise ValueError(f"No samples found for filter: {_filter}")
-else:
-    SAMPLES = ALL_SAMPLES
+SAMPLES = filter_samples(ALL_SAMPLES, config.get("samples"))
 
 # ── Schema auto-detection ─────────────────────────────────────────────────────
 def _schema_for(sample):
@@ -158,12 +142,13 @@ rule chewbbaca:
     shell:
         # Copies are named 19-03-2026_005a.fasta so chewBBACA sample IDs match the
         # flat-underscore form used by the report script (normalised back to leaf names).
+        # Bash parameter expansion replaces the previous double-sed + tr chain.
         """
         mkdir -p {params.asm_dir}
         rm -f {params.asm_dir}/*.fasta
         for f in {input.assemblies}; do
-            sname=$(echo "$f" | sed 's|{RESULTS_DIR}/||' | sed 's|/Assembly/contigs.fa||' | tr '/' '_')
-            cp "$f" "{params.asm_dir}/$sname.fasta"
+            sname="${{f#{RESULTS_DIR}/}}"; sname="${{sname%/Assembly/contigs.fa}}"
+            cp "$f" "{params.asm_dir}/${{sname//\\//_}}.fasta"
         done
         rm -rf {params.chw_dir}
         pixi run --environment cgmlst chewBBACA.py AlleleCall \
@@ -270,7 +255,7 @@ rule cgmlst_report:
             --dists {input.dists} \
             --grapetree {input.grapetree} \
             --partitions {input.partitions} \
-            --template report_template_cgmlst.html \
+            --template scripts/templates/report_template_cgmlst.html \
             --samples {params.samples} \
             --schema {SCHEMA} \
             --thresholds {params.thresholds} \

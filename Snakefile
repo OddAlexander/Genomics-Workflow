@@ -2,6 +2,7 @@
 
 # --- Configuration ---
 configfile: "config.yaml"
+include: "rules/common.smk"
 from pathlib import Path
 
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
@@ -13,9 +14,7 @@ SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reserved per S
 SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reserved per skani job (much lower than fastANI)
 SKANI_THREADS    = config.get("skani_threads", 8)
 CHECKM_MEM       = config.get("checkm_mem_mb", 22000)   # MB RAM per CheckM job (lineage_wf --reduced_tree, pplacer peaks ~14-18 GB; 22 GB allows 1 job per 30 GB host)
-GAMBIT_DB        = config.get("gambit_db", "/databases/gambit_db/")
-SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Path to skani sketch (directory) -- empty = skani is skipped
-SKANI_THRESHOLD  = config.get("skani_threshold", 0.3)      # skani runs when GAMBIT closest.distance exceeds this
+SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Path to skani sketch -- used for species ID (replaces GAMBIT)
 PLASMIDFINDER_DB = config.get("plasmidfinder_db", "/databases/plasmidfinder_db/")
 RUN_LOG          = f"{RESULTS_DIR}/run_log.tsv"
 
@@ -64,6 +63,7 @@ AMR_ORG = {
 # --- Tools per species group ---
 ALWAYS_TOOLS = [
     "QC/fastp.json",
+    "QC/self_coverage.tsv",
     "QUAST/report.html",
     "CheckM/quality.tsv",
     "MultiQC/multiqc_report.html",
@@ -74,7 +74,6 @@ ALWAYS_TOOLS = [
     "MEfinder/mefinder.tsv",
     "ID_Kraken2/kraken2_report.txt",
     "ID_Kraken2/bracken_species.txt",
-    "ID_GAMBIT/gambit.csv",
     "ID_Skani/skani.tsv",
 ]
 
@@ -117,26 +116,8 @@ def get_all_outputs(wildcards):
 # so the results/ tree mirrors the data/ tree.
 ALL_SAMPLES, ANY = glob_wildcards(f"{DATA_DIR}/{{sample}}/{{any}}_R1.fastq.gz")
 READS_DICT = {s: f"{DATA_DIR}/{s}/{a}" for s, a in zip(ALL_SAMPLES, ANY)}
-assert len(set(ALL_SAMPLES)) == len(ALL_SAMPLES), \
-    f"Duplicate sample IDs: {[s for s in set(ALL_SAMPLES) if ALL_SAMPLES.count(s) > 1]}"
-
-_filter = config.get("samples", None)
-if _filter:
-    _filter = _filter if isinstance(_filter, list) else [_filter]
-    # Filter order is preserved: samples=[a,b,c] yields SAMPLES in that order
-    # (handy for downstream tooling that depends on the first sample, e.g. the
-    # phylo pipeline's auto-reference picker).
-    seen = set()
-    SAMPLES = []
-    for f in _filter:
-        for s in ALL_SAMPLES:
-            if f in s and s not in seen:
-                SAMPLES.append(s)
-                seen.add(s)
-    if not SAMPLES:
-        raise ValueError(f"No samples found for filter: {_filter}")
-else:
-    SAMPLES = ALL_SAMPLES
+assert_unique_samples(ALL_SAMPLES)
+SAMPLES = filter_samples(ALL_SAMPLES, config.get("samples"))
 print(f"Running {len(SAMPLES)}/{len(ALL_SAMPLES)} samples.")
 
 # --- Rules ---
@@ -150,7 +131,7 @@ rule report:
     output:
         f"{RESULTS_DIR}/{{sample}}/pipeline_summary.html"
     params:
-        template   = "report_template.html",
+        template   = "scripts/templates/report_template.html",
         results    = RESULTS_DIR,
         kraken2_db = KRAKEN2_DB,
         log_path   = RUN_LOG
@@ -195,47 +176,41 @@ rule kraken2_qc:
         """
 
 checkpoint identify_species:
+    # SKANI species ID -- writes both the canonical skani.tsv and species.txt
+    # (Genus_species form, first two whitespace-separated tokens of Ref_name).
+    # This is a Snakemake checkpoint because species.txt drives DAG routing for
+    # the species-specific rules (Kleborate, StaphScope, AMRFinder, ...).
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
     output:
         sp  = f"{RESULTS_DIR}/{{sample}}/species.txt",
-        csv = f"{RESULTS_DIR}/{{sample}}/ID_GAMBIT/gambit.csv"
+        tsv = f"{RESULTS_DIR}/{{sample}}/ID_Skani/skani.tsv"
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/identify_species.log"
     params:
-        db = GAMBIT_DB
-    shell:
-        """
-        pixi run --environment identification gambit -d {params.db} query \
-            --output {output.csv} --outfmt csv {input.fa} 2>&1 | tee {log}
-        awk -F',' 'NR==2{{print $2}}' {output.csv} | sed 's/ /_/g' > {output.sp}
-        """
-
-rule skani:
-    input:
-        fa     = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
-        gambit = f"{RESULTS_DIR}/{{sample}}/ID_GAMBIT/gambit.csv"
-    output:
-        f"{RESULTS_DIR}/{{sample}}/ID_Skani/skani.tsv"
-    log:
-        f"{RESULTS_DIR}/{{sample}}/logs/skani.log"
-    params:
-        db        = SKANI_DB,
-        threshold = SKANI_THRESHOLD
+        db = SKANI_DB
     threads: SKANI_THREADS
     resources:
         mem_mb = SKANI_MEM
     retries: 2
-    run:
-        import csv
-        row  = next(csv.DictReader(open(input.gambit)))
-        dist = float(row.get("closest.distance") or "inf")
-        if params.db and dist > params.threshold:
-            shell("pixi run --environment identification skani search -q {input.fa} -d {params.db}"
-                  " -o {output} -t {threads} 2>&1 | tee {log}")
-        else:
-            reason = "no database" if not params.db else f"GAMBIT confident (dist={dist:.3f})"
-            shell(f"echo -e 'status\\treason\\nskipped\\t{reason}' > {{output}}")
+    shell:
+        # Ref_name (column 6) looks like "NC_016845.1 Klebsiella pneumoniae subsp. ..."
+        # so the first token is the accession, not the genus. Walk tokens and pick
+        # the first "Genus species" pair (Capital+lowercase, lowercase) -> Genus_species.
+        # Falls through to "unknown_species" for accession-only / 'sp.' / phage hits.
+        """
+        pixi run --environment identification skani search \
+            -q {input.fa} -d {params.db} -o {output.tsv} -t {threads} 2>&1 | tee {log}
+        awk -F'\\t' 'NR==2{{
+            n = split($6, a, " ");
+            for (i = 1; i < n; i++) {{
+                if (a[i] ~ /^[A-Z][a-z]+$/ && a[i+1] ~ /^[a-z]+$/) {{
+                    print a[i] "_" a[i+1]; exit;
+                }}
+            }}
+            print "unknown_species";
+        }}' {output.tsv} > {output.sp}
+        """
 
 rule assemble:
     input:
@@ -274,6 +249,35 @@ rule quast:
     threads: THREADS
     shell:
         "pixi run quast {input.fa} -o $(dirname {output}) --threads {threads} 2>&1 | tee {log}"
+
+rule self_coverage:
+    # SeqSphere-style depth: map trimmed reads back to the sample's own Shovill
+    # assembly with bwa-mem2 and summarise with `samtools coverage`. Because the
+    # assembly was built from these exact reads, mapping rate is ~98%+ and the
+    # resulting depth/breadth reflect the *actual* sequencing yield -- distinct
+    # from the assembly-length estimate (over-counts non-aligning reads) and
+    # from the varcall reference-based depth (under-counts when reference differs).
+    # All intermediates land in a tmp dir and are wiped at the end -- only the
+    # samtools coverage TSV is kept.
+    input:
+        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
+        r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz"
+    output:
+        cov = f"{RESULTS_DIR}/{{sample}}/QC/self_coverage.tsv"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/self_coverage.log"
+    threads: THREADS
+    shell:
+        """
+        work=$(mktemp -d)
+        cp {input.fa} "$work/asm.fa"
+        pixi run bwa-mem2 index "$work/asm.fa" 2>&1 | tee {log}
+        pixi run bwa-mem2 mem -t {threads} "$work/asm.fa" {input.r1} {input.r2} 2>>{log} \
+          | pixi run samtools sort -@ {threads} -O bam -o "$work/aln.bam" - 2>>{log}
+        pixi run samtools coverage "$work/aln.bam" > {output.cov} 2>>{log}
+        rm -rf "$work"
+        """
 
 rule checkm:
     # CheckM expects a directory of FASTAs, one per genome/bin. Symlink the

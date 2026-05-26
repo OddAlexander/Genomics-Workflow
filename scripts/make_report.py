@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate HTML report for a single sample from pipeline outputs."""
-import argparse, csv, fcntl, json
+import argparse, csv, fcntl, gzip, json, re
 from datetime import datetime
 from pathlib import Path
 
@@ -272,29 +272,6 @@ def parse_skani(path):
     }
 
 
-def parse_gambit_full(path):
-    txt = safe_read(path)
-    if not txt:
-        return {}
-    rows = list(csv.DictReader(txt.splitlines()))
-    if not rows:
-        return {}
-    r = rows[0]
-    def _f(key):
-        try:
-            return float(r.get(key, "") or "")
-        except ValueError:
-            return None
-    return {
-        "predicted_name":      r.get("predicted.name",      "-") or "-",
-        "predicted_rank":      r.get("predicted.rank",      "-") or "-",
-        "predicted_threshold": _f("predicted.threshold"),
-        "closest_distance":    _f("closest.distance"),
-        "closest_description": r.get("closest.description", "-") or "-",
-        "next_name":           r.get("next.name",           "-") or "-",
-    }
-
-
 def parse_seqsero2(path):
     r = tsv_first_row(path)
     if not r:
@@ -361,8 +338,103 @@ def parse_mefinder(path):
     return {"count": len(elements), "elements": elements}
 
 
-def derive_purity(primary_pct, gambit_sp, bracken_sp):
-    if primary_pct >= 80 and gambit_sp == bracken_sp:
+def _aggregate_samtools_coverage(path):
+    """Walk a `samtools coverage` TSV and return length-weighted (mean_depth,
+    breadth_pct) across all contigs, or (None, None) if the file is missing
+    or has no usable rows. Shared by parse_self_coverage and parse_varcall."""
+    if not nonempty(path):
+        return (None, None)
+    total_len = total_dep = total_cov = 0
+    for line in Path(path).read_text().splitlines():
+        if line.startswith("#") or not line.strip():
+            continue
+        p = line.split("\t")
+        if len(p) < 7:
+            continue
+        try:
+            length = int(p[2]) - int(p[1]) + 1
+            total_len += length
+            total_dep += float(p[6]) * length
+            total_cov += int(p[4])
+        except (IndexError, ValueError):
+            pass
+    if not total_len:
+        return (None, None)
+    return (round(total_dep / total_len, 1),
+            round(total_cov / total_len * 100, 2))
+
+
+def parse_varcall(sp_dir):
+    """Opportunistically surface the varcall pipeline's outputs if it has been
+    run for this sample (results/<sample>/VarCall/...). Returns None when
+    varcall hasn't run, so the rest of the report renders cleanly without it.
+
+    Provides reference-mapped depth/breadth (complementary to self-mapped depth
+    from parse_self_coverage), chosen reference species, variant PASS/filtered
+    counts, and a link to the full varcall_report.html."""
+    vc_dir          = Path(sp_dir) / "VarCall"
+    mean_depth, br  = _aggregate_samtools_coverage(vc_dir / "QC" / "coverage.tsv")
+    if mean_depth is None:
+        return None
+
+    mapped_pct = None
+    flagstat = vc_dir / "QC" / "flagstat.txt"
+    if nonempty(flagstat):
+        for line in flagstat.read_text().splitlines():
+            if " mapped (" in line and "primary" not in line and "mate" not in line:
+                m = re.search(r"\(([0-9.]+)%", line)
+                if m:
+                    mapped_pct = float(m.group(1))
+                    break
+
+    ref_species = "-"
+    ref_tsv = vc_dir / "Mash" / "reference.tsv"
+    if nonempty(ref_tsv):
+        lines = ref_tsv.read_text().splitlines()
+        if len(lines) >= 2:
+            ref_species = lines[1].split("\t")[0]
+
+    n_pass = n_filt = 0
+    vcf = vc_dir / "VCF" / "variants.annotated.vcf.gz"
+    if not vcf.exists():
+        vcf = vc_dir / "VCF" / "variants.vcf.gz"
+    if vcf.exists():
+        try:
+            with gzip.open(vcf, "rt") as fh:
+                for line in fh:
+                    if line.startswith("#") or not line.strip():
+                        continue
+                    parts = line.rstrip("\n").split("\t")
+                    if len(parts) < 7:
+                        continue
+                    if parts[6] in ("PASS", "."):
+                        n_pass += 1
+                    else:
+                        n_filt += 1
+        except OSError:
+            pass
+
+    return {
+        "reference_species": ref_species,
+        "mean_depth":        mean_depth,
+        "breadth_pct":       br,
+        "mapping_rate_pct":  mapped_pct,
+        "variants_pass":     n_pass,
+        "variants_filtered": n_filt,
+        "report_link":       "VarCall/varcall_report.html",
+    }
+
+
+def parse_self_coverage(path):
+    """samtools coverage on reads self-mapped to the Shovill assembly.
+    Returns length-weighted mean depth + breadth, SeqSphere-equivalent metric.
+    Shares the aggregation helper with parse_varcall."""
+    mean_depth, br = _aggregate_samtools_coverage(path)
+    return {"mean_depth": mean_depth, "breadth_pct": br}
+
+
+def derive_purity(primary_pct, skani_sp, bracken_sp):
+    if primary_pct >= 80 and skani_sp == bracken_sp:
         return "PURE"
     if primary_pct >= 60:
         return "LIKELY_PURE"
@@ -380,8 +452,8 @@ def contamination_check(primary_pct, secondary_pct, secondary_sp, uncl_pct):
     return warnings
 
 
-def concordance_score(gambit_sp, bracken_sp):
-    return 2 if gambit_sp == bracken_sp and gambit_sp not in ("unknown", "-", "") else 0
+def concordance_score(skani_sp, bracken_sp):
+    return 2 if skani_sp == bracken_sp and skani_sp not in ("unknown", "-", "") else 0
 
 
 if __name__ == "__main__":
@@ -409,8 +481,9 @@ if __name__ == "__main__":
     mge_data     = parse_mefinder(sp_dir / "MEfinder/mefinder.tsv")
     pf_data      = parse_plasmidfinder(sp_dir / "PlasmidFinder/results_tab.tsv")
     skani_data   = parse_skani(sp_dir / "ID_Skani/skani.tsv")
-    gambit_full  = parse_gambit_full(sp_dir / "ID_GAMBIT/gambit.csv")
-    gambit_sp    = (safe_read(sp_dir / "species.txt") or "unknown").strip()
+    skani_sp     = (safe_read(sp_dir / "species.txt") or "unknown").strip()
+    self_cov     = parse_self_coverage(sp_dir / "QC/self_coverage.tsv")
+    varcall_data = parse_varcall(sp_dir)   # None when varcall hasn't been run for this sample
 
     contig_mge = {}
     for el in mge_data.get("elements", []):
@@ -422,9 +495,9 @@ if __name__ == "__main__":
         amr_raw.get("_rows", []), mob_data.get("_contig_mob", {}),
         contig_mge, pf_data.get("_contig_plasmid", {}))
 
-    purity  = derive_purity(bracken_data["primary_pct"], gambit_sp, bracken_data["primary_species"])
-    score   = concordance_score(gambit_sp, bracken_data["primary_species"])
-    species = gambit_sp if gambit_sp not in ("unknown", "") else bracken_data["primary_species"]
+    purity  = derive_purity(bracken_data["primary_pct"], skani_sp, bracken_data["primary_species"])
+    score   = concordance_score(skani_sp, bracken_data["primary_species"])
+    species = skani_sp if skani_sp not in ("unknown", "") else bracken_data["primary_species"]
     contam_warnings = contamination_check(
         bracken_data["primary_pct"], bracken_data["secondary_pct"],
         bracken_data["secondary_species"], uncl_pct)
@@ -436,10 +509,12 @@ if __name__ == "__main__":
         "mlst":      mlst_data,
         "assembly":  quast_data,
         "qc": {
-            "reads":     fastp_data["reads"],
-            "q30_pct":   fastp_data["q30_pct"],
-            "dup_pct":   fastp_data["dup_pct"],
-            "est_depth": est_depth,
+            "reads":         fastp_data["reads"],
+            "q30_pct":       fastp_data["q30_pct"],
+            "dup_pct":       fastp_data["dup_pct"],
+            "est_depth":     est_depth,                # fastp bases / QUAST length -- upper bound
+            "mapped_depth":  self_cov["mean_depth"],   # self-mapped (bwa-mem2 vs Shovill assembly)
+            "breadth_pct":   self_cov["breadth_pct"],
         },
         "amr": {
             "total_amr_genes":       amr_raw["total_amr_genes"],
@@ -453,25 +528,19 @@ if __name__ == "__main__":
         "plasmidfinder": {"hits": pf_data.get("hits", [])},
         "mge":           mge_data,
         "species_id": {
-            "purity":                     purity,
-            "concordance_score":          score,
-            "contamination_warnings":     contam_warnings,
-            "bracken_species":            bracken_data["primary_species"],
-            "gambit_species":             gambit_sp,
-            "gambit_predicted_name":      gambit_full.get("predicted_name",      "-"),
-            "gambit_predicted_rank":      gambit_full.get("predicted_rank",      "-"),
-            "gambit_predicted_threshold": gambit_full.get("predicted_threshold"),
-            "gambit_distance":            gambit_full.get("closest_distance"),
-            "gambit_closest_description": gambit_full.get("closest_description", "-"),
-            "gambit_next_name":           gambit_full.get("next_name",           "-"),
-            "id_method":                  "Bracken + GAMBIT",
-            "primary_species":            bracken_data["primary_species"],
-            "primary_pct":                bracken_data["primary_pct"],
-            "secondary_species":          bracken_data["secondary_species"],
-            "secondary_pct":              bracken_data["secondary_pct"],
-            "unclassified_pct":           uncl_pct,
-            "skani":                      skani_data,
-            "kraken2_db":                 args.kraken2_db,
+            "purity":                 purity,
+            "concordance_score":      score,
+            "contamination_warnings": contam_warnings,
+            "bracken_species":        bracken_data["primary_species"],
+            "skani_species":          skani_sp,
+            "id_method":              "Bracken + SKANI",
+            "primary_species":        bracken_data["primary_species"],
+            "primary_pct":            bracken_data["primary_pct"],
+            "secondary_species":      bracken_data["secondary_species"],
+            "secondary_pct":          bracken_data["secondary_pct"],
+            "unclassified_pct":       uncl_pct,
+            "skani":                  skani_data,
+            "kraken2_db":             args.kraken2_db,
         },
     }
 
@@ -492,6 +561,9 @@ if __name__ == "__main__":
         data["spatyper"]   = {"spa_type": ss["spa_type"], "CC": "-"}
         data["sccmec"]     = {"type": ss["sccmec_type"], "mrsa": ss["mrsa"]}
 
+    if varcall_data:
+        data["varcall"] = varcall_data
+
     Path(args.output).write_text(
         Path(args.template).read_text()
             .replace("__PIPELINE_JSON_DATA__", json.dumps(data, ensure_ascii=False))
@@ -502,8 +574,8 @@ if __name__ == "__main__":
     # Static, single TSV — re-running a sample upserts (replaces) its row.
     log_path = Path(args.log_path) if args.log_path else \
                Path(args.results_dir) / "run_log.tsv"
-    header = "\t".join(["#", "Sample", "GAMBIT", "Bracken", "Skani hit", "Skani ANI",
-                         "ST", "MLST tool", "Species-specific typing", "Date"])
+    header = "\t".join(["#", "Sample", "Species (SKANI)", "Skani hit", "Skani ANI",
+                         "Bracken top", "ST", "MLST tool", "Species-specific typing", "Date"])
     skani  = data["species_id"]["skani"]
 
     typing_parts = []
@@ -539,10 +611,10 @@ if __name__ == "__main__":
     row = "\t".join([
         "{nr}",
         args.sample,
-        gambit_full.get("predicted_name", "-"),
-        bracken_data["primary_species"].replace("_", " "),
+        skani_sp.replace("_", " ") if skani_sp not in ("unknown", "") else "-",
         skani.get("top_hit", "-") if skani.get("status") == "ok" else "-",
         f"{skani['ani']:.2f}" if skani.get("status") == "ok" and skani.get("ani") else "-",
+        bracken_data["primary_species"].replace("_", " "),
         mlst_data["ST"],
         f"mlst ({mlst_data['scheme']})" if mlst_data["scheme"] != "-" else "mlst",
         "; ".join(typing_parts) if typing_parts else "-",

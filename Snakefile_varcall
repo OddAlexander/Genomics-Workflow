@@ -1,0 +1,451 @@
+# Snakefile_varcall -- variant-calling pipeline
+#
+# Read-mapping + bcftools variant calling against an NCBI reference genome
+# selected via Mash screen on the trimmed reads. Lean by design: only mapping,
+# variant calling, QC, and a per-sample HTML report. Assembly / typing / AMR
+# stay in the main pipeline (Snakefile).
+#
+# Outputs live alongside the main pipeline's per-sample tree, under
+# results/<sample>/VarCall/. Trimmed reads, fastp / fastqc / Kraken2 outputs
+# share paths with the main pipeline so running both is cheap.
+#
+# Run:
+#   pixi run snakemake -s Snakefile_varcall --cores 16 --resources mem_mb=60000
+#   pixi run snakemake -s Snakefile_varcall --cores 16 --config samples=19-03-2026
+#   pixi run snakemake -s Snakefile_varcall --cores 16 --config "samples=[001k,002k]"
+#
+# Config (in config.yaml or --config):
+#   refseq_list           path to JSON {species -> {fasta, gff}} (default /databases/refseq/refseq_list.json)
+#   refseq_min_identity   Mash identity floor for top-hit selection (default 0.95)
+#   bcftools_min_qual     QUAL filter (default 20)
+#   bcftools_min_dp       depth filter (default 10)
+#   bcftools_min_mq       mpileup MQ filter (default 40)
+
+configfile: "config.yaml"
+include: "rules/common.smk"
+import json, re, sys
+from pathlib import Path
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+DATA_DIR        = config.get("data_dir",       "data/").rstrip("/")
+RESULTS_DIR     = config.get("results_dir",    "results").rstrip("/")
+THREADS         = config.get("threads", 8)
+MASH_DB         = config.get("mash_db",        "/databases/mash_db/refseq.msh")
+KRAKEN2_DB      = config.get("kraken2_db",     "/databases/kraken2_db_light/")
+KRAKEN2_MEM     = config.get("kraken2_mem_mb", 12000)
+REFSEQ_LIST     = config.get("refseq_list",    f"{workflow.basedir}/refseq_list.json")
+REFSEQ_MIN_ID   = float(config.get("refseq_min_identity", 0.95))
+BCFTOOLS_QUAL   = int(config.get("bcftools_min_qual", 20))
+BCFTOOLS_DP     = int(config.get("bcftools_min_dp",   10))
+BCFTOOLS_MQ     = int(config.get("bcftools_min_mq",   40))
+
+# ── Load reference map ────────────────────────────────────────────────────────
+# refseq_list.json schema:
+#   {
+#     "Klebsiella_pneumoniae": {"fasta": "/databases/refseq/kpneumo/GCF_xxx.fna",
+#                               "gff":   "/databases/refseq/kpneumo/GCF_xxx.gff"},
+#     ...
+#   }
+# Species keys use underscored "Genus_species" (matches the rest of the pipeline).
+# The gff is optional -- omit to skip bcftools csq annotation for that species.
+_refseq_p = Path(REFSEQ_LIST)
+if not _refseq_p.exists():
+    raise FileNotFoundError(
+        f"refseq_list.json not found at {REFSEQ_LIST}\n"
+        "Create it with one entry per species you want to support, e.g.:\n"
+        '  {"Klebsiella_pneumoniae": {"fasta": "/path/genome.fna", "gff": "/path/genome.gff"}}\n'
+        f"Override the location with --config refseq_list=/your/path.json"
+    )
+REFSEQ_MAP = json.loads(_refseq_p.read_text())
+if not isinstance(REFSEQ_MAP, dict) or not REFSEQ_MAP:
+    raise ValueError(f"{REFSEQ_LIST} must be a non-empty JSON object")
+
+# ── Sample detection (same pattern as Snakefile) ──────────────────────────────
+ALL_SAMPLES, ANY = glob_wildcards(f"{DATA_DIR}/{{sample}}/{{any}}_R1.fastq.gz")
+READS_DICT = {s: f"{DATA_DIR}/{s}/{a}" for s, a in zip(ALL_SAMPLES, ANY)}
+assert_unique_samples(ALL_SAMPLES)
+SAMPLES = filter_samples(ALL_SAMPLES, config.get("samples"))
+print(f"Variant calling: {len(SAMPLES)}/{len(ALL_SAMPLES)} samples")
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+_SPECIES_RE = re.compile(r"\b([A-Z][a-z]+)\s+([a-z]+)\b")
+
+def read_ref_field(field):
+    """Make a params function that reads input.ref (reference.tsv) and returns
+    the named column (species/fasta/gff) from the single data row. Replaces
+    inline `awk 'NR==2{...}' {input.ref}` in downstream shell commands."""
+    def fn(wildcards, input):
+        with open(input.ref) as fh:
+            header = fh.readline().rstrip("\n").split("\t")
+            values = fh.readline().rstrip("\n").split("\t")
+        return dict(zip(header, values)).get(field, "-")
+    return fn
+
+def parse_mash_top_species(screen_tsv_path, min_identity):
+    """Walk the sorted Mash screen TSV and return Genus_species for the first
+    *bacterial, species-level* hit above min_identity, or None.
+
+    Skips:
+      - phage / virus / plasmid comments (Mash sketches mix them in with bacteria)
+      - generic 'Genus sp.' / 'Genus spp.' placeholders (no resolvable species)
+    Stops (returns None) once we drop below min_identity -- since the file is
+    sorted, no later hit can be better.
+    """
+    SKIP_EPITHETS = {"sp", "spp"}
+    SKIP_KEYWORDS = ("phage", "virus", "plasmid")
+    with open(screen_tsv_path) as fh:
+        for line in fh:
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) < 5:
+                continue
+            try:
+                identity = float(parts[0])
+            except ValueError:
+                continue
+            if identity < min_identity:
+                return None
+            comment = parts[-1]
+            if any(k in comment.lower() for k in SKIP_KEYWORDS):
+                continue
+            m = _SPECIES_RE.search(comment)
+            if not m:
+                continue
+            if m.group(2) in SKIP_EPITHETS:
+                continue
+            return f"{m.group(1)}_{m.group(2)}"
+    return None
+
+# ── Rules ─────────────────────────────────────────────────────────────────────
+
+rule all:
+    input:
+        expand(f"{RESULTS_DIR}/{{sample}}/VarCall/varcall_report.html", sample=SAMPLES),
+        expand(f"{RESULTS_DIR}/{{sample}}/pipeline_summary.html",       sample=SAMPLES)
+
+
+# Trimmed reads, QC, and Kraken2 share the main pipeline's output paths so
+# running Snakefile + Snakefile_varcall on the same samples does each step once.
+rule fastp:
+    input:
+        r1 = lambda wc: f"{READS_DICT[wc.sample]}_R1.fastq.gz",
+        r2 = lambda wc: f"{READS_DICT[wc.sample]}_R2.fastq.gz"
+    output:
+        r1   = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2   = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz",
+        json = f"{RESULTS_DIR}/{{sample}}/QC/fastp.json",
+        html = f"{RESULTS_DIR}/{{sample}}/QC/fastp.html"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/fastp.log"
+    threads: THREADS
+    shell:
+        "pixi run fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} "
+        "-j {output.json} -h {output.html} --thread {threads} 2>&1 | tee {log}"
+
+
+rule fastqc:
+    input:
+        r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz"
+    output:
+        r1 = f"{RESULTS_DIR}/{{sample}}/QC/fastqc/R1_fastqc.html",
+        r2 = f"{RESULTS_DIR}/{{sample}}/QC/fastqc/R2_fastqc.html"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/fastqc.log"
+    threads: 2
+    shell:
+        "pixi run fastqc {input.r1} {input.r2} -o $(dirname {output.r1}) --threads {threads} 2>&1 | tee {log}"
+
+
+rule kraken2_qc:
+    input:
+        r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz"
+    output:
+        rep     = f"{RESULTS_DIR}/{{sample}}/ID_Kraken2/kraken2_report.txt",
+        bracken = f"{RESULTS_DIR}/{{sample}}/ID_Kraken2/bracken_species.txt"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/kraken2_qc.log"
+    params:
+        db = KRAKEN2_DB
+    threads: THREADS
+    resources:
+        mem_mb = KRAKEN2_MEM
+    shell:
+        """
+        pixi run --environment identification kraken2 --db {params.db} \
+            --threads {threads} --paired --report {output.rep} {input.r1} {input.r2} 2>&1 | tee {log}
+        pixi run --environment identification bracken -d {params.db} \
+            -i {output.rep} -o {output.bracken} -l S 2>&1 | tee -a {log}
+        """
+
+
+rule mash_screen:
+    # Species ID directly from trimmed reads -- runs before/in parallel with
+    # mapping, so we don't wait on Shovill.
+    input:
+        r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz"
+    output:
+        tsv = f"{RESULTS_DIR}/{{sample}}/VarCall/Mash/screen.tsv"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/mash_screen.log"
+    params:
+        db = MASH_DB
+    threads: THREADS
+    shell:
+        # -w winner-takes-all: report best containment per genome, deduplicating identical hits.
+        # Sort by identity descending so top-1 = best hit.
+        """
+        pixi run --environment identification mash screen -w -p {threads} \
+            {params.db} {input.r1} {input.r2} 2> {log} | sort -gr > {output.tsv}
+        """
+
+
+rule pick_reference:
+    # Resolve Mash top hit -> species -> reference path via REFSEQ_MAP.
+    # Fails loudly when there's no confident hit or the species isn't in the JSON.
+    input:
+        screen = f"{RESULTS_DIR}/{{sample}}/VarCall/Mash/screen.tsv"
+    output:
+        ref = f"{RESULTS_DIR}/{{sample}}/VarCall/Mash/reference.tsv"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/pick_reference.log"
+    run:
+        # Errors land in BOTH the per-rule log AND stderr -- Snakemake's `run:`
+        # directive otherwise shows only "message: None" in the terminal, and
+        # the per-rule log isn't auto-populated for `run:` failures the way it
+        # is for `shell:`. Red ANSI banner so it's visible amongst the
+        # other concurrent jobs' progress lines.
+        def fail(reason, msg):
+            full = (
+                f"\n\033[91m━━━ pick_reference FAILED ━━━ sample: {wildcards.sample} ━━━ reason: {reason} ━━━\033[0m\n"
+                f"{msg}\n"
+                f"\033[91m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+            )
+            Path(log[0]).parent.mkdir(parents=True, exist_ok=True)
+            Path(log[0]).write_text(f"[{reason}] {msg}\n")
+            print(full, file=sys.stderr, flush=True)
+            raise ValueError(f"[{reason}] sample {wildcards.sample}: {msg}")
+
+        species = parse_mash_top_species(input.screen, REFSEQ_MIN_ID)
+        if species is None:
+            fail("no Mash hit above threshold",
+                 f"No usable Mash hit >= {REFSEQ_MIN_ID} identity.\n"
+                 f"Top hits were phage / virus / 'Genus sp.' placeholders or below threshold.\n"
+                 f"  Inspect:  {input.screen}\n"
+                 f"  Options:  lower refseq_min_identity, add the species to refseq_list.json, or skip the sample.")
+        if species not in REFSEQ_MAP:
+            fail("species not in refseq_list.json",
+                 f"Mash picked species '{species}' but it's not in {REFSEQ_LIST}.\n"
+                 f"  Options:  add an entry, or pass --config refseq_list=/path/to/other.json\n"
+                 f"  Available species ({len(REFSEQ_MAP)}): {', '.join(sorted(REFSEQ_MAP.keys()))}")
+        entry = REFSEQ_MAP[species]
+        fasta = entry.get("fasta") or entry.get("path")
+        gff   = entry.get("gff", "-") or "-"
+        if not fasta or not Path(fasta).exists():
+            fail("reference FASTA missing on disk",
+                 f"refseq_list.json points '{species}' at:\n  {fasta}\n"
+                 f"but that file does not exist. Re-run scripts/build_refseq_list.py "
+                 f"after fixing the path, or update refseq_list.json by hand.")
+        Path(output.ref).parent.mkdir(parents=True, exist_ok=True)
+        with open(output.ref, "w") as fh:
+            fh.write(f"species\tfasta\tgff\n{species}\t{fasta}\t{gff}\n")
+        with open(log[0], "w") as lf:
+            lf.write(f"{wildcards.sample}: picked {species} -> {fasta}\n")
+
+
+rule bowtie2_align:
+    # Bowtie2 index is built per-reference under {RESULTS_DIR}/.bowtie2_indices/
+    # and reused across samples (flock prevents concurrent rebuilds). Output:
+    # coordinate-sorted, duplicate-marked, indexed BAM.
+    input:
+        ref = f"{RESULTS_DIR}/{{sample}}/VarCall/Mash/reference.tsv",
+        r1  = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2  = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz"
+    output:
+        bam = f"{RESULTS_DIR}/{{sample}}/VarCall/Bowtie2/aligned.bam",
+        bai = f"{RESULTS_DIR}/{{sample}}/VarCall/Bowtie2/aligned.bam.bai"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/bowtie2.log"
+    threads: THREADS
+    params:
+        idx_dir = f"{RESULTS_DIR}/.bowtie2_indices",
+        fasta   = read_ref_field("fasta")
+    shell:
+        # Index name = reference basename minus the FASTA suffix; flock prevents
+        # concurrent samples from racing on the same bowtie2-build.
+        # Align → name-sort → fixmate → coord-sort → markdup as a single pipe;
+        # Snakemake's default `set -euo pipefail` fails the rule if any stage errors.
+        """
+        mkdir -p {params.idx_dir}
+        idx_prefix="{params.idx_dir}/$(basename '{params.fasta}' | sed -E 's/\\.(fa|fna|fasta)(\\.gz)?$//')"
+        (
+          flock 200
+          [ -f "${{idx_prefix}}.1.bt2" ] \
+            || pixi run bowtie2-build --threads {threads} "{params.fasta}" "$idx_prefix" 2>&1 | tee {log}
+        ) 200> "${{idx_prefix}}.lock"
+
+        pixi run bowtie2 -x "$idx_prefix" -1 {input.r1} -2 {input.r2} -p {threads} \
+            --rg-id "{wildcards.sample}" --rg "SM:{wildcards.sample}" \
+            --rg "LB:lib1" --rg "PL:ILLUMINA" 2>>{log} \
+          | pixi run samtools sort   -n  -@ {threads} -O bam -        2>>{log} \
+          | pixi run samtools fixmate -m -@ {threads}        -    -   2>>{log} \
+          | pixi run samtools sort       -@ {threads} -O bam -        2>>{log} \
+          | pixi run samtools markdup    -@ {threads} -    {output.bam} 2>>{log}
+        pixi run samtools index -@ {threads} {output.bam} 2>>{log}
+        """
+
+
+rule samtools_stats:
+    input:
+        bam = f"{RESULTS_DIR}/{{sample}}/VarCall/Bowtie2/aligned.bam"
+    output:
+        coverage = f"{RESULTS_DIR}/{{sample}}/VarCall/QC/coverage.tsv",
+        flagstat = f"{RESULTS_DIR}/{{sample}}/VarCall/QC/flagstat.txt",
+        stats    = f"{RESULTS_DIR}/{{sample}}/VarCall/QC/samtools_stats.txt"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/samtools_stats.log"
+    shell:
+        """
+        pixi run samtools coverage {input.bam} > {output.coverage} 2> {log}
+        pixi run samtools flagstat {input.bam} > {output.flagstat} 2>> {log}
+        pixi run samtools stats   {input.bam} > {output.stats}    2>> {log}
+        """
+
+
+rule bcftools_call:
+    # bcftools mpileup | call -mv (multiallelic, variants-only) | filter on QUAL/DP.
+    # Ploidy=1 because bacteria are haploid.
+    input:
+        bam = f"{RESULTS_DIR}/{{sample}}/VarCall/Bowtie2/aligned.bam",
+        ref = f"{RESULTS_DIR}/{{sample}}/VarCall/Mash/reference.tsv"
+    output:
+        vcf = f"{RESULTS_DIR}/{{sample}}/VarCall/VCF/variants.vcf.gz",
+        tbi = f"{RESULTS_DIR}/{{sample}}/VarCall/VCF/variants.vcf.gz.tbi"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/bcftools_call.log"
+    threads: THREADS
+    params:
+        qual  = BCFTOOLS_QUAL,
+        dp    = BCFTOOLS_DP,
+        mq    = BCFTOOLS_MQ,
+        fasta = read_ref_field("fasta")
+    shell:
+        """
+        # bcftools needs the reference .fai for region lookups
+        [ -f "{params.fasta}.fai" ] || pixi run samtools faidx "{params.fasta}" 2>&1 | tee {log}
+
+        pixi run bcftools mpileup -f "{params.fasta}" --threads {threads} \
+            -a AD,ADF,ADR,DP,SP -q {params.mq} {input.bam} 2>> {log} \
+          | pixi run bcftools call --threads {threads} -mv --ploidy 1 2>> {log} \
+          | pixi run bcftools filter -e "QUAL<{params.qual} || INFO/DP<{params.dp}" -s LOW_QUAL 2>> {log} \
+          | pixi run bcftools view --threads {threads} -Oz -o {output.vcf} 2>> {log}
+        pixi run bcftools index --threads {threads} -t {output.vcf} 2>> {log}
+        """
+
+
+rule bcftools_csq:
+    # Lightweight consequence annotation. Skipped when no GFF is available.
+    input:
+        vcf = f"{RESULTS_DIR}/{{sample}}/VarCall/VCF/variants.vcf.gz",
+        ref = f"{RESULTS_DIR}/{{sample}}/VarCall/Mash/reference.tsv"
+    output:
+        vcf = f"{RESULTS_DIR}/{{sample}}/VarCall/VCF/variants.annotated.vcf.gz",
+        tbi = f"{RESULTS_DIR}/{{sample}}/VarCall/VCF/variants.annotated.vcf.gz.tbi"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/bcftools_csq.log"
+    params:
+        fasta = read_ref_field("fasta"),
+        gff   = read_ref_field("gff")
+    shell:
+        """
+        if [ "{params.gff}" = "-" ] || [ ! -f "{params.gff}" ]; then
+            echo "No GFF for this reference -- copying VCF without annotation" | tee {log}
+            cp {input.vcf} {output.vcf}
+            pixi run bcftools index -t {output.vcf}
+        else
+            pixi run bcftools csq -f "{params.fasta}" -g "{params.gff}" -p a {input.vcf} -Oz -o {output.vcf} 2>&1 | tee {log}
+            pixi run bcftools index -t {output.vcf}
+        fi
+        """
+
+
+rule multiqc:
+    input:
+        fastp    = f"{RESULTS_DIR}/{{sample}}/QC/fastp.json",
+        fastqc   = f"{RESULTS_DIR}/{{sample}}/QC/fastqc/R1_fastqc.html",
+        flagstat = f"{RESULTS_DIR}/{{sample}}/VarCall/QC/flagstat.txt",
+        stats    = f"{RESULTS_DIR}/{{sample}}/VarCall/QC/samtools_stats.txt"
+    output:
+        f"{RESULTS_DIR}/{{sample}}/VarCall/MultiQC/multiqc_report.html"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/varcall_multiqc.log"
+    params:
+        scan_dir = lambda wc: f"{RESULTS_DIR}/{wc.sample}"
+    shell:
+        "pixi run multiqc {params.scan_dir} -o $(dirname {output}) --force 2>&1 | tee {log}"
+
+
+rule varcall_report:
+    input:
+        ref       = f"{RESULTS_DIR}/{{sample}}/VarCall/Mash/reference.tsv",
+        screen    = f"{RESULTS_DIR}/{{sample}}/VarCall/Mash/screen.tsv",
+        coverage  = f"{RESULTS_DIR}/{{sample}}/VarCall/QC/coverage.tsv",
+        flagstat  = f"{RESULTS_DIR}/{{sample}}/VarCall/QC/flagstat.txt",
+        stats     = f"{RESULTS_DIR}/{{sample}}/VarCall/QC/samtools_stats.txt",
+        vcf       = f"{RESULTS_DIR}/{{sample}}/VarCall/VCF/variants.annotated.vcf.gz",
+        fastp     = f"{RESULTS_DIR}/{{sample}}/QC/fastp.json",
+        bracken   = f"{RESULTS_DIR}/{{sample}}/ID_Kraken2/bracken_species.txt",
+        multiqc   = f"{RESULTS_DIR}/{{sample}}/VarCall/MultiQC/multiqc_report.html"
+    output:
+        f"{RESULTS_DIR}/{{sample}}/VarCall/varcall_report.html"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/varcall_report.log"
+    shell:
+        """
+        python scripts/make_varcall_report.py \
+            --sample {wildcards.sample} \
+            --results-dir {RESULTS_DIR} \
+            --template scripts/templates/report_template_varcall.html \
+            --ref-tsv {input.ref} \
+            --mash-screen {input.screen} \
+            --coverage {input.coverage} \
+            --flagstat {input.flagstat} \
+            --stats {input.stats} \
+            --vcf {input.vcf} \
+            --fastp {input.fastp} \
+            --bracken {input.bracken} \
+            --output {output} \
+            2>&1 | tee {log}
+        """
+
+
+rule update_pipeline_report:
+    # After varcall finishes for a sample, refresh the main pipeline's per-sample
+    # HTML report so it picks up the new VarCall section (parse_varcall() in
+    # make_report.py reads results/<sample>/VarCall/* opportunistically). This
+    # rule has the same output path as Snakefile's `rule report` -- only one
+    # Snakemake invocation owns the file at a time, so they don't conflict.
+    # Assumes the main pipeline has already produced the per-sample inputs;
+    # run `pixi run snakemake --cores N` first if not.
+    input:
+        varcall_report = f"{RESULTS_DIR}/{{sample}}/VarCall/varcall_report.html",
+    output:
+        f"{RESULTS_DIR}/{{sample}}/pipeline_summary.html",
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/pipeline_report_refresh.log",
+    params:
+        template   = "scripts/templates/report_template.html",
+        kraken2_db = config.get("kraken2_db", "/databases/kraken2_db_light/"),
+        log_path   = f"{RESULTS_DIR}/run_log.tsv",
+    shell:
+        """
+        python scripts/make_report.py \
+            --sample {wildcards.sample} \
+            --results-dir {RESULTS_DIR} \
+            --template {params.template} \
+            --output {output} \
+            --kraken2-db {params.kraken2_db} \
+            --log-path {params.log_path} \
+            2>&1 | tee {log}
+        """

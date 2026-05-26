@@ -25,7 +25,7 @@ results_dir: results
 # If left unset, the Snakefile defaults to /srv/phylo_results/$USER -- the $USER
 # expansion happens in Python (os.environ["USER"]), not in YAML. To override,
 # uncomment and use a literal path (YAML does NOT expand env vars):
-#   results_base: /srv/phylo_results/odd
+results_base: /home/odd/genomics/phylo_results/odd
 #   results_base: /scratch/projects/outbreak_2026
 
 # Directory containing pipeline scripts (from install-scripts.sh)
@@ -36,9 +36,16 @@ scripts_dir: ~/bin
 threads: 8
 
 # Path to mash sketch database (e.g. RefSeq .msh file)
-mash_db: /databases/mash_db/refseq.genomes+plasmid.k21s1000.msh
+mash_db: /databases/mash_db/combined.msh
 
 # Path to FastANI reference genome list (.txt, one genome path per line)
 # Run scripts/download_fastani_refs.sh to populate this database
 fastani_db: /databases/fastani_db/reference_list.txt
+
+# Variant-calling pipeline (Snakefile_varcall) -- override via --config if needed.
+# refseq_list:           refseq_list.json                     # species -> {fasta, gff} map (default: next to the Snakefile)
+# refseq_min_identity:   0.95                                  # Mash containment floor
+# bcftools_min_qual:     20                                    # PASS threshold for QUAL
+# bcftools_min_dp:       10                                    # PASS threshold for INFO/DP
+# bcftools_min_mq:       40                                    # mpileup mapping-quality floor
 

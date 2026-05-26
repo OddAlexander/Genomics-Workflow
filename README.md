@@ -21,39 +21,15 @@ pixi install
 
 ### Databases
 
-**Kraken2** — recommended: PlusPF 8 GB (~8 GB, requires ≥16 GB RAM):
-```bash
-mkdir -p /databases/kraken2_db_light
-wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_8gb_20240904.tar.gz -P /databases/kraken2_db_light/
-tar -xzf /databases/kraken2_db_light/k2_pluspf_8gb_20240904.tar.gz -C /databases/kraken2_db_light/
-```
+**Kraken2** — recommended: PlusPF 8 GB (~8 GB, requires ≥16 GB RAM)
 
-**skani** (~3 GB sketch, ~25 GB temporary during build):
-```bash
-sudo mkdir -p /databases/fastani_db /databases/skani_db && sudo chown $USER /databases/fastani_db /databases/skani_db
-pixi run --environment identification datasets download genome taxon bacteria \
-    --reference --assembly-source refseq --assembly-level complete \
-    --include genome --filename /databases/fastani_db/bacteria_refs.zip
-unzip /databases/fastani_db/bacteria_refs.zip -d /databases/fastani_db/
-find /databases/fastani_db/ncbi_dataset/data -name "*.fna" > /databases/fastani_db/reference_list.txt
-pixi run --environment identification skani sketch \
-    -l /databases/fastani_db/reference_list.txt -o /databases/skani_db/bacteria -t 16
-rm -rf /databases/fastani_db/ncbi_dataset /databases/fastani_db/bacteria_refs.zip
-```
+**skani** (~3 GB sketch, ~25 GB temporary during build with FastANI)
 
 **MOB-suite** (~1.5 GB): `pixi run --environment mobsuite mob_init`
 
 **AMRFinder**: `pixi run --environment amrfinder4 amrfinder --update`
 
-**CheckM** (~1.4 GB):
-
-```bash
-sudo mkdir -p /databases/checkm_data && sudo chown $USER /databases/checkm_data
-wget -P /databases/checkm_data \
-    https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz
-tar -xzf /databases/checkm_data/checkm_data_2015_01_16.tar.gz -C /databases/checkm_data/
-pixi run --environment checkm checkm data setRoot /databases/checkm_data
-```
+**CheckM** (~1.4 GB)
 
 **cgMLST schemas** (required only for the cgMLST pipeline) — chewBBACA-prepared
 schemas, one per species, placed under `/databases/cgmlst/<species>/`. See
@@ -122,18 +98,22 @@ Filenames can be anything, but must end with `_R1.fastq.gz` / `_R2.fastq.gz`.
 pixi run snakemake -n --cores 16
 
 # One sample / one date / multiple samples / all
-pixi run snakemake --cores 16 --resources mem_mb=60000 --config samples=001k
-pixi run snakemake --cores 16 --resources mem_mb=60000 --config samples=19-03-2026
-pixi run snakemake --cores 16 --resources mem_mb=60000 --config "samples=[001k,002k]"
-pixi run snakemake --cores 16 --resources mem_mb=60000
+pixi run snakemake --cores 16  --config samples=001k
+pixi run snakemake --cores 16  --config samples=19-03-2026
+pixi run snakemake --cores 16  --config "samples=[001k,002k]"
+pixi run snakemake --cores 16 
 
 # One specific file
 pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
 ```
 
-> **`mem_mb`** should be set to total RAM minus ~4 GB (e.g. `12000` on a 16 GB machine). Kraken2, Shovill, and skani reserve 12, 12, and 4 GB respectively.
-
 Each run appends one row per sample to `results/run_log.tsv` (sample ID, SKANI species, skani hit + ANI, Bracken top, MLST ST, species-specific typing, date). Re-running a sample replaces its prior row, so the file always reflects the latest call per sample — a single, cumulative summary across all runs.
+
+**Per-sample HTML report** at `results/<sample>/pipeline_summary.html` surfaces three depth numbers side-by-side:
+
+- **Depth (est.)** — `fastp` trimmed bases ÷ `QUAST` assembled length. Upper bound; no remapping.
+- **Depth (mapped)** — `bwa-mem2` self-mapping of trimmed reads back to the sample's own Shovill assembly, summarised by `samtools coverage`. SeqSphere-equivalent, mapping-verified, **reference-free**.
+- **Depth (vs ref)** — *only present after the varcall pipeline has run* — `samtools coverage` on the varcall pipeline's `bowtie2`-mapped BAM against the chosen NCBI reference. The gap between "mapped" and "vs ref" surfaces strain divergence + reference-content mismatch.
 
 ### Phylogenomics pipeline (`Snakefile_phylo`)
 
@@ -142,7 +122,7 @@ Runs independently of the main pipeline — takes raw reads directly as input.
 ```bash
 # With an external reference (.gbk from Prokka — recommended)
 pixi run snakemake -s Snakefile_phylo --cores 16 \
-    --config ref=/databases/prokka_refs/19-03-2026_005a/19-03-2026_005a.gbk
+    --config ref=/databases/prokka_refs/example.gbk
 
 # Without reference — first sample is auto-annotated with Prokka
 pixi run snakemake -s Snakefile_phylo --cores 16
@@ -151,11 +131,11 @@ pixi run snakemake -s Snakefile_phylo --cores 16
 pixi run snakemake -s Snakefile_phylo --cores 16 \
     --config ref=... samples=19-03-2026
 pixi run snakemake -s Snakefile_phylo --cores 16 \
-    --config ref=... "samples=[19-03-2026/005a,19-03-2026/007b]"
+    --config ref=... "samples=[005a,007b]"
 
 # Custom run name (default: date+time)
 pixi run snakemake -s Snakefile_phylo --cores 16 \
-    --config ref=... run_name=salmonella_outbreak
+    --config ref=... run_name=Salmonella_outbreak
 
 # SNP threshold for outbreak cluster coloring in the report
 pixi run snakemake -s Snakefile_phylo --cores 16 \
@@ -229,7 +209,7 @@ sample. Omit the `gff` to skip `bcftools csq` annotation for that species.
 
 ```bash
 # All samples
-pixi run snakemake -s Snakefile_varcall --cores 16 --resources mem_mb=60000
+pixi run snakemake -s Snakefile_varcall --cores 16 
 
 # Filter by date / sample / list (same syntax as the main pipeline)
 pixi run snakemake -s Snakefile_varcall --cores 16 --config samples=19-03-2026
@@ -268,6 +248,18 @@ the Mash screen top hits (useful for spotting contamination), variant counts
 broken down by PASS/filtered, Ts/Tv ratio, and a top-N variant table annotated
 with gene + consequence when the reference GFF is available.
 
+**Main-report refresh.** After `varcall_report` finishes for a sample, an
+`update_pipeline_report` rule re-runs `make_report.py` so the main
+`pipeline_summary.html` picks up the new "Reference mapping (from varcall
+pipeline)" card with reference-mapped depth, mapping rate, and PASS/filtered
+variant counts. The card appears only on samples where varcall has been run;
+others render exactly as the main pipeline produced them. Recommended workflow:
+
+```bash
+pixi run snakemake --cores 16                              # main pipeline first
+pixi run snakemake -s Snakefile_varcall --cores 16         # then varcall (also refreshes the main reports)
+```
+
 A bowtie2 index per unique reference is built once and cached under
 `results/.bowtie2_indices/`, shared across samples.
 
@@ -287,7 +279,7 @@ pixi run snakemake -s Snakefile_cgmlst --cores 16 --config samples=19-03-2026
 
 # A specific subset
 pixi run snakemake -s Snakefile_cgmlst --cores 16 \
-    --config "samples=[19-03-2026/005a,19-03-2026/007b]"
+    --config "samples=[005a,007b]"
 
 # Multiple clustering thresholds + custom run name
 pixi run snakemake -s Snakefile_cgmlst --cores 16 \
@@ -338,6 +330,8 @@ flowchart TD
     fastp --> shovill[Shovill assembly]
     shovill --> quast[QUAST]
     shovill --> checkm[CheckM<br/>completeness · contamination]
+    shovill --> selfcov[self_coverage<br/>bwa-mem2 + samtools coverage<br/>SeqSphere-style depth + breadth]
+    fastp --> selfcov
     shovill --> skani[/skani<br/>species checkpoint<br/>writes species.txt/]
     skani --> mlst[MLST]
     skani --> amr[AMRFinder]
@@ -345,7 +339,7 @@ flowchart TD
     skani --> me[MEfinder]
     skani --> plf[PlasmidFinder]
     skani --> sp[Species-specific:<br/>StaphScope · Kleborate · ECTyper<br/>emmtyper · Pasty · SeqSero2 · hicap]
-    fastqc & kraken & quast & checkm & mlst & amr & mob & me & plf & sp --> multiqc[MultiQC]
+    fastqc & kraken & quast & checkm & selfcov & mlst & amr & mob & me & plf & sp --> multiqc[MultiQC]
     multiqc --> report[pipeline_summary.html]
 ```
 
@@ -387,7 +381,8 @@ flowchart TD
     bowtie --> bcfcall[bcftools mpileup<br/>+ call -mv --ploidy 1<br/>+ filter QUAL/DP/MQ]
     bcfcall --> bcfcsq[bcftools csq<br/>consequence annotation<br/>from GFF]
     fastqc & kraken & sstats & bcfcsq --> multiqc[MultiQC]
-    multiqc --> report[varcall_report.html]
+    multiqc --> vcreport[varcall_report.html]
+    vcreport --> refresh[update_pipeline_report<br/>re-runs make_report.py<br/>so pipeline_summary.html<br/>picks up the varcall section]
 ```
 
 ### cgMLST pipeline — DAG
@@ -478,7 +473,7 @@ cat results/26-03-2026/001k/logs/amrfinder.log
 pixi run snakemake --cores 16 --forcerun amrfinder
 
 # Resume an interrupted run
-pixi run snakemake --cores 16 --resources mem_mb=60000 --rerun-incomplete
+pixi run snakemake --cores 16 --rerun-incomplete
 ```
 
 ---

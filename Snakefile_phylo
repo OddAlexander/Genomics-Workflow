@@ -15,6 +15,7 @@
 #   --config mincov=10 minfrac=0.9          Snippy parameters
 
 configfile: "config.yaml"
+include: "rules/common.smk"
 import os
 from datetime import datetime
 
@@ -46,26 +47,10 @@ PARSNP_DIR  = f"{PHYLO_DIR}/Parsnp"
 # {sample} captures the full relative path under DATA_DIR, e.g. "19-03-2026/005a"
 ALL_SAMPLES, ANY = glob_wildcards(f"{DATA_DIR}/{{sample}}/{{any}}_R1.fastq.gz")
 READS_DICT = {s: f"{DATA_DIR}/{s}/{a}" for s, a in zip(ALL_SAMPLES, ANY)}
-assert len(set(ALL_SAMPLES)) == len(ALL_SAMPLES), \
-    f"Duplicate sample IDs: {[s for s in set(ALL_SAMPLES) if ALL_SAMPLES.count(s) > 1]}"
-
-_filter = config.get("samples", None)
-if _filter:
-    _filter = _filter if isinstance(_filter, list) else [_filter]
-    # Filter order is preserved: with samples=[3q,3o,3n] the resulting SAMPLES list
-    # starts with the 3q match -- so SAMPLES[0] (used as the Snippy auto-reference)
-    # is deterministic and user-controllable.
-    seen = set()
-    SAMPLES = []
-    for f in _filter:
-        for s in ALL_SAMPLES:
-            if f in s and s not in seen:
-                SAMPLES.append(s)
-                seen.add(s)
-    if not SAMPLES:
-        raise ValueError(f"No samples found for filter: {_filter}")
-else:
-    SAMPLES = ALL_SAMPLES
+assert_unique_samples(ALL_SAMPLES)
+# SAMPLES[0] (used as Snippy auto-reference if no --config ref=... given) is
+# the first match of filter token #1, so the choice is deterministic.
+SAMPLES = filter_samples(ALL_SAMPLES, config.get("samples"))
 
 if "ref" in config:
     REFERENCE = config["ref"]
@@ -200,7 +185,15 @@ rule skani:
         """
         pixi run --environment identification skani search \
             -q {input.fa} -d {SKANI_DB} -o {output.tsv} -t {threads} 2>&1 | tee {log}
-        awk -F'\\t' 'NR==2{{print $6}}' {output.tsv} | sed 's/ /_/g' > {output.species}
+        awk -F'\\t' 'NR==2{{
+            n = split($6, a, " ");
+            for (i = 1; i < n; i++) {{
+                if (a[i] ~ /^[A-Z][a-z]+$/ && a[i+1] ~ /^[a-z]+$/) {{
+                    print a[i] "_" a[i+1]; exit;
+                }}
+            }}
+            print "unknown_species";
+        }}' {output.tsv} > {output.species}
         """
 
 
@@ -253,8 +246,8 @@ rule snippy_core:
         rm -rf {params.flat_base} && mkdir -p {params.flat_base}
         for vcf in {input.vcfs}; do
             dir=$(dirname "$vcf")
-            flat=$(echo "$dir" | sed 's|{params.snippy_base}/||' | tr '/' '_')
-            ln -sfn "$(readlink -f "$dir")" "{params.flat_base}/$flat"
+            flat="${{dir#{params.snippy_base}/}}"
+            ln -sfn "$(readlink -f "$dir")" "{params.flat_base}/${{flat//\\//_}}"
         done
         pixi run snippy-core --ref {input.ref} --prefix {params.prefix} \
             {params.flat_base}/* 2>&1 | tee {log} \
@@ -278,9 +271,15 @@ rule gubbins:
             echo "Fewer than 4 taxa ($n) — Gubbins skipped" | tee {log}
             touch {output.fasta} {output.tree} {output.gff}
         else
-            pixi run --environment gubbins run_gubbins.py --threads {threads} \
-                --prefix {GUBBINS_DIR}/gubbins --tree-builder hybrid {input.aln} 2>&1 | tee {log}
-            find . -maxdepth 1 -type d -name 'tmp????????' -exec rm -rf {{}} +
+            # Run from inside GUBBINS_DIR so run_gubbins.py's tmp dirs land
+            # there (it drops them in CWD with no override flag); the previous
+            # version did `find .` from the project root, which is fragile.
+            aln_abs=$(readlink -f {input.aln})
+            log_abs=$(readlink -f {log})
+            ( cd {GUBBINS_DIR} && \
+              pixi run --environment gubbins run_gubbins.py --threads {threads} \
+                  --prefix gubbins --tree-builder hybrid "$aln_abs" 2>&1 | tee "$log_abs" && \
+              rm -rf tmp???????? )
         fi
         """
 
@@ -305,17 +304,21 @@ rule iqtree:
         """
 
 
+_SNP_DISTS_INPUTS = {
+    "":        f"{CORE_DIR}/core.full.aln",
+    "_gubbins": f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta",
+    "_parsnp":  f"{PARSNP_DIR}/parsnp.snps.fasta",
+}
+
 rule snp_dists:
-    input:  aln = f"{CORE_DIR}/core.full.aln"
-    output: tsv = f"{SNP_DIR}/snp_dists.tsv"
-    log:    f"{PHYLO_DIR}/logs/snp_dists.log"
-    shell:  "pixi run snp-dists {input.aln} > {output.tsv} 2> {log}"
-
-
-rule snp_dists_gubbins:
-    input:  aln = f"{GUBBINS_DIR}/gubbins.filtered_polymorphic_sites.fasta"
-    output: tsv = f"{SNP_DIR}/snp_dists_gubbins.tsv"
-    log:    f"{PHYLO_DIR}/logs/snp_dists_gubbins.log"
+    # One rule, three outputs: snp_dists.tsv (core, raw), snp_dists_gubbins.tsv
+    # (recombination-filtered), snp_dists_parsnp.tsv (Parsnp SNP-only alignment).
+    # Empty alignment -> empty TSV (gubbins/parsnp may produce no alignment for tiny runs).
+    input:  aln = lambda wc: _SNP_DISTS_INPUTS[wc.suffix]
+    output: tsv = f"{SNP_DIR}/snp_dists{{suffix}}.tsv"
+    log:    f"{PHYLO_DIR}/logs/snp_dists{{suffix}}.log"
+    wildcard_constraints:
+        suffix = r"|_gubbins|_parsnp"
     shell:
         """
         if [ -s {input.aln} ]; then
@@ -359,8 +362,8 @@ rule parsnp:
         mkdir -p {params.query_dir}
         rm -f {params.query_dir}/*.fasta
         for f in {input.assemblies}; do
-            flat=$(echo "$f" | sed 's|{PHYLO_DIR}/||' | sed 's|/Assembly/contigs.fa||' | tr '/' '_')
-            cp "$f" "{params.query_dir}/$flat.fasta"
+            flat="${{f#{PHYLO_DIR}/}}"; flat="${{flat%/Assembly/contigs.fa}}"
+            cp "$f" "{params.query_dir}/${{flat//\\//_}}.fasta"
         done
         rm -f {output.tree} {output.ggr} {output.vcf}
         pixi run --environment parsnp parsnp \
@@ -370,20 +373,6 @@ rule parsnp:
             -i {output.ggr} -S {output.snps_fasta} 2>> {log}
         # Parsnp omits parsnp.tree when --skip-phylogeny is set; create empty stub so the DAG completes.
         [ -f {output.tree} ] || touch {output.tree}
-        """
-
-
-rule snp_dists_parsnp:
-    input:  fasta = f"{PARSNP_DIR}/parsnp.snps.fasta"
-    output: tsv   = f"{SNP_DIR}/snp_dists_parsnp.tsv"
-    log:    f"{PHYLO_DIR}/logs/snp_dists_parsnp.log"
-    shell:
-        """
-        if [ -s {input.fasta} ]; then
-            pixi run snp-dists {input.fasta} > {output.tsv} 2> {log}
-        else
-            touch {output.tsv}
-        fi
         """
 
 
@@ -421,7 +410,7 @@ rule phylo_report:
         python scripts/make_phylo_report.py \
             --phylo-dir {PHYLO_DIR} \
             --samples {params.samples} \
-            --template report_template_phylo.html \
+            --template scripts/templates/report_template_phylo.html \
             --ref {REFERENCE} \
             --mincov {SNIPPY_MINCOV} \
             --minfrac {SNIPPY_MINFRAC} \

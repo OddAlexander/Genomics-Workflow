@@ -32,6 +32,7 @@ seqkit             = ">=2.8"
 samtools           = ">=1.19"
 bcftools           = ">=1.19"
 bwa-mem2           = ">=2.2"
+bowtie2            = ">=2.5"          # Read aligner for the variant-calling pipeline (Snakefile_varcall)
 minimap2           = ">=2.26"
 setuptools         = "*"
 pasty              = ">=2.2"          # P. aeruginosa O-antigen serotyping
