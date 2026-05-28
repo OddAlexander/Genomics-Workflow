@@ -133,6 +133,21 @@ function render() {
       extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.hicap.serotype}</div><div class="lbl">Capsule type (hicap)</div></div>`;
   }
 
+  // LRE-Finder -- linezolid resistance summary for Enterococcus faecium / faecalis.
+  // Tile shows the maximum % of mutated 23S rRNA copies + count of acquired
+  // resistance genes (cfr / optrA / poxtA). Red when either is present.
+  if (sp.includes('Enterococcus_fae') && s.lrefinder) {
+    const mut = s.lrefinder.max_23s_mut_pct;
+    const nAc = s.lrefinder.n_acquired;
+    if (nAc > 0) {
+      extraStats += `<div class="stat"><div class="val" style="color:#b02a37;font-size:0.95rem">${s.lrefinder.acquired_genes.map(g=>g.template.split('_')[0]).join(' ')}</div><div class="lbl">Linezolid R (acquired)</div></div>`;
+    }
+    if (mut != null && mut >= 0.05) {
+      const mutColor = mut >= 5 ? '#b02a37' : mut >= 1 ? '#856404' : '#0a3622';
+      extraStats += `<div class="stat"><div class="val" style="color:${mutColor}">${mut.toFixed(2)}%</div><div class="lbl">23S rRNA mutated (LRE)</div></div>`;
+    }
+  }
+
   h += `<div class="card"><div class="grid">
     <div class="stat"><div class="val">${s.sample}</div><div class="lbl">Sample</div></div>
     <div class="stat"><div class="val" style="font-size:1rem">${sp.replace(/_/g,' ')}</div><div class="lbl">Species</div></div>
@@ -397,6 +412,62 @@ function render() {
           ? `<tr><td>spa-type</td><td>${s.spatyper.spa_type} (${s.spatyper.CC})</td></tr>` : ''}
         <tr><td>MRSA nomenclature</td><td>ST${s.mlst.ST}-SCCmec${s.sccmec.type} (${s.spatyper?.spa_type||'-'})</td></tr>
       </table>
+    </div>`;
+  }
+
+  // -- LRE-Finder (Enterococcus linezolid resistance, read-based)
+  if (s.lrefinder) {
+    const lre = s.lrefinder;
+    const hasResistance = lre.n_acquired > 0 || (lre.max_23s_mut_pct != null && lre.max_23s_mut_pct >= 1);
+    h += `<h2>Linezolid resistance (LRE-Finder)</h2><div class="card">
+      <div class="alert ${hasResistance ? 'alert-red' : 'alert-green'}" style="margin-bottom:10px">
+        <strong>${hasResistance ? 'Linezolid resistance markers DETECTED' : 'No linezolid resistance markers detected'}</strong>
+        &nbsp;<span style="font-weight:normal;font-size:0.85rem">(KMA on trimmed reads; reports % of mutated 23S rRNA copies + acquired resistance genes)</span>
+      </div>
+      ${lre.acquired_genes.length ? `
+        <h3 style="margin-top:8px;font-size:0.95rem;color:#b02a37">Acquired resistance genes (${lre.acquired_genes.length})</h3>
+        <table>
+          <thead><tr><th>Gene template</th><th>Identity</th><th>Coverage</th><th>Depth</th></tr></thead>
+          <tbody>
+            ${lre.acquired_genes.map(g => `<tr>
+              <td><strong>${g.template}</strong></td>
+              <td>${g.identity.toFixed(2)}%</td>
+              <td>${g.coverage.toFixed(2)}%</td>
+              <td>${g.depth}×</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : ''}
+      ${lre.ribosomal_hits.length ? `
+        <h3 style="margin-top:10px;font-size:0.95rem">23S rRNA references</h3>
+        <p style="font-size:0.8rem;color:var(--muted);margin:2px 0 6px 0">
+          E. faecium / faecalis carry 6 copies of 23S rRNA. <strong>Mutated %</strong> below = fraction of copies carrying the linezolid-resistance mutation (G2576T, G2505A, etc.). &ge;1% suggests partial mosaicism worth phenotypic confirmation; &ge;5% is typically associated with clinical resistance.
+        </p>
+        <table>
+          <thead><tr><th>Reference</th><th>Identity</th><th>Mutated %</th><th>Coverage</th><th>Depth</th></tr></thead>
+          <tbody>
+            ${lre.ribosomal_hits.map(r => {
+              const mp = r.mut_pct;
+              const c  = mp == null ? 'inherit' : mp >= 5 ? '#b02a37' : mp >= 1 ? '#856404' : 'inherit';
+              return `<tr>
+                <td style="font-family:monospace;font-size:0.82rem">${r.template}</td>
+                <td>${r.identity.toFixed(2)}%</td>
+                <td style="color:${c};font-weight:600">${mp != null ? mp.toFixed(2) + '%' : '-'}</td>
+                <td>${r.coverage.toFixed(2)}%</td>
+                <td>${r.depth}×</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>` : ''}
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
+        Caveats: assemblies collapse the 6 rRNA copies into one consensus, so assembly-based AMR tools may miss low-mosaicism resistance. LRE-Finder maps reads directly to track the per-copy state. Verify clinical resistance with MIC.
+      </p>
+      <p style="font-size:0.72rem;color:var(--muted);margin-top:6px;font-style:italic">
+        Filtering applied:
+        acquired-gene rows below <strong>90% template coverage</strong> or <strong>98% identity</strong> are dropped (k-mer noise / fragmentary hits);
+        23S rows below <strong>50% coverage</strong> or <strong>80% identity</strong> are dropped (cross-species probe).
+        Banner turns red when an acquired gene survives or 23S mosaicism &ge; 1%.
+        Raw output retained at <code>results/&lt;sample&gt;/LRE-Finder/lre.res</code> for borderline review.
+      </p>
     </div>`;
   }
 

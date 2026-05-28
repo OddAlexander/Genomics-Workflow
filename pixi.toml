@@ -174,6 +174,16 @@ snp-sites    = ">=2.5"
 cgmlst-dists = ">=0.4"
 git          = "*"                # used by rule fetch_reportree to clone the repo
 
+# LRE-Finder (CGE) -- linezolid resistance detection in Enterococcus from reads.
+# Cloned at runtime by rule fetch_lrefinder (same pattern as ReporTree).
+# Needs KMA (k-mer alignment) at runtime; Python only as launcher.
+[feature.lrefinder.dependencies]
+python     = "3.11.*"
+kma        = ">=1.4"
+git        = "*"
+make       = "*"      # for `make getGene` in fetch_lrefinder.sh
+c-compiler = "*"      # gcc; LRE-Finder ships C sources that need compiling
+
 [environments]
 default        = { solve-group = "main" }
 annotation     = { features = ["annotation"],     solve-group = "annotation",     no-default-feature = true }
@@ -194,3 +204,4 @@ clonalframeml  = { features = ["clonalframeml"],   solve-group = "clonalframeml"
 raxml          = { features = ["raxml"],            solve-group = "raxml",           no-default-feature = true }
 grapetree      = { features = ["grapetree"],        solve-group = "grapetree",       no-default-feature = true }
 reportree      = { features = ["reportree"],        solve-group = "reportree",       no-default-feature = true }
+lrefinder      = { features = ["lrefinder"],        solve-group = "lrefinder",       no-default-feature = true }

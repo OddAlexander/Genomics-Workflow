@@ -31,6 +31,13 @@ pixi install
 
 **CheckM** (~1.4 GB)
 
+**LRE-Finder** (linezolid resistance in *Enterococcus*) — not on conda/PyPI; clone once with the helper script:
+
+```bash
+scripts/fetch_lrefinder.sh
+# default target: ./.lrefinder/  (override via env: LREFINDER_DIR=...)
+```
+
 **cgMLST schemas** (required only for the cgMLST pipeline) — chewBBACA-prepared
 schemas, one per species, placed under `/databases/cgmlst/<species>/`. See
 [Snakefile_cgmlst](Snakefile_cgmlst) for the default per-species paths
@@ -338,7 +345,7 @@ flowchart TD
     skani --> mob[MOB-suite]
     skani --> me[MEfinder]
     skani --> plf[PlasmidFinder]
-    skani --> sp[Species-specific:<br/>StaphScope · Kleborate · ECTyper<br/>emmtyper · Pasty · SeqSero2 · hicap]
+    skani --> sp[Species-specific:<br/>StaphScope · Kleborate · ECTyper<br/>emmtyper · Pasty · SeqSero2 · hicap · LRE-Finder]
     fastqc & kraken & quast & checkm & selfcov & mlst & amr & mob & me & plf & sp --> multiqc[MultiQC]
     multiqc --> report[pipeline_summary.html]
 ```
@@ -409,6 +416,7 @@ flowchart TD
 | *P. aeruginosa* | Pasty | O-antigen serotype |
 | *Salmonella* spp. | SeqSero2 | O and H antigen serotyping |
 | *H. influenzae* | hicap | Capsule type (a–f / non-typeable) |
+| *E. faecium* + *E. faecalis* | LRE-Finder | Linezolid resistance: cfr / optrA / poxtA acquired genes + 23S rRNA mosaicism % |
 | All | MEfinder | Insertion sequences and transposons |
 | All | MOB-suite | Plasmid typing (relaxase, conjugation) |
 
@@ -499,6 +507,7 @@ pixi run snakemake --cores 16 --rerun-incomplete
 | Pasty | ≥2.2 | *P. aeruginosa* O-antigen |
 | SeqSero2 | ≥1.3 | *Salmonella* serotyping |
 | hicap | ≥1.0 | *H. influenzae* capsule type |
+| LRE-Finder | latest | Linezolid resistance in *Enterococcus* (acquired genes + 23S rRNA mosaicism) |
 | Snippy + snippy-core | ≥4.6 | SNP calling and core alignment |
 | Gubbins | ≥3.3 | Recombination removal |
 | IQ-TREE2 | ≥2.2 | ML phylogenetic tree |

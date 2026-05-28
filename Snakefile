@@ -16,6 +16,7 @@ SKANI_THREADS    = config.get("skani_threads", 8)
 CHECKM_MEM       = config.get("checkm_mem_mb", 22000)   # MB RAM per CheckM job (lineage_wf --reduced_tree, pplacer peaks ~14-18 GB; 22 GB allows 1 job per 30 GB host)
 SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Path to skani sketch -- used for species ID (replaces GAMBIT)
 PLASMIDFINDER_DB = config.get("plasmidfinder_db", "/databases/plasmidfinder_db/")
+LRE_DIR          = config.get("lrefinder_dir", f"{workflow.basedir}/.lrefinder")  # cloned at runtime, same pattern as ReporTree
 RUN_LOG          = f"{RESULTS_DIR}/run_log.tsv"
 
 # --- Species groups and schemes ---
@@ -25,6 +26,7 @@ GAS = {"Streptococcus_pyogenes"}
 PA  = {"Pseudomonas_aeruginosa"}
 SAL = {"Salmonella_enterica"}
 HI  = {"Haemophilus_influenzae"}
+EFM = {"Enterococcus_faecium", "Enterococcus_faecalis"}      # LRE-Finder targets
 
 KLEB_PRESET = {
     "Klebsiella_pneumoniae":"kpsc", "Klebsiella_variicola":"kpsc", "Klebsiella_quasipneumoniae":"kpsc",
@@ -85,6 +87,7 @@ SPECIES_TOOLS = [
     (PA,                  ["Pasty/pasty.tsv"]),
     (SAL,                 ["SeqSero2/seqsero2.tsv"]),
     (HI,                  ["Hicap/hicap.tsv"]),
+    (EFM,                 ["LRE-Finder/lre.res"]),
 ]
 
 # --- Helper functions ---
@@ -505,6 +508,39 @@ rule pasty:
     shell:
         "pixi run pasty -i {input.fa} -o $(dirname {output}) -p pasty --force 2>&1 | tee {log}"
 
+rule lrefinder:
+    # Detects linezolid resistance markers in E. faecium / E. faecalis directly
+    # from reads (KMA k-mer alignment, no assembly): cfr/optrA/poxtA acquired
+    # genes + 23S rRNA G2576T/G2505A + L3/L4 mutations, with mosaicism %.
+    # LRE-Finder is not on conda/PyPI; install it once with `scripts/fetch_lrefinder.sh`
+    # (clones the repo to .lrefinder/ at the project root). The rule fails loudly
+    # with that hint if the script hasn't been run.
+    input:
+        r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
+        r2 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz",
+    output:
+        res = f"{RESULTS_DIR}/{{sample}}/LRE-Finder/lre.res",
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/lrefinder.log",
+    threads: THREADS
+    shell:
+        # `-1t1` enables one-to-one read-template matching (recommended for mixed
+        # 23S copies); `-cge` selects the CGE-style result formatting.
+        """
+        if [ ! -f {LRE_DIR}/LRE-Finder.py ]; then
+            echo "ERROR: LRE-Finder not installed at {LRE_DIR}/" >&2
+            echo "       Run: scripts/fetch_lrefinder.sh" >&2
+            exit 1
+        fi
+        outdir=$(dirname {output.res})
+        mkdir -p "$outdir"
+        pixi run --environment lrefinder python {LRE_DIR}/LRE-Finder.py \
+            -ipe {input.r1} {input.r2} \
+            -o "$outdir/lre" \
+            -t_db {LRE_DIR}/elmDB/elm \
+            -1t1 -cge 2>&1 | tee {log}
+        """
+
 rule multiqc:
     input:
         fastp   = f"{RESULTS_DIR}/{{sample}}/QC/fastp.json",
@@ -516,4 +552,4 @@ rule multiqc:
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/multiqc.log"
     shell:
-        "pixi run multiqc $(dirname $(dirname {output})) -o $(dirname {output}) 2>&1 | tee {log}"
+        "pixi run multiqc $(dirname $(dirname {output})) -o $(dirname {output}) --force 2>&1 | tee {log}"

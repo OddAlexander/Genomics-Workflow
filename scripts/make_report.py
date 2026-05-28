@@ -295,6 +295,56 @@ def parse_hicap(path):
     }
 
 
+def parse_lrefinder(path):
+    """LRE-Finder .res (KMA TSV) -> detected linezolid resistance markers.
+
+    LRE-Finder reports a row for any template with non-zero k-mer overlap,
+    including: (a) the wrong-species 23S probe (always low identity), and
+    (b) acquired-gene templates that share a few k-mers with unrelated reads.
+    Without filtering, those fragmentary hits would flip the report banner
+    from green to red. So we apply standard AMR-calling thresholds here:
+      - acquired genes (cfr/optrA/poxtA/...): require coverage >= 90% AND identity >= 98%
+      - 23S references: require coverage >= 50% AND identity >= 80% (drops cross-species probe)
+
+    For 23S, the *clinical* number is `mut_pct = 100 - identity` -- the fraction
+    of 23S rRNA copies carrying a resistance mutation (mosaicism)."""
+    txt = safe_read(path)
+    if not txt:
+        return None
+    acquired, ribosomal = [], []
+    for line in txt.splitlines():
+        if line.startswith("#") or not line.strip():
+            continue
+        p = line.split("\t")
+        if len(p) < 9:
+            continue
+        try:
+            template, identity, coverage, depth = p[0], float(p[4]), float(p[5]), float(p[8])
+        except (IndexError, ValueError):
+            continue
+        is_23s = "23S" in template or template.lower().startswith("rrl")
+        if is_23s:
+            if coverage < 50 or identity < 80:
+                continue   # cross-species probe, not informative
+        else:
+            if coverage < 90 or identity < 98:
+                continue   # fragmentary k-mer overlap, not a real acquired-gene call
+        row = {"template": template, "identity": round(identity, 2),
+               "coverage": round(coverage, 2), "depth": round(depth, 1),
+               "mut_pct":  round(100.0 - identity, 2) if is_23s else None}
+        (ribosomal if is_23s else acquired).append(row)
+    if not acquired and not ribosomal:
+        return None
+    return {
+        "acquired_genes": acquired,
+        "ribosomal_hits": ribosomal,
+        "n_acquired":     len(acquired),
+        # Max mutated-copy % across 23S references is the clinically actionable signal.
+        "max_23s_mut_pct": max((r["mut_pct"] for r in ribosomal if r["mut_pct"] is not None),
+                                default=None),
+    }
+
+
 def parse_plasmidfinder(path):
     txt = safe_read(path)
     if not txt:
@@ -550,6 +600,7 @@ if __name__ == "__main__":
         (parse_emmtyper,  "emmtyper",  "EmmTyper/emmtyper.txt"),
         (parse_seqsero2,  "seqsero2",  "SeqSero2/seqsero2.tsv"),
         (parse_hicap,     "hicap",     "Hicap/hicap.tsv"),
+        (parse_lrefinder, "lrefinder", "LRE-Finder/lre.res"),
     ]:
         result = parser(sp_dir / fname)
         if result:
