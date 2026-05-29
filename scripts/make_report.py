@@ -295,6 +295,41 @@ def parse_hicap(path):
     }
 
 
+def parse_gambit(path):
+    txt = safe_read(path)
+    empty = {"status": "skipped", "predicted_name": "-", "closest_description": "-", "closest_distance": None}
+    if not txt:
+        return empty
+    rows = list(csv.DictReader(txt.splitlines()))
+    if not rows:
+        return empty
+    r    = rows[0]
+    name = (r.get("predicted.name") or "").strip()
+    dist = r.get("closest.distance", "")
+    return {
+        "status":              "ok" if name else "no_match",
+        "predicted_name":      name or "-",
+        "closest_description": (r.get("closest.description") or "-").strip(),
+        "closest_distance":    float(dist) if dist else None,
+    }
+
+
+def parse_gbsserotyper(path):
+    """GBS-SBG TSV (Name / Serotype / Uncertainty) -> serotype + uncertainty."""
+    txt = safe_read(path)
+    if not txt:
+        return None
+    for line in txt.splitlines():
+        if line.startswith("#"):
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 2:
+            serotype    = parts[1].strip() or "NT"
+            uncertainty = parts[2].strip() if len(parts) > 2 else ""
+            return {"serotype": serotype, "uncertainty": uncertainty}
+    return None
+
+
 def parse_lrefinder(path):
     """LRE-Finder .res (KMA TSV) -> detected linezolid resistance markers.
 
@@ -483,8 +518,17 @@ def parse_self_coverage(path):
     return {"mean_depth": mean_depth, "breadth_pct": br}
 
 
-def derive_purity(primary_pct, skani_sp, bracken_sp):
-    if primary_pct >= 80 and skani_sp == bracken_sp:
+def parse_pasty(path):
+    """Pasty P. aeruginosa O-antigen serotyping -> serotype string."""
+    r = tsv_first_row(path)
+    if not r:
+        return None
+    stype = r.get("type") or r.get("serogroup") or "-"
+    return {"serotype": stype or "-"} if stype and stype not in ("-", "") else None
+
+
+def derive_purity(primary_pct, species_sp, bracken_sp):
+    if primary_pct >= 80 and species_sp == bracken_sp:
         return "PURE"
     if primary_pct >= 60:
         return "LIKELY_PURE"
@@ -502,8 +546,8 @@ def contamination_check(primary_pct, secondary_pct, secondary_sp, uncl_pct):
     return warnings
 
 
-def concordance_score(skani_sp, bracken_sp):
-    return 2 if skani_sp == bracken_sp and skani_sp not in ("unknown", "-", "") else 0
+def concordance_score(species_sp, bracken_sp):
+    return 2 if species_sp == bracken_sp and species_sp not in ("unknown", "-", "") else 0
 
 
 if __name__ == "__main__":
@@ -531,7 +575,8 @@ if __name__ == "__main__":
     mge_data     = parse_mefinder(sp_dir / "MEfinder/mefinder.tsv")
     pf_data      = parse_plasmidfinder(sp_dir / "PlasmidFinder/results_tab.tsv")
     skani_data   = parse_skani(sp_dir / "ID_Skani/skani.tsv")
-    skani_sp     = (safe_read(sp_dir / "species.txt") or "unknown").strip()
+    gambit_data  = parse_gambit(sp_dir / "ID_Gambit/gambit.csv")
+    species_sp   = (safe_read(sp_dir / "species.txt") or "unknown").strip()
     self_cov     = parse_self_coverage(sp_dir / "QC/self_coverage.tsv")
     varcall_data = parse_varcall(sp_dir)   # None when varcall hasn't been run for this sample
 
@@ -545,9 +590,9 @@ if __name__ == "__main__":
         amr_raw.get("_rows", []), mob_data.get("_contig_mob", {}),
         contig_mge, pf_data.get("_contig_plasmid", {}))
 
-    purity  = derive_purity(bracken_data["primary_pct"], skani_sp, bracken_data["primary_species"])
-    score   = concordance_score(skani_sp, bracken_data["primary_species"])
-    species = skani_sp if skani_sp not in ("unknown", "") else bracken_data["primary_species"]
+    purity  = derive_purity(bracken_data["primary_pct"], species_sp, bracken_data["primary_species"])
+    score   = concordance_score(species_sp, bracken_data["primary_species"])
+    species = species_sp if species_sp not in ("unknown", "") else bracken_data["primary_species"]
     contam_warnings = contamination_check(
         bracken_data["primary_pct"], bracken_data["secondary_pct"],
         bracken_data["secondary_species"], uncl_pct)
@@ -582,14 +627,15 @@ if __name__ == "__main__":
             "concordance_score":      score,
             "contamination_warnings": contam_warnings,
             "bracken_species":        bracken_data["primary_species"],
-            "skani_species":          skani_sp,
-            "id_method":              "Bracken + SKANI",
+            "gambit_species":          species_sp,
+            "id_method":              "Bracken + GAMBIT + SKANI",
             "primary_species":        bracken_data["primary_species"],
             "primary_pct":            bracken_data["primary_pct"],
             "secondary_species":      bracken_data["secondary_species"],
             "secondary_pct":          bracken_data["secondary_pct"],
             "unclassified_pct":       uncl_pct,
             "skani":                  skani_data,
+            "gambit":                 gambit_data,
             "kraken2_db":             args.kraken2_db,
         },
     }
@@ -600,7 +646,9 @@ if __name__ == "__main__":
         (parse_emmtyper,  "emmtyper",  "EmmTyper/emmtyper.txt"),
         (parse_seqsero2,  "seqsero2",  "SeqSero2/seqsero2.tsv"),
         (parse_hicap,     "hicap",     "Hicap/hicap.tsv"),
-        (parse_lrefinder, "lrefinder", "LRE-Finder/lre.res"),
+        (parse_pasty,        "pasty",        "Pasty/pasty.tsv"),
+        (parse_lrefinder,    "lrefinder",    "LRE-Finder/lre.res"),
+        (parse_gbsserotyper, "gbsserotyper", "GBSSeroTyper/serotype.tsv"),
     ]:
         result = parser(sp_dir / fname)
         if result:
@@ -625,9 +673,11 @@ if __name__ == "__main__":
     # Static, single TSV — re-running a sample upserts (replaces) its row.
     log_path = Path(args.log_path) if args.log_path else \
                Path(args.results_dir) / "run_log.tsv"
-    header = "\t".join(["#", "Sample", "Species (SKANI)", "Skani hit", "Skani ANI",
-                         "Bracken top", "ST", "MLST tool", "Species-specific typing", "Date"])
+    header = "\t".join(["#", "Sample", "Species (GAMBIT)", "GAMBIT hit", "Skani ANI",
+                         "Bracken top", "ST", "MLST tool", "Species-specific typing",
+                         "Depth (mapped)", "N50", "Q30", "Date"])
     skani  = data["species_id"]["skani"]
+    gambit = data["species_id"]["gambit"]
 
     typing_parts = []
     if data.get("kleborate"):
@@ -652,23 +702,24 @@ if __name__ == "__main__":
         typing_parts.append(f"SeqSero2: {data['seqsero2'].get('serotype', '-')}")
     if data.get("hicap"):
         typing_parts.append(f"hicap: {data['hicap'].get('serotype', '-')}")
-
-    pasty_txt = safe_read(sp_dir / "Pasty/pasty.tsv")
-    if pasty_txt:
-        pasty_rows = list(csv.DictReader(pasty_txt.splitlines(), delimiter="\t"))
-        if pasty_rows and pasty_rows[0].get("type") and pasty_rows[0]["type"] != "-":
-            typing_parts.append(f"Pasty: {pasty_rows[0]['type']}")
+    if data.get("pasty"):
+        typing_parts.append(f"Pasty: {data['pasty'].get('serotype', '-')}")
+    if data.get("gbsserotyper"):
+        typing_parts.append(f"GBS-SBG: {data['gbsserotyper'].get('serotype', '-')}")
 
     row = "\t".join([
         "{nr}",
         args.sample,
-        skani_sp.replace("_", " ") if skani_sp not in ("unknown", "") else "-",
-        skani.get("top_hit", "-") if skani.get("status") == "ok" else "-",
+        species_sp.replace("_", " ") if species_sp not in ("unknown", "") else "-",
+        gambit.get("closest_description", "-") if gambit.get("status") == "ok" else "-",
         f"{skani['ani']:.2f}" if skani.get("status") == "ok" and skani.get("ani") else "-",
         bracken_data["primary_species"].replace("_", " "),
         mlst_data["ST"],
         f"mlst ({mlst_data['scheme']})" if mlst_data["scheme"] != "-" else "mlst",
         "; ".join(typing_parts) if typing_parts else "-",
+        f"{self_cov['mean_depth']:.1f}" if self_cov.get("mean_depth") else "-",
+        str(quast_data.get("N50") or "-"),
+        f"{fastp_data['q30_pct']:.1f}" if fastp_data.get("q30_pct") is not None else "-",
         datetime.now().strftime("%Y-%m-%d %H:%M"),
     ])
 
@@ -680,10 +731,7 @@ if __name__ == "__main__":
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
             existing = f.read().splitlines()
-            if existing and existing[0].startswith("#"):
-                head, body = existing[0], existing[1:]
-            else:
-                head, body = header, existing
+            body = existing[1:] if existing and existing[0].startswith("#") else existing
             # Drop any prior row for this sample, then append the fresh one.
             data = [l for l in body
                     if l.strip() and (l.split("\t") + [""])[1] != args.sample]
@@ -696,6 +744,6 @@ if __name__ == "__main__":
                 renumbered.append("\t".join(parts))
             f.seek(0)
             f.truncate()
-            f.write("\n".join([head] + renumbered) + "\n")
+            f.write("\n".join([header] + renumbered) + "\n")
         finally:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)

@@ -8,15 +8,18 @@ from pathlib import Path
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
-KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_light/")
+KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db/")
 KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reserved per job -- caps parallel jobs via --resources mem_mb=<available RAM>
 SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reserved per Shovill/SPAdes job (SPAdes --ram is set to this / 1024)
 SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reserved per skani job (much lower than fastANI)
 SKANI_THREADS    = config.get("skani_threads", 8)
 CHECKM_MEM       = config.get("checkm_mem_mb", 22000)   # MB RAM per CheckM job (lineage_wf --reduced_tree, pplacer peaks ~14-18 GB; 22 GB allows 1 job per 30 GB host)
-SKANI_DB         = config.get("skani_db", "/databases/skani_db/bacteria")     # Path to skani sketch -- used for species ID (replaces GAMBIT)
+SKANI_DB         = config.get("skani_db",         "/databases/skani_db/bacteria")       # ANI confirmation in report
+GAMBIT_DB        = config.get("gambit_db",        "/databases/gambit_db")              # Primary species ID (drives DAG routing)
+ECTYPER_MASH     = config.get("ectyper_mash",     "/databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh")
 PLASMIDFINDER_DB = config.get("plasmidfinder_db", "/databases/plasmidfinder_db/")
-LRE_DIR          = config.get("lrefinder_dir", f"{workflow.basedir}/.lrefinder")  # cloned at runtime, same pattern as ReporTree
+LRE_DIR          = config.get("lrefinder_dir",    f"{workflow.basedir}/.lrefinder")   # cloned once via scripts/fetch_lrefinder.sh
+GBS_SBG_DIR      = config.get("gbssbg_dir",       f"{workflow.basedir}/.gbssbg")      # cloned once via scripts/fetch_gbssbg.sh
 RUN_LOG          = f"{RESULTS_DIR}/run_log.tsv"
 
 # --- Species groups and schemes ---
@@ -27,6 +30,7 @@ PA  = {"Pseudomonas_aeruginosa"}
 SAL = {"Salmonella_enterica"}
 HI  = {"Haemophilus_influenzae"}
 EFM = {"Enterococcus_faecium", "Enterococcus_faecalis"}      # LRE-Finder targets
+GBS = {"Streptococcus_agalactiae"}                           # GBS-SBG serotyping
 
 KLEB_PRESET = {
     "Klebsiella_pneumoniae":"kpsc", "Klebsiella_variicola":"kpsc", "Klebsiella_quasipneumoniae":"kpsc",
@@ -77,6 +81,7 @@ ALWAYS_TOOLS = [
     "ID_Kraken2/kraken2_report.txt",
     "ID_Kraken2/bracken_species.txt",
     "ID_Skani/skani.tsv",
+    "ID_Gambit/gambit.csv",
 ]
 
 SPECIES_TOOLS = [
@@ -88,6 +93,7 @@ SPECIES_TOOLS = [
     (SAL,                 ["SeqSero2/seqsero2.tsv"]),
     (HI,                  ["Hicap/hicap.tsv"]),
     (EFM,                 ["LRE-Finder/lre.res"]),
+    (GBS,                 ["GBSSeroTyper/serotype.tsv"]),
 ]
 
 # --- Helper functions ---
@@ -179,40 +185,35 @@ rule kraken2_qc:
         """
 
 checkpoint identify_species:
-    # SKANI species ID -- writes both the canonical skani.tsv and species.txt
-    # (Genus_species form, first two whitespace-separated tokens of Ref_name).
-    # This is a Snakemake checkpoint because species.txt drives DAG routing for
-    # the species-specific rules (Kleborate, StaphScope, AMRFinder, ...).
+    # GAMBIT (primary) + SKANI (report) species identification.
+    # GAMBIT predicted.name -> species.txt, which drives DAG routing 
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
     output:
-        sp  = f"{RESULTS_DIR}/{{sample}}/species.txt",
-        tsv = f"{RESULTS_DIR}/{{sample}}/ID_Skani/skani.tsv"
+        sp         = f"{RESULTS_DIR}/{{sample}}/species.txt",
+        gambit_csv = f"{RESULTS_DIR}/{{sample}}/ID_Gambit/gambit.csv",
+        tsv        = f"{RESULTS_DIR}/{{sample}}/ID_Skani/skani.tsv",
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/identify_species.log"
     params:
-        db = SKANI_DB
+        gambit_db = GAMBIT_DB,
+        skani_db  = SKANI_DB,
     threads: SKANI_THREADS
     resources:
         mem_mb = SKANI_MEM
     retries: 2
     shell:
-        # Ref_name (column 6) looks like "NC_016845.1 Klebsiella pneumoniae subsp. ..."
-        # so the first token is the accession, not the genus. Walk tokens and pick
-        # the first "Genus species" pair (Capital+lowercase, lowercase) -> Genus_species.
-        # Falls through to "unknown_species" for accession-only / 'sp.' / phage hits.
         """
+        pixi run --environment identification gambit -d {params.gambit_db} query \
+            -o {output.gambit_csv} -f csv {input.fa} 2>&1 | tee {log}
         pixi run --environment identification skani search \
-            -q {input.fa} -d {params.db} -o {output.tsv} -t {threads} 2>&1 | tee {log}
-        awk -F'\\t' 'NR==2{{
-            n = split($6, a, " ");
-            for (i = 1; i < n; i++) {{
-                if (a[i] ~ /^[A-Z][a-z]+$/ && a[i+1] ~ /^[a-z]+$/) {{
-                    print a[i] "_" a[i+1]; exit;
-                }}
-            }}
-            print "unknown_species";
-        }}' {output.tsv} > {output.sp}
+            -q {input.fa} -d {params.skani_db} -o {output.tsv} -t {threads} 2>&1 | tee -a {log}
+        sp=$(awk -F',' 'NR==2{{
+            gsub(/"/, "", $2);
+            n = split($2, a, " ");
+            if (n >= 2) {{ print a[1] "_" a[2]; exit }}
+        }}' {output.gambit_csv})
+        echo "${{sp:-unknown_species}}" > {output.sp}
         """
 
 rule assemble:
@@ -254,14 +255,11 @@ rule quast:
         "pixi run quast {input.fa} -o $(dirname {output}) --threads {threads} 2>&1 | tee {log}"
 
 rule self_coverage:
-    # SeqSphere-style depth: map trimmed reads back to the sample's own Shovill
+    # Map trimmed reads back to the sample's own Shovill
     # assembly with bwa-mem2 and summarise with `samtools coverage`. Because the
     # assembly was built from these exact reads, mapping rate is ~98%+ and the
     # resulting depth/breadth reflect the *actual* sequencing yield -- distinct
-    # from the assembly-length estimate (over-counts non-aligning reads) and
-    # from the varcall reference-based depth (under-counts when reference differs).
-    # All intermediates land in a tmp dir and are wiped at the end -- only the
-    # samtools coverage TSV is kept.
+    # from the assembly-length estimate (over-counts non-aligning reads)
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
         r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
@@ -283,9 +281,6 @@ rule self_coverage:
         """
 
 rule checkm:
-    # CheckM expects a directory of FASTAs, one per genome/bin. Symlink the
-    # assembly under a private input/ so the run produces a single-row report.
-    # --reduced_tree drops memory from ~40 GB to ~14 GB for marginal accuracy loss.
     # Requires CheckM data root set once: `pixi run --environment checkm checkm data setRoot /databases/checkm_data`.
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
@@ -375,9 +370,6 @@ rule amrfinder:
     shell:
         "pixi run --environment amrfinder4 amrfinder --nucleotide {input.fa} {params.organism} --output {output} --threads {threads} --plus 2>&1 | tee {log}"
 
-ECTYPER_MASH = config.get("ectyper_mash",
-              "/databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh")
-
 rule ectyper:
     input:
         fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa",
@@ -415,6 +407,7 @@ rule plasmidfinder:
         f"{RESULTS_DIR}/{{sample}}/logs/plasmidfinder.log"
     params:
         db = PLASMIDFINDER_DB
+    retries: 2
     shell:
         "pixi run --environment plasmidfinder plasmidfinder.py -i {input.fa} -o $(dirname {output}) -p {params.db} -x 2>&1 | tee {log}"
 
@@ -450,11 +443,6 @@ rule mefinder:
         outdir = lambda wc: f"{RESULTS_DIR}/{wc.sample}/MEfinder",
         db_dir = f"{RESULTS_DIR}/.mefinder_db"
     shell:
-        # Shovill appends metadata to FASTA headers that mefinder can't parse -- strip with sed.
-        # --db-path points at a pre-built shared BLAST DB to avoid the race on /tmp/mge_finder.
-        # --temp-dir per sample isolates the per-job working directory.
-        # mefinder versions differ in output format: older writes mefinder.csv, newer mefinder.tsv.
-        # The prefix passed to `mefinder find` is {params.outdir}/mefinder, so the .tsv path equals {output}.
         """
         sed '/^>/s/ .*//' {input.fa} > {params.outdir}/contigs.fa
         pixi run --environment mefinder mefinder find {params.outdir}/mefinder \
@@ -509,12 +497,6 @@ rule pasty:
         "pixi run pasty -i {input.fa} -o $(dirname {output}) -p pasty --force 2>&1 | tee {log}"
 
 rule lrefinder:
-    # Detects linezolid resistance markers in E. faecium / E. faecalis directly
-    # from reads (KMA k-mer alignment, no assembly): cfr/optrA/poxtA acquired
-    # genes + 23S rRNA G2576T/G2505A + L3/L4 mutations, with mosaicism %.
-    # LRE-Finder is not on conda/PyPI; install it once with `scripts/fetch_lrefinder.sh`
-    # (clones the repo to .lrefinder/ at the project root). The rule fails loudly
-    # with that hint if the script hasn't been run.
     input:
         r1 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R1.fastq.gz",
         r2 = f"{RESULTS_DIR}/{{sample}}/Trimmed/R2.fastq.gz",
@@ -541,11 +523,35 @@ rule lrefinder:
             -1t1 -cge 2>&1 | tee {log}
         """
 
+rule gbsserotyper:
+    # Perl + BLAST+-based; not on conda. Install once: scripts/fetch_gbssbg.sh
+    # Output TSV: Name / Serotype / Uncertainty.
+    input:
+        fa = f"{RESULTS_DIR}/{{sample}}/Assembly/contigs.fa"
+    output:
+        tsv = f"{RESULTS_DIR}/{{sample}}/GBSSeroTyper/serotype.tsv"
+    log:
+        f"{RESULTS_DIR}/{{sample}}/logs/gbsserotyper.log"
+    params:
+        dir  = GBS_SBG_DIR,
+        name = lambda wc: wc.sample.replace("/", "_"),
+    shell:
+        """
+        if [ ! -f {params.dir}/GBS-SBG.pl ]; then
+            echo "ERROR: GBS-SBG not installed at {params.dir}/" >&2
+            echo "       Run: scripts/fetch_gbssbg.sh" >&2
+            exit 1
+        fi
+        mkdir -p "$(dirname {output.tsv})"
+        pixi run --environment identification perl {params.dir}/GBS-SBG.pl \
+            {input.fa} -name {params.name} -best \
+            -ref {params.dir}/GBS-SBG.fasta 2>&1 | tee {log} > {output.tsv}
+        """
+
 rule multiqc:
     input:
         fastp   = f"{RESULTS_DIR}/{{sample}}/QC/fastp.json",
-        fastqc  = f"{RESULTS_DIR}/{{sample}}/QC/fastqc/R1_fastqc.html",
-        # lambda triggers checkpoint resolution via get_all_outputs → read_species → checkpoints.identify_species.get(...)
+        fastqc  = f"{RESULTS_DIR}/{{sample}}/QC/fastqc/R1_fastqc.html",       
         dynamic = lambda wc: [f for f in get_all_outputs(wc) if "multiqc_report.html" not in f]
     output:
         f"{RESULTS_DIR}/{{sample}}/MultiQC/multiqc_report.html"

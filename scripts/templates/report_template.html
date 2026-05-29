@@ -133,6 +133,12 @@ function render() {
       extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.hicap.serotype}</div><div class="lbl">Capsule type (hicap)</div></div>`;
   }
 
+  // GBS-SBG
+  if (sp.includes('Streptococcus_agalactiae')) {
+    if (s.gbsserotyper?.serotype && s.gbsserotyper.serotype!=='-')
+      extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.gbsserotyper.serotype}</div><div class="lbl">Serotype (GBS-SBG)</div></div>`;
+  }
+
   // LRE-Finder -- linezolid resistance summary for Enterococcus faecium / faecalis.
   // Tile shows the maximum % of mutated 23S rRNA copies + count of acquired
   // resistance genes (cfr / optrA / poxtA). Red when either is present.
@@ -520,6 +526,8 @@ function render() {
       ? `<tr><td>SeqSero2</td><td>${s.seqsero2.serotype} (${s.seqsero2.antigenic_profile})</td><td>Kauffmann-White scheme</td></tr>` : ''}
     ${s.species?.includes('Haemophilus') && s.hicap
       ? `<tr><td>hicap</td><td>${s.hicap.serotype} &mdash; genes: ${s.hicap.genes}</td><td>hicap database</td></tr>` : ''}
+    ${s.species?.includes('Streptococcus_agalactiae') && s.gbsserotyper
+      ? `<tr><td>GBS-SBG</td><td>${s.gbsserotyper.serotype}${s.gbsserotyper.uncertainty ? ` <span style="color:var(--muted);font-size:0.85em">(${s.gbsserotyper.uncertainty})</span>` : ''}</td><td>GBS-SBG (assembly-based)</td></tr>` : ''}
   </table></div>`;
 
   h += `<p style="color:var(--muted);font-size:0.78rem;margin-top:16px">
