@@ -23,7 +23,9 @@ pixi install
 
 **Kraken2** — recommended: PlusPF 8 GB (~8 GB, requires ≥16 GB RAM)
 
-**skani** (~3 GB sketch, ~25 GB temporary during build with FastANI)
+**GAMBIT** (~2 GB) — primary species ID, drives DAG routing
+
+**skani** (~3 GB sketch) — ANI confirmation shown in the report alongside GAMBIT
 
 **MOB-suite** (~1.5 GB): `pixi run --environment mobsuite mob_init`
 
@@ -31,11 +33,18 @@ pixi install
 
 **CheckM** (~1.4 GB)
 
-**LRE-Finder** (linezolid resistance in *Enterococcus*) — not on conda/PyPI; clone once with the helper script:
+**LRE-Finder** (linezolid resistance in *Enterococcus*) — not on conda/PyPI; clone once:
 
 ```bash
 scripts/fetch_lrefinder.sh
 # default target: ./.lrefinder/  (override via env: LREFINDER_DIR=...)
+```
+
+**GBS-SBG** (*S. agalactiae* serotyping) — not on conda; clone once:
+
+```bash
+scripts/fetch_gbssbg.sh
+# default target: ./.gbssbg/  (override via env: GBSSBG_DIR=...)
 ```
 
 **cgMLST schemas** (required only for the cgMLST pipeline) — chewBBACA-prepared
@@ -105,6 +114,7 @@ Filenames can be anything, but must end with `_R1.fastq.gz` / `_R2.fastq.gz`.
 pixi run snakemake -n --cores 16
 
 # One sample / one date / multiple samples / all
+# Matching is exact against the leaf name or date component — '3w' will NOT match '3wous'
 pixi run snakemake --cores 16  --config samples=001k
 pixi run snakemake --cores 16  --config samples=19-03-2026
 pixi run snakemake --cores 16  --config "samples=[001k,002k]"
@@ -114,7 +124,7 @@ pixi run snakemake --cores 16
 pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
 ```
 
-Each run appends one row per sample to `results/run_log.tsv` (sample ID, SKANI species, skani hit + ANI, Bracken top, MLST ST, species-specific typing, date). Re-running a sample replaces its prior row, so the file always reflects the latest call per sample — a single, cumulative summary across all runs.
+Each run appends one row per sample to `results/run_log.tsv` (sample ID, GAMBIT species, GAMBIT closest hit, skani ANI, Bracken top, ST, MLST tool, species-specific typing, depth (mapped), N50, Q30, date). Re-running a sample replaces its prior row, so the file always reflects the latest call per sample — a single, cumulative summary across all runs.
 
 **Per-sample HTML report** at `results/<sample>/pipeline_summary.html` surfaces three depth numbers side-by-side:
 
@@ -339,13 +349,13 @@ flowchart TD
     shovill --> checkm[CheckM<br/>completeness · contamination]
     shovill --> selfcov[self_coverage<br/>bwa-mem2 + samtools coverage<br/>SeqSphere-style depth + breadth]
     fastp --> selfcov
-    shovill --> skani[/skani<br/>species checkpoint<br/>writes species.txt/]
-    skani --> mlst[MLST]
-    skani --> amr[AMRFinder]
-    skani --> mob[MOB-suite]
-    skani --> me[MEfinder]
-    skani --> plf[PlasmidFinder]
-    skani --> sp[Species-specific:<br/>StaphScope · Kleborate · ECTyper<br/>emmtyper · Pasty · SeqSero2 · hicap · LRE-Finder]
+    shovill --> id[/GAMBIT + skani<br/>species checkpoint<br/>GAMBIT → species.txt<br/>skani → ANI report/]
+    id --> mlst[MLST]
+    id --> amr[AMRFinder]
+    id --> mob[MOB-suite]
+    id --> me[MEfinder]
+    id --> plf[PlasmidFinder]
+    id --> sp[Species-specific:<br/>StaphScope · Kleborate · ECTyper<br/>emmtyper · Pasty · SeqSero2 · hicap<br/>LRE-Finder · GBS-SBG]
     fastqc & kraken & quast & checkm & selfcov & mlst & amr & mob & me & plf & sp --> multiqc[MultiQC]
     multiqc --> report[pipeline_summary.html]
 ```
@@ -416,6 +426,7 @@ flowchart TD
 | *P. aeruginosa* | Pasty | O-antigen serotype |
 | *Salmonella* spp. | SeqSero2 | O and H antigen serotyping |
 | *H. influenzae* | hicap | Capsule type (a–f / non-typeable) |
+| *S. agalactiae* | GBS-SBG | Capsular serotype (Ia–IX / NT) |
 | *E. faecium* + *E. faecalis* | LRE-Finder | Linezolid resistance: cfr / optrA / poxtA acquired genes + 23S rRNA mosaicism % |
 | All | MEfinder | Insertion sequences and transposons |
 | All | MOB-suite | Plasmid typing (relaxase, conjugation) |
@@ -439,9 +450,10 @@ wget -O databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh \
 | `threads` | `8` | Threads per rule |
 | `kraken2_db` | `/databases/kraken2_db_light/` | Kraken2 database |
 | `kraken2_mem_mb` | `12000` | MB RAM per Kraken2 job |
-| `skani_db` | `/databases/skani_db/bacteria` | skani sketch database (drives species ID checkpoint) |
-| `skani_mem_mb` | `4000` | MB RAM per skani job |
-| `skani_threads` | `8` | Threads per skani job |
+| `gambit_db` | `/databases/gambit_db` | GAMBIT database — primary species ID, drives checkpoint routing |
+| `skani_db` | `/databases/skani_db/bacteria` | skani sketch database — ANI confirmation in report |
+| `skani_mem_mb` | `4000` | MB RAM per identify_species job (GAMBIT + skani) |
+| `skani_threads` | `8` | Threads per identify_species job |
 | `shovill_mem_mb` | `12000` | MB RAM per Shovill job |
 | `checkm_mem_mb` | `16000` | MB RAM per CheckM job (lineage_wf `--reduced_tree`) |
 
@@ -496,7 +508,8 @@ pixi run snakemake --cores 16 --rerun-incomplete
 | QUAST | ≥5.2 | Assembly statistics |
 | CheckM | ≥1.2 | Assembly completeness and contamination (lineage-based marker genes) |
 | Kraken2 + Bracken | ≥2.1 | Species identification (reads) |
-| skani | ≥0.2 | ANI-based species identification (assembly) — controls DAG routing |
+| GAMBIT | ≥0.5 | Genome-signature species ID — primary checkpoint, writes species.txt |
+| skani | ≥0.2 | ANI-based species confirmation (assembly) — shown in report alongside GAMBIT |
 | MLST | ≥2.23 | Sequence typing (PubMLST) |
 | AMRFinder | v4.x | Resistance and virulence genes |
 | MOB-suite | ≥3.1 | Plasmid typing |
@@ -508,6 +521,7 @@ pixi run snakemake --cores 16 --rerun-incomplete
 | SeqSero2 | ≥1.3 | *Salmonella* serotyping |
 | hicap | ≥1.0 | *H. influenzae* capsule type |
 | LRE-Finder | latest | Linezolid resistance in *Enterococcus* (acquired genes + 23S rRNA mosaicism) |
+| GBS-SBG | latest | *S. agalactiae* capsular serotyping (Ia–IX / NT) |
 | Snippy + snippy-core | ≥4.6 | SNP calling and core alignment |
 | Gubbins | ≥3.3 | Recombination removal |
 | IQ-TREE2 | ≥2.2 | ML phylogenetic tree |
