@@ -1,0 +1,104 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job                count
+---------------  -------
+chewbbaca              1
+fetch_reportree        1
+cgmlst_dists           1
+grapetree              1
+reportree              1
+cgmlst_report          1
+all                    1
+total                  7
+
+Select jobs to execute...
+Execute 2 jobs...
+[Thu May 28 12:45:41 2026]
+localrule chewbbaca:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa, /srv/results/27-05-2026/3wous/Assembly/contigs.fa, /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv
+    log: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/logs/chewbbaca.log
+    jobid: 1
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv
+    threads: 8
+    resources: tmpdir=/tmp
+[Thu May 28 12:45:41 2026]
+localrule fetch_reportree:
+    output: .reportree/reportree.py
+    log: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/logs/fetch_reportree.log
+    jobid: 5
+    reason: Missing output files: .reportree/reportree.py
+    resources: tmpdir=/tmp
+[Thu May 28 12:45:52 2026]
+Finished jobid: 5 (Rule: fetch_reportree)
+1 of 7 steps (14%) done
+[Thu May 28 12:46:58 2026]
+Finished jobid: 1 (Rule: chewbbaca)
+2 of 7 steps (29%) done
+Select jobs to execute...
+Execute 3 jobs...
+[Thu May 28 12:46:58 2026]
+localrule reportree:
+    input: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv, .reportree/reportree.py
+    output: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cluster_partitions.tsv
+    log: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/logs/reportree.log
+    jobid: 4
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cluster_partitions.tsv; Input files updated by another job: .reportree/reportree.py, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv
+    threads: 8
+    resources: tmpdir=/tmp
+[Thu May 28 12:46:58 2026]
+localrule cgmlst_dists:
+    input: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv
+    output: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_dists.tsv
+    log: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/logs/cgmlst_dists.log
+    jobid: 2
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_dists.tsv; Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv
+    resources: tmpdir=/tmp
+[Thu May 28 12:46:58 2026]
+localrule grapetree:
+    input: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv
+    output: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/grapetree.nwk
+    log: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/logs/grapetree.log
+    jobid: 3
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/grapetree.nwk; Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv
+    resources: tmpdir=/tmp
+[Thu May 28 12:46:58 2026]
+Finished jobid: 2 (Rule: cgmlst_dists)
+3 of 7 steps (43%) done
+[Thu May 28 12:47:02 2026]
+Finished jobid: 3 (Rule: grapetree)
+4 of 7 steps (57%) done
+[Thu May 28 12:47:03 2026]
+Finished jobid: 4 (Rule: reportree)
+5 of 7 steps (71%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Thu May 28 12:47:03 2026]
+localrule cgmlst_report:
+    input: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_dists.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/grapetree.nwk, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cluster_partitions.tsv, /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3xous/QUAST/report.tsv, /srv/results/27-05-2026/3wous/QUAST/report.tsv, /srv/results/27-05-2026/3yous/QUAST/report.tsv
+    output: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_report.html
+    log: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/logs/cgmlst_report.log
+    jobid: 6
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_report.html; Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_dists.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/grapetree.nwk, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cluster_partitions.tsv
+    resources: tmpdir=/tmp
+[Thu May 28 12:47:06 2026]
+Finished jobid: 6 (Rule: cgmlst_report)
+6 of 7 steps (86%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Thu May 28 12:47:06 2026]
+localrule all:
+    input: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_dists.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/grapetree.nwk, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cluster_partitions.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_report.html
+    jobid: 0
+    reason: Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test_ous_SNP/allele_profiles.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cluster_partitions.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/grapetree.nwk, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_dists.tsv, /srv/phylo_results/bruker/cgmlst/test_ous_SNP/cgmlst_report.html
+    resources: tmpdir=/tmp
+[Thu May 28 12:47:06 2026]
+Finished jobid: 0 (Rule: all)
+7 of 7 steps (100%) done
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-05-28T124541.427204.snakemake.log

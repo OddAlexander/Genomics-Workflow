@@ -1,0 +1,44 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job             count
+------------  -------
+fastp               2
+assemble            2
+fastqc              2
+checkm              2
+parsnp              1
+prokka              1
+quast               2
+skani               2
+multiqc             2
+snippy              2
+snp_dists           3
+multiqc_run         1
+snippy_core         1
+gubbins             1
+iqtree              1
+phylo_report        1
+all                 1
+total              27
+
+Select jobs to execute...
+Execute 2 jobs...
+[Thu May 28 12:28:54 2026]
+localrule fastp:
+    input: /srv/data/27-05-2026/3wous/3wous_R1.fastq.gz, /srv/data/27-05-2026/3wous/3wous_R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/QC/fastp.json, /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/QC/fastp.html
+    log: /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/logs/fastp.log
+    jobid: 7
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/QC/fastp.json, /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/Trimmed/R1.fastq.gz
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp
+WorkflowError:
+Failed to create output directory /srv/phylo_results/bruker/phylo/test_ous/27-05-2026/3wous/Trimmed.
+PermissionError: [Errno 13] Permission denied: '/srv/phylo_results/bruker'

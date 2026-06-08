@@ -1,0 +1,93 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job              count
+-------------  -------
+chewbbaca            1
+cgmlst_dists         1
+grapetree            1
+reportree            1
+cgmlst_report        1
+all                  1
+total                6
+
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 13:57:51 2026]
+localrule chewbbaca:
+    input: /srv/results/28-05-2026/3x/Assembly/contigs.fa, /srv/results/27-05-2026/3xous/Assembly/contigs.fa, /srv/results/28-05-2026/3wwr/Assembly/contigs.fa, /srv/results/28-05-2026/3w/Assembly/contigs.fa, /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv
+    log: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/logs/chewbbaca.log
+    jobid: 1
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 13:58:28 2026]
+Finished jobid: 1 (Rule: chewbbaca)
+1 of 6 steps (17%) done
+Select jobs to execute...
+Execute 3 jobs...
+[Fri May 29 13:58:28 2026]
+localrule reportree:
+    input: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv, .reportree/reportree.py
+    output: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cluster_partitions.tsv
+    log: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/logs/reportree.log
+    jobid: 4
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cluster_partitions.tsv; Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 13:58:28 2026]
+localrule cgmlst_dists:
+    input: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv
+    output: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_dists.tsv
+    log: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/logs/cgmlst_dists.log
+    jobid: 2
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_dists.tsv; Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv
+    resources: tmpdir=/tmp
+[Fri May 29 13:58:28 2026]
+localrule grapetree:
+    input: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv
+    output: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/grapetree.nwk
+    log: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/logs/grapetree.log
+    jobid: 3
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/grapetree.nwk; Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv
+    resources: tmpdir=/tmp
+[Fri May 29 13:58:28 2026]
+Finished jobid: 2 (Rule: cgmlst_dists)
+2 of 6 steps (33%) done
+[Fri May 29 13:58:31 2026]
+Finished jobid: 3 (Rule: grapetree)
+3 of 6 steps (50%) done
+[Fri May 29 13:58:34 2026]
+Finished jobid: 4 (Rule: reportree)
+4 of 6 steps (67%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 13:58:34 2026]
+localrule cgmlst_report:
+    input: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_dists.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/grapetree.nwk, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cluster_partitions.tsv, /srv/results/28-05-2026/3x/QC/fastp.json, /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/28-05-2026/3wwr/QC/fastp.json, /srv/results/28-05-2026/3w/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/28-05-2026/3x/QUAST/report.tsv, /srv/results/27-05-2026/3xous/QUAST/report.tsv, /srv/results/28-05-2026/3wwr/QUAST/report.tsv, /srv/results/28-05-2026/3w/QUAST/report.tsv, /srv/results/27-05-2026/3wous/QUAST/report.tsv
+    output: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_report.html
+    log: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/logs/cgmlst_report.log
+    jobid: 6
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_report.html; Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cluster_partitions.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/grapetree.nwk, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_dists.tsv
+    resources: tmpdir=/tmp
+[Fri May 29 13:58:36 2026]
+Finished jobid: 6 (Rule: cgmlst_report)
+5 of 6 steps (83%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 13:58:36 2026]
+localrule all:
+    input: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_dists.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/grapetree.nwk, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cluster_partitions.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_report.html
+    jobid: 0
+    reason: Input files updated by another job: /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/allele_profiles.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/grapetree.nwk, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cluster_partitions.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_dists.tsv, /srv/phylo_results/bruker/cgmlst/test-gulstaff--28-05-2026/cgmlst_report.html
+    resources: tmpdir=/tmp
+[Fri May 29 13:58:36 2026]
+Finished jobid: 0 (Rule: all)
+6 of 6 steps (100%) done
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-05-29T135751.178229.snakemake.log

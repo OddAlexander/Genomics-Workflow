@@ -1,0 +1,86 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job              count
+-------------  -------
+chewbbaca            1
+cgmlst_dists         1
+grapetree            1
+reportree            1
+cgmlst_report        1
+all                  1
+total                6
+
+Select jobs to execute...
+Execute 1 jobs...
+[Tue Jun  2 14:34:49 2026]
+localrule chewbbaca:
+    input: /srv/results/22-04-2026/3h/Assembly/contigs.fa, /srv/results/22-04-2026/3i/Assembly/contigs.fa, /srv/results/22-04-2026/3j/Assembly/contigs.fa, /srv/results/22-04-2026/3k/Assembly/contigs.fa, /srv/results/22-04-2026/3l/Assembly/contigs.fa, /srv/results/30-04-2026/3u/Assembly/contigs.fa, /srv/results/30-04-2026/3v/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/allele_profiles.tsv
+    log: /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/logs/chewbbaca.log
+    jobid: 1
+    reason: Missing output files: /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/allele_profiles.tsv
+    threads: 8
+    resources: tmpdir=/tmp
+RuleException:
+CalledProcessError in file "/home/bruker/genomics/Snakefile_cgmlst", line 146:
+Command 'set -euo pipefail;  
+        mkdir -p /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies
+        rm -f /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies/*.fasta
+        for f in /srv/results/22-04-2026/3h/Assembly/contigs.fa /srv/results/22-04-2026/3i/Assembly/contigs.fa /srv/results/22-04-2026/3j/Assembly/contigs.fa /srv/results/22-04-2026/3k/Assembly/contigs.fa /srv/results/22-04-2026/3l/Assembly/contigs.fa /srv/results/30-04-2026/3u/Assembly/contigs.fa /srv/results/30-04-2026/3v/Assembly/contigs.fa; do
+            sname="${f#/srv/results/}"; sname="${sname%/Assembly/contigs.fa}"
+            cp "$f" "/srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies/${sname//\//_}.fasta"
+        done
+        rm -rf /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca
+        pixi run --environment cgmlst chewBBACA.py AlleleCall             -i /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies             -g /databases/cgmlst/kleb_pneumo             -o /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca             --cpu 8             --no-inferred             2>&1 | tee /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/logs/chewbbaca.log
+        find /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca -name 'results_alleles.tsv' | head -1 | xargs -I{} cp {} /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/allele_profiles.tsv' returned non-zero exit status 1.
+[Tue Jun  2 14:35:06 2026]
+Error in rule chewbbaca:
+    message: None
+    jobid: 1
+    input: /srv/results/22-04-2026/3h/Assembly/contigs.fa, /srv/results/22-04-2026/3i/Assembly/contigs.fa, /srv/results/22-04-2026/3j/Assembly/contigs.fa, /srv/results/22-04-2026/3k/Assembly/contigs.fa, /srv/results/22-04-2026/3l/Assembly/contigs.fa, /srv/results/30-04-2026/3u/Assembly/contigs.fa, /srv/results/30-04-2026/3v/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/allele_profiles.tsv
+    log: /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/logs/chewbbaca.log (check log file(s) for error details)
+    shell:
+        
+        mkdir -p /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies
+        rm -f /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies/*.fasta
+        for f in /srv/results/22-04-2026/3h/Assembly/contigs.fa /srv/results/22-04-2026/3i/Assembly/contigs.fa /srv/results/22-04-2026/3j/Assembly/contigs.fa /srv/results/22-04-2026/3k/Assembly/contigs.fa /srv/results/22-04-2026/3l/Assembly/contigs.fa /srv/results/30-04-2026/3u/Assembly/contigs.fa /srv/results/30-04-2026/3v/Assembly/contigs.fa; do
+            sname="${f#/srv/results/}"; sname="${sname%/Assembly/contigs.fa}"
+            cp "$f" "/srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies/${sname//\//_}.fasta"
+        done
+        rm -rf /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca
+        pixi run --environment cgmlst chewBBACA.py AlleleCall             -i /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies             -g /databases/cgmlst/kleb_pneumo             -o /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca             --cpu 8             --no-inferred             2>&1 | tee /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/logs/chewbbaca.log
+        find /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca -name 'results_alleles.tsv' | head -1 | xargs -I{} cp {} /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/allele_profiles.tsv
+        
+        (command exited with non-zero exit code)
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Tue Jun  2 14:35:06 2026]
+Error in rule chewbbaca:
+    message: None
+    jobid: 1
+    input: /srv/results/22-04-2026/3h/Assembly/contigs.fa, /srv/results/22-04-2026/3i/Assembly/contigs.fa, /srv/results/22-04-2026/3j/Assembly/contigs.fa, /srv/results/22-04-2026/3k/Assembly/contigs.fa, /srv/results/22-04-2026/3l/Assembly/contigs.fa, /srv/results/30-04-2026/3u/Assembly/contigs.fa, /srv/results/30-04-2026/3v/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/allele_profiles.tsv
+    log: /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/logs/chewbbaca.log (check log file(s) for error details)
+    shell:
+        
+        mkdir -p /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies
+        rm -f /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies/*.fasta
+        for f in /srv/results/22-04-2026/3h/Assembly/contigs.fa /srv/results/22-04-2026/3i/Assembly/contigs.fa /srv/results/22-04-2026/3j/Assembly/contigs.fa /srv/results/22-04-2026/3k/Assembly/contigs.fa /srv/results/22-04-2026/3l/Assembly/contigs.fa /srv/results/30-04-2026/3u/Assembly/contigs.fa /srv/results/30-04-2026/3v/Assembly/contigs.fa; do
+            sname="${f#/srv/results/}"; sname="${sname%/Assembly/contigs.fa}"
+            cp "$f" "/srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies/${sname//\//_}.fasta"
+        done
+        rm -rf /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca
+        pixi run --environment cgmlst chewBBACA.py AlleleCall             -i /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/assemblies             -g /databases/cgmlst/kleb_pneumo             -o /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca             --cpu 8             --no-inferred             2>&1 | tee /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/logs/chewbbaca.log
+        find /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/chewbbaca -name 'results_alleles.tsv' | head -1 | xargs -I{} cp {} /srv/phylo_results/bruker/cgmlst/02-06-2026_1434/allele_profiles.tsv
+        
+        (command exited with non-zero exit code)
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-06-02T143449.529767.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

@@ -1,0 +1,77 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Updating checkpoint dependencies.
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job        count
+-------  -------
+multiqc        1
+report         3
+all            1
+total          5
+
+Select jobs to execute...
+Execute 3 jobs...
+[Thu May 28 12:20:12 2026]
+localrule multiqc:
+    input: /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/27-05-2026/3xous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/27-05-2026/3xous/QC/self_coverage.tsv, /srv/results/27-05-2026/3xous/QUAST/report.html, /srv/results/27-05-2026/3xous/CheckM/quality.tsv, /srv/results/27-05-2026/3xous/MLST/mlst.tsv, /srv/results/27-05-2026/3xous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3xous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3xous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3xous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3xous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3xous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3xous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3xous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3xous/MultiQC/multiqc_report.html
+    log: /srv/results/27-05-2026/3xous/logs/multiqc.log
+    jobid: 32
+    reason: Missing output files: /srv/results/27-05-2026/3xous/MultiQC/multiqc_report.html
+    wildcards: sample=27-05-2026/3xous
+    resources: tmpdir=/tmp
+[Thu May 28 12:20:12 2026]
+localrule report:
+    input: /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/self_coverage.tsv, /srv/results/27-05-2026/3wous/QUAST/report.html, /srv/results/27-05-2026/3wous/CheckM/quality.tsv, /srv/results/27-05-2026/3wous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3wous/MLST/mlst.tsv, /srv/results/27-05-2026/3wous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3wous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3wous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3wous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3wous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3wous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3wous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3wous/pipeline_summary.html
+    jobid: 9
+    reason: Missing output files: /srv/results/27-05-2026/3wous/pipeline_summary.html
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+[Thu May 28 12:20:12 2026]
+localrule report:
+    input: /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/self_coverage.tsv, /srv/results/27-05-2026/3yous/QUAST/report.html, /srv/results/27-05-2026/3yous/CheckM/quality.tsv, /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3yous/MLST/mlst.tsv, /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3yous/pipeline_summary.html
+    jobid: 1
+    reason: Missing output files: /srv/results/27-05-2026/3yous/pipeline_summary.html
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Thu May 28 12:20:12 2026]
+Finished jobid: 1 (Rule: report)
+1 of 5 steps (20%) done
+[Thu May 28 12:20:12 2026]
+Finished jobid: 9 (Rule: report)
+2 of 5 steps (40%) done
+[Thu May 28 12:20:14 2026]
+Finished jobid: 32 (Rule: multiqc)
+3 of 5 steps (60%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Thu May 28 12:20:14 2026]
+localrule report:
+    input: /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/27-05-2026/3xous/QC/self_coverage.tsv, /srv/results/27-05-2026/3xous/QUAST/report.html, /srv/results/27-05-2026/3xous/CheckM/quality.tsv, /srv/results/27-05-2026/3xous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3xous/MLST/mlst.tsv, /srv/results/27-05-2026/3xous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3xous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3xous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3xous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3xous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3xous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3xous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3xous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3xous/pipeline_summary.html
+    jobid: 5
+    reason: Missing output files: /srv/results/27-05-2026/3xous/pipeline_summary.html; Input files updated by another job: /srv/results/27-05-2026/3xous/MultiQC/multiqc_report.html
+    wildcards: sample=27-05-2026/3xous
+    resources: tmpdir=/tmp
+[Thu May 28 12:20:14 2026]
+Finished jobid: 5 (Rule: report)
+4 of 5 steps (80%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Thu May 28 12:20:14 2026]
+localrule all:
+    input: /srv/results/27-05-2026/3yous/pipeline_summary.html, /srv/results/27-05-2026/3xous/pipeline_summary.html, /srv/results/27-05-2026/3wous/pipeline_summary.html
+    jobid: 0
+    reason: Input files updated by another job: /srv/results/27-05-2026/3wous/pipeline_summary.html, /srv/results/27-05-2026/3yous/pipeline_summary.html, /srv/results/27-05-2026/3xous/pipeline_summary.html
+    resources: tmpdir=/tmp
+[Thu May 28 12:20:14 2026]
+Finished jobid: 0 (Rule: all)
+5 of 5 steps (100%) done
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-05-28T122012.580860.snakemake.log

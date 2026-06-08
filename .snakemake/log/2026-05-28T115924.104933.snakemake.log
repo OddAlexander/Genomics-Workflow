@@ -1,0 +1,185 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+fastp                   3
+assemble                3
+identify_species        3
+report                  3
+all                     1
+total                  13
+
+Select jobs to execute...
+Execute 2 jobs...
+[Thu May 28 11:59:24 2026]
+localrule fastp:
+    input: /srv/data/27-05-2026/3xous/3xous_R1.fastq.gz, /srv/data/27-05-2026/3xous/3xous_R2.fastq.gz
+    output: /srv/results/27-05-2026/3xous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3xous/Trimmed/R2.fastq.gz, /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/27-05-2026/3xous/QC/fastp.html
+    log: /srv/results/27-05-2026/3xous/logs/fastp.log
+    jobid: 8
+    reason: Missing output files: /srv/results/27-05-2026/3xous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3xous/Trimmed/R2.fastq.gz
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp
+[Thu May 28 11:59:24 2026]
+localrule fastp:
+    input: /srv/data/27-05-2026/3yous/3yous_R1.fastq.gz, /srv/data/27-05-2026/3yous/3yous_R2.fastq.gz
+    output: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz, /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/fastp.html
+    log: /srv/results/27-05-2026/3yous/logs/fastp.log
+    jobid: 4
+    reason: Missing output files: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 11:59:27 2026]
+Finished jobid: 4 (Rule: fastp)
+1 of 13 steps (8%) done
+Execute 1 jobs...
+[Thu May 28 11:59:27 2026]
+localrule assemble:
+    input: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    log: /srv/results/27-05-2026/3yous/logs/assemble.log
+    jobid: 3
+    reason: Missing output files: /srv/results/27-05-2026/3yous/Assembly/contigs.fa; Input files updated by another job: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+[Thu May 28 11:59:27 2026]
+Finished jobid: 8 (Rule: fastp)
+2 of 13 steps (15%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Thu May 28 11:59:27 2026]
+localrule fastp:
+    input: /srv/data/27-05-2026/3wous/3wous_R1.fastq.gz, /srv/data/27-05-2026/3wous/3wous_R2.fastq.gz
+    output: /srv/results/27-05-2026/3wous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3wous/Trimmed/R2.fastq.gz, /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/fastp.html
+    log: /srv/results/27-05-2026/3wous/logs/fastp.log
+    jobid: 12
+    reason: Missing output files: /srv/results/27-05-2026/3wous/Trimmed/R2.fastq.gz, /srv/results/27-05-2026/3wous/Trimmed/R1.fastq.gz
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 11:59:30 2026]
+Finished jobid: 12 (Rule: fastp)
+3 of 13 steps (23%) done
+Execute 1 jobs...
+[Thu May 28 11:59:30 2026]
+localrule assemble:
+    input: /srv/results/27-05-2026/3wous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3wous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    log: /srv/results/27-05-2026/3wous/logs/assemble.log
+    jobid: 11
+    reason: Missing output files: /srv/results/27-05-2026/3wous/Assembly/contigs.fa; Input files updated by another job: /srv/results/27-05-2026/3wous/Trimmed/R2.fastq.gz, /srv/results/27-05-2026/3wous/Trimmed/R1.fastq.gz
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Thu May 28 12:01:11 2026]
+Finished jobid: 3 (Rule: assemble)
+4 of 13 steps (31%) done
+Execute 1 jobs...
+[Thu May 28 12:01:11 2026]
+localcheckpoint identify_species:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/species.txt, /srv/results/27-05-2026/3yous/ID_Skani/skani.tsv
+    log: /srv/results/27-05-2026/3yous/logs/identify_species.log
+    jobid: 2
+    reason: Missing output files: /srv/results/27-05-2026/3yous/species.txt; Input files updated by another job: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=4000, mem=4 GB, mem_mib=3815
+DAG of jobs will be updated after completion.
+Select jobs to execute...
+[Thu May 28 12:01:14 2026]
+Finished jobid: 2 (Rule: identify_species)
+5 of 13 steps (38%) done
+Updating checkpoint dependencies.
+Execute 1 jobs...
+[Thu May 28 12:01:14 2026]
+localrule assemble:
+    input: /srv/results/27-05-2026/3xous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3xous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3xous/Assembly/contigs.fa
+    log: /srv/results/27-05-2026/3xous/logs/assemble.log
+    jobid: 7
+    reason: Missing output files: /srv/results/27-05-2026/3xous/Assembly/contigs.fa; Input files updated by another job: /srv/results/27-05-2026/3xous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3xous/Trimmed/R2.fastq.gz
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Thu May 28 12:01:35 2026]
+Finished jobid: 11 (Rule: assemble)
+6 of 25 steps (24%) done
+Execute 1 jobs...
+[Thu May 28 12:01:35 2026]
+localrule amrfinder:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa, /srv/results/27-05-2026/3yous/species.txt
+    output: /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv
+    log: /srv/results/27-05-2026/3yous/logs/amrfinder.log
+    jobid: 23
+    reason: Missing output files: /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:01:40 2026]
+Finished jobid: 23 (Rule: amrfinder)
+7 of 25 steps (28%) done
+Execute 1 jobs...
+[Thu May 28 12:01:40 2026]
+localrule kraken2_qc:
+    input: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt
+    log: /srv/results/27-05-2026/3yous/logs/kraken2_qc.log
+    jobid: 28
+    reason: Missing output files: /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+RuleException:
+CalledProcessError in file "/home/bruker/genomics/Snakefile", line 171:
+Command 'set -euo pipefail;  
+        pixi run --environment identification kraken2 --db /databases/kraken2_db_light/             --threads 8 --paired --report /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz 2>&1 | tee /srv/results/27-05-2026/3yous/logs/kraken2_qc.log
+        pixi run --environment identification bracken -d /databases/kraken2_db_light/             -i /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt -o /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt -l S 2>&1 | tee -a /srv/results/27-05-2026/3yous/logs/kraken2_qc.log' returned non-zero exit status 2.
+[Thu May 28 12:01:40 2026]
+Error in rule kraken2_qc:
+    message: None
+    jobid: 28
+    input: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt
+    log: /srv/results/27-05-2026/3yous/logs/kraken2_qc.log (check log file(s) for error details)
+    shell:
+        
+        pixi run --environment identification kraken2 --db /databases/kraken2_db_light/             --threads 8 --paired --report /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz 2>&1 | tee /srv/results/27-05-2026/3yous/logs/kraken2_qc.log
+        pixi run --environment identification bracken -d /databases/kraken2_db_light/             -i /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt -o /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt -l S 2>&1 | tee -a /srv/results/27-05-2026/3yous/logs/kraken2_qc.log
+        
+        (command exited with non-zero exit code)
+[Thu May 28 12:02:58 2026]
+Finished jobid: 7 (Rule: assemble)
+8 of 25 steps (32%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Thu May 28 12:02:58 2026]
+Error in rule kraken2_qc:
+    message: None
+    jobid: 28
+    input: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt
+    log: /srv/results/27-05-2026/3yous/logs/kraken2_qc.log (check log file(s) for error details)
+    shell:
+        
+        pixi run --environment identification kraken2 --db /databases/kraken2_db_light/             --threads 8 --paired --report /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz 2>&1 | tee /srv/results/27-05-2026/3yous/logs/kraken2_qc.log
+        pixi run --environment identification bracken -d /databases/kraken2_db_light/             -i /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt -o /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt -l S 2>&1 | tee -a /srv/results/27-05-2026/3yous/logs/kraken2_qc.log
+        
+        (command exited with non-zero exit code)
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-05-28T115924.104933.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

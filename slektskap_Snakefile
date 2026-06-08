@@ -1,0 +1,719 @@
+# slektskap_Snakefile -- Utbruddspipeline for bakteriell genomikk
+# Kjøres etter at prøver er analysert av hovudpipelinen
+#
+# Flyt:
+#   Snippy (per prøve, parallelt) -> snippy-core -> snp-dists + IQ-TREE
+#   -> Utbruddsrapport (.txt / .json / .html)
+#
+# Bruk:
+#   snakemake --snakefile slektskap_Snakefile --cores 8 \
+#     --config \
+#       samples="[001k,002k,003k]" \
+#       species="Enterococcus_faecium" \
+#       outbreak_name="VRE_Post4_Mars2026"
+#
+#   # Med manuell referanse:
+#   snakemake --snakefile slektskap_Snakefile --cores 8 \
+#     --config \
+#       samples="[001k,002k,003k]" \
+#       ref="/databases/snippy_refs/efaecium_Aus0004.gbff" \
+#       outbreak_name="VRE_Post4_Mars2026"
+#
+# Krav:
+#   - Prøver må være ferdig analysert av hovudpipelinen (results/<prøve>/)
+#   - pixi-miljø med snippy, iqtree, snp-dists installert
+
+import os, csv, json, re
+from datetime import datetime
+from pathlib import Path
+
+# -- Farger
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
+
+def logm(m):    print(f"{CYAN}[{datetime.now().strftime('%H:%M:%S')}]{RESET} {m}")
+def success(m): print(f"{GREEN}[{datetime.now().strftime('%H:%M:%S')}] OK {m}{RESET}")
+def warn(m):    print(f"{YELLOW}[{datetime.now().strftime('%H:%M:%S')}] ADVARSEL {m}{RESET}")
+def error(m):   print(f"{RED}[{datetime.now().strftime('%H:%M:%S')}] FEIL {m}{RESET}")
+def header(m):
+    print(f"\n{BOLD}{CYAN}== {m} =={RESET}")
+
+def write_log(logfile, status, msg, tool=""):
+    os.makedirs(os.path.dirname(logfile), exist_ok=True)
+    with open(logfile, 'a') as f:
+        f.write(f"[{datetime.now().isoformat()}] {status} | tool={tool}\n  {msg}\n\n")
+
+# -- Konfigurasjon
+configfile: "config.yaml"
+
+RESULTS_DIR   = config.get("results_dir",   "results/")
+THREADS       = config.get("threads",       8)
+OUTBREAK_NAME = config.get("outbreak_name", f"utbrudd_{datetime.now().strftime('%Y-%m-%d')}")
+OUTBREAK_DIR  = config.get("outbreak_dir",  os.path.expanduser(f"~/genomics/slektskapsanalyser/{OUTBREAK_NAME}"))
+SPECIES       = config.get("species",       "")
+
+# Referansegenom per art -- automatisk valg
+SNIPPY_REFS = {
+    "Enterococcus_faecium":  "/databases/snippy_refs/efaecium_Aus0004.gbff",
+    "Enterococcus_faecalis": "/databases/snippy_refs/efaecalis_V583.gbff",
+    "Klebsiella_pneumoniae": "/databases/snippy_refs/kpneumoniae_HS11286.gbff",
+    "Klebsiella_variicola":  "/databases/snippy_refs/kvariicola_At22.gbff",
+    "Klebsiella_oxytoca":    "/databases/snippy_refs/koxytoca.gbff",
+    "Staphylococcus_aureus": "/databases/snippy_refs/saureus_NCTC8325.gbff",
+    "Escherichia_coli":      "/databases/snippy_refs/ecoli_K12.gbff",
+    "Enterobacter_cloacae":  "/databases/snippy_refs/ecloacae.gbff",
+}
+
+# SNP-terskel for utbruddsdefinisjon per art (publisert litteratur)
+SNP_THRESHOLD = {
+    "Enterococcus_faecium":  20,
+    "Enterococcus_faecalis": 20,
+    "Klebsiella_pneumoniae": 15,
+    "Klebsiella_variicola":  15,
+    "Staphylococcus_aureus": 30,
+    "Escherichia_coli":      10,
+    "Enterobacter_cloacae":  20,
+}
+
+# Manuell referanse overstyrer automatisk valg
+if "ref" in config:
+    REF = config["ref"]
+elif SPECIES and SPECIES in SNIPPY_REFS:
+    REF = SNIPPY_REFS[SPECIES]
+else:
+    REF = config.get("snippy_ref", os.environ.get("SNIPPY_REF",
+          "/databases/snippy_refs/latest"))
+
+# Prøveliste
+if "samples" in config:
+    SAMPLES = config["samples"] if isinstance(config["samples"], list) else [config["samples"]]
+else:
+    raise ValueError("Ingen prøver angitt. Bruk --config samples=[001k,002k,...]")
+
+# Terskelverdi
+THRESHOLD = config.get("snp_threshold",
+            SNP_THRESHOLD.get(SPECIES, 20))
+
+logm(f"Utbruddspipeline: {OUTBREAK_NAME}")
+logm(f"Art:              {SPECIES or 'ikke angitt'}")
+logm(f"Prøver ({len(SAMPLES)}):   {SAMPLES}")
+logm(f"Referanse:        {REF}")
+logm(f"SNP-terskel:      {THRESHOLD}")
+logm(f"Utdatamappe:      {OUTBREAK_DIR}")
+
+# -- Valider referanse
+if not os.path.exists(REF):
+    raise FileNotFoundError(
+        f"Referansegenom ikke funnet: {REF}\n"
+        f"Legg til riktig referanse for {SPECIES} eller angi --config ref=<sti>"
+    )
+
+# -- Finn assembly per prøve
+def get_assembly(sample):
+    for candidate in [
+        f"{RESULTS_DIR}/{sample}/Assembly/contigs.fa",
+        f"{RESULTS_DIR}/{sample}/Assembly/scaffolds.fasta",
+    ]:
+        if os.path.exists(candidate):
+            return os.path.realpath(candidate)
+    raise FileNotFoundError(
+        f"Ingen assembly funnet for {sample} i {RESULTS_DIR}/{sample}/Assembly/\n"
+        f"Kjør hovudpipelinen først."
+    )
+
+def get_r1(sample):
+    for candidate in list(Path(RESULTS_DIR).glob(f"{sample}/Trimmed/{sample}_R1.fastq.gz")):
+        return str(candidate)
+    raise FileNotFoundError(f"Ingen trimmede reads funnet for {sample}")
+
+def get_r2(r1): return r1.replace("_R1", "_R2")
+
+# =============================================================================
+# Hovudregel
+# =============================================================================
+rule all:
+    input:
+        f"{OUTBREAK_DIR}/rapport/utbrudd_rapport.html"
+
+# =============================================================================
+# Steg 1: Snippy -- SNP-kalling per prøve mot referanse
+# =============================================================================
+rule snippy:
+    input:
+        r1  = lambda wc: get_r1(wc.sample),
+        r2  = lambda wc: get_r2(get_r1(wc.sample)),
+        ref = REF,
+    output:
+        vcf  = f"{OUTBREAK_DIR}/snippy/{{sample}}/snps.vcf",
+        aln  = f"{OUTBREAK_DIR}/snippy/{{sample}}/snps.aligned.fa",
+        bam  = f"{OUTBREAK_DIR}/snippy/{{sample}}/snps.bam",
+        txt  = f"{OUTBREAK_DIR}/snippy/{{sample}}/snps.txt",
+    log: f"{OUTBREAK_DIR}/logger/snippy_{{sample}}.log"
+    threads: THREADS
+    run:
+        try:
+            _lf = str(log[0]); write_log(_lf, "START", f"Snippy for {wildcards.sample}", tool="snippy")
+            header(f"Snippy SNP-kalling -- {wildcards.sample}")
+            outdir = f"{OUTBREAK_DIR}/snippy/{wildcards.sample}"
+            shell(
+                f"pixi run -- snippy "
+                f"--cpus {threads} "
+                f"--outdir {outdir} "
+                f"--ref {input.ref} "
+                f"--R1 {input.r1} --R2 {input.r2} "
+                f"--force"
+            )
+            # Tell antall SNPs
+            n_snps = 0
+            with open(output.txt) as f:
+                for line in f:
+                    if line.startswith("VariantSNPs"):
+                        n_snps = int(line.strip().split('\t')[1])
+                        break
+            success(f"Snippy ferdig -- {wildcards.sample} ({n_snps} SNP-er)")
+        except Exception as e:
+            error(f"Snippy feilet for {wildcards.sample}: {e}")
+            write_log(_lf, "ERROR", str(e), tool="snippy"); raise
+        else:
+            write_log(_lf, "SUCCESS", f"Ferdig", tool="snippy")
+
+# =============================================================================
+# Steg 2: snippy-core -- Bygg kjerne-SNP-alignment
+# =============================================================================
+rule snippy_core:
+    input:
+        alns = expand(f"{OUTBREAK_DIR}/snippy/{{sample}}/snps.aligned.fa", sample=SAMPLES),
+        ref  = REF,
+    output:
+        aln      = f"{OUTBREAK_DIR}/core/core.full.aln",
+        vcf      = f"{OUTBREAK_DIR}/core/core.vcf",
+        tab      = f"{OUTBREAK_DIR}/core/core.tab",
+        stats    = f"{OUTBREAK_DIR}/core/core.txt",
+    log: f"{OUTBREAK_DIR}/logger/snippy_core.log"
+    run:
+        try:
+            _lf = str(log[0]); write_log(_lf, "START", "snippy-core", tool="snippy-core")
+            header("snippy-core -- bygg kjerne-SNP-alignment")
+            outdir    = f"{OUTBREAK_DIR}/snippy"
+            core_pref = f"{OUTBREAK_DIR}/core/core"
+            os.makedirs(f"{OUTBREAK_DIR}/core", exist_ok=True)
+
+            # Lag symlenker med prøvenavn (snippy-core bruker mappenavn)
+            symdir = f"{OUTBREAK_DIR}/snippy_symlinks"
+            os.makedirs(symdir, exist_ok=True)
+            for sample in SAMPLES:
+                src = os.path.realpath(f"{OUTBREAK_DIR}/snippy/{sample}")
+                dst = f"{symdir}/{sample}"
+                if not os.path.exists(dst):
+                    os.symlink(src, dst)
+
+            dirs = " ".join(f"{symdir}/{s}" for s in SAMPLES)
+            shell(
+                f"pixi run -- snippy-core "
+                f"--ref {input.ref} "
+                f"--prefix {core_pref} "
+                f"{dirs}"
+            )
+            # Tell kjerne-SNPs
+            n_core = 0
+            if os.path.exists(output.stats):
+                with open(output.stats) as f:
+                    for line in f:
+                        if "CoreSNPs" in line:
+                            try: n_core = int(line.strip().split('\t')[1])
+                            except: pass
+            success(f"snippy-core ferdig -- {n_core} kjerne-SNP-er")
+        except Exception as e:
+            error(f"snippy-core feilet: {e}")
+            write_log(_lf, "ERROR", str(e), tool="snippy-core"); raise
+        else:
+            write_log(_lf, "SUCCESS", "Ferdig", tool="snippy-core")
+
+# =============================================================================
+# Steg 3: snp-dists -- Parvise SNP-avstander
+# =============================================================================
+rule snp_dists:
+    input:
+        f"{OUTBREAK_DIR}/core/core.full.aln"
+    output:
+        tsv    = f"{OUTBREAK_DIR}/rapport/snp_matrix.tsv",
+        molten = f"{OUTBREAK_DIR}/rapport/snp_pairs.tsv",
+    log: f"{OUTBREAK_DIR}/logger/snp_dists.log"
+    run:
+        try:
+            _lf = str(log[0]); write_log(_lf, "START", "snp-dists", tool="snp-dists")
+            header("snp-dists -- parvise SNP-avstander")
+            os.makedirs(f"{OUTBREAK_DIR}/rapport", exist_ok=True)
+            shell(f"pixi run -- snp-dists {input} > {output.tsv}")
+            # Lag smeltet (molten) versjon for enklere tolkning
+            with open(output.tsv) as f:
+                reader = csv.reader(f, delimiter='\t')
+                header_row = next(reader)[1:]  # hopp over første celle
+                pairs = []
+                for row in reader:
+                    s1 = row[0]
+                    for i, dist in enumerate(row[1:]):
+                        s2 = header_row[i]
+                        if s1 < s2:  # unngå duplikater
+                            try:
+                                d = int(dist)
+                                verdict = "SANNSYNLIG UTBRUDD" if d <= THRESHOLD else (
+                                          "MULIG TILKNYTNING" if d <= THRESHOLD * 2 else "IKKE RELATERT")
+                                pairs.append({
+                                    "prøve_1": s1, "prøve_2": s2,
+                                    "snp_avstand": d,
+                                    "terskel": THRESHOLD,
+                                    "vurdering": verdict,
+                                })
+                            except ValueError:
+                                pass
+            with open(output.molten, 'w', newline='') as f:
+                w = csv.DictWriter(f, fieldnames=["prøve_1","prøve_2","snp_avstand","terskel","vurdering"],
+                                   delimiter='\t')
+                w.writeheader(); w.writerows(pairs)
+            outbreak_pairs = [p for p in pairs if "UTBRUDD" in p["vurdering"]]
+            logm(f"Prøvepar analysert:  {len(pairs)}")
+            logm(f"Innenfor terskel:    {len(outbreak_pairs)}")
+            if outbreak_pairs:
+                error(f"MULIGE UTBRUDD -- {len(outbreak_pairs)} par innenfor {THRESHOLD} SNP:")
+                for p in sorted(outbreak_pairs, key=lambda x: x['snp_avstand']):
+                    error(f"  {p['prøve_1']} <-> {p['prøve_2']}: {p['snp_avstand']} SNP-er")
+            success("snp-dists ferdig")
+        except Exception as e:
+            error(f"snp-dists feilet: {e}")
+            write_log(_lf, "ERROR", str(e), tool="snp-dists"); raise
+        else:
+            write_log(_lf, "SUCCESS", "Ferdig", tool="snp-dists")
+
+# =============================================================================
+# Steg 4: IQ-TREE -- Fylogenetisk tre
+# =============================================================================
+rule iqtree:
+    input:
+        f"{OUTBREAK_DIR}/core/core.full.aln"
+    output:
+        tree   = f"{OUTBREAK_DIR}/rapport/outbreak_tree.treefile",
+        log_iq = f"{OUTBREAK_DIR}/rapport/outbreak_tree.log",
+    log: f"{OUTBREAK_DIR}/logger/iqtree.log"
+    threads: THREADS
+    run:
+        try:
+            _lf = str(log[0]); write_log(_lf, "START", "IQ-TREE", tool="iqtree")
+            header("IQ-TREE -- fylogenetisk tre")
+            prefix = f"{OUTBREAK_DIR}/rapport/outbreak_tree"
+            shell(
+                f"pixi run -- iqtree "
+                f"-s {input} "
+                f"-B 1000 "
+                f"-T {threads} "
+                f"--prefix {prefix} "
+                f"-m GTR+G "
+                f"--redo"
+            )
+            success("IQ-TREE ferdig")
+        except Exception as e:
+            error(f"IQ-TREE feilet: {e}")
+            write_log(_lf, "ERROR", str(e), tool="iqtree"); raise
+        else:
+            write_log(_lf, "SUCCESS", "Ferdig", tool="iqtree")
+
+# =============================================================================
+# Steg 5: Utbruddsrapport (.txt / .json / .html)
+# =============================================================================
+rule utbrudd_rapport:
+    input:
+        matrix = f"{OUTBREAK_DIR}/rapport/snp_matrix.tsv",
+        pairs  = f"{OUTBREAK_DIR}/rapport/snp_pairs.tsv",
+        tree   = f"{OUTBREAK_DIR}/rapport/outbreak_tree.treefile",
+        core_stats = f"{OUTBREAK_DIR}/core/core.txt",
+        core_tab   = f"{OUTBREAK_DIR}/core/core.tab",
+    output:
+        txt  = f"{OUTBREAK_DIR}/rapport/utbrudd_rapport.txt",
+        json = f"{OUTBREAK_DIR}/rapport/utbrudd_rapport.json",
+        html = f"{OUTBREAK_DIR}/rapport/utbrudd_rapport.html",
+    run:
+        header(f"Utbruddsrapport -- {OUTBREAK_NAME}")
+        now = datetime.now().isoformat()
+
+        # Les SNP-par
+        pairs = []
+        with open(input.pairs) as f:
+            for row in csv.DictReader(f, delimiter='\t'):
+                row['snp_avstand'] = int(row['snp_avstand'])
+                pairs.append(row)
+
+        # Les SNP-matrise
+        matrix = {}
+        with open(input.matrix) as f:
+            reader = csv.reader(f, delimiter='\t')
+            header_row = next(reader)[1:]
+            for row in reader:
+                s1 = row[0]
+                matrix[s1] = {}
+                for i, val in enumerate(row[1:]):
+                    try: matrix[s1][header_row[i]] = int(val)
+                    except: matrix[s1][header_row[i]] = val
+
+        # Les Newick-tre
+        newick_str = ""
+        if os.path.exists(input.tree):
+            newick_str = open(input.tree).read().strip()
+
+        # Les kjerne-statistikk
+        core_stats = {}
+        if os.path.exists(input.core_stats):
+            with open(input.core_stats) as f:
+                for line in f:
+                    cols = line.strip().split('\t')
+                    if len(cols) == 2:
+                        core_stats[cols[0]] = cols[1]
+
+        # Les per-prøve SNP-telling fra snippy
+        sample_snps = {}
+        for sample in SAMPLES:
+            txt_f = f"{OUTBREAK_DIR}/snippy/{sample}/snps.txt"
+            if os.path.exists(txt_f):
+                with open(txt_f) as f:
+                    for line in f:
+                        if line.startswith("VariantSNPs"):
+                            try: sample_snps[sample] = int(line.strip().split('\t')[1])
+                            except: sample_snps[sample] = 0
+
+        # Hent MLST og art fra hovudpipeline-resultater
+        # CT (cluster type) hentes fra config hvis angitt, ellers "-"
+        # Oppslag per art:
+        #   E. faecium, E. faecalis, E. coli: https://enterobase.warwick.ac.uk
+        #   K. pneumoniae, S. aureus, S. epidermidis, E. cloacae: https://www.cgmlst.org
+        CT_URL = {
+            "Enterococcus_faecium":   "https://enterobase.warwick.ac.uk",
+            "Enterococcus_faecalis":  "https://enterobase.warwick.ac.uk",
+            "Escherichia_coli":       "https://enterobase.warwick.ac.uk",
+            "Shigella_sonnei":        "https://enterobase.warwick.ac.uk",
+            "Klebsiella_pneumoniae":  "https://www.cgmlst.org/ncs/schema/2187931/",
+            "Klebsiella_variicola":   "https://www.cgmlst.org",
+            "Klebsiella_oxytoca":     "https://www.cgmlst.org",
+            "Staphylococcus_aureus":  "https://www.cgmlst.org/ncs/schema/141106/",
+            "Staphylococcus_epidermidis": "https://www.cgmlst.org",
+            "Enterobacter_cloacae":   "https://www.cgmlst.org",
+            "Clostridioides_difficile": "https://www.cgmlst.org",
+        }
+        ct_url = CT_URL.get(SPECIES, "https://www.cgmlst.org")
+        ct_map = config.get("cluster_types", {})  # {"001k": "CT5", "002k": "CT5"}
+        sample_info = {}
+        for sample in SAMPLES:
+            info = {"art": SPECIES or "-", "ST": "-", "amr": [], "CT": ct_map.get(sample, "-")}
+            sp_f   = f"{RESULTS_DIR}/{sample}/species.txt"
+            mlst_f = f"{RESULTS_DIR}/{sample}/MLST/mlst.tsv"
+            amr_f  = f"{RESULTS_DIR}/{sample}/AMR/amrfinder_amr.tsv"
+            if os.path.exists(sp_f):
+                info["art"] = open(sp_f).read().strip()
+            if os.path.exists(mlst_f):
+                lines = open(mlst_f).readlines()
+                if len(lines) > 1:
+                    cols = lines[1].strip().split('\t')
+                    info["ST"] = cols[2] if len(cols) > 2 else "-"
+            if os.path.exists(amr_f):
+                with open(amr_f) as f:
+                    for row in csv.DictReader(f, delimiter='\t'):
+                        gene = row.get("Element symbol","")
+                        if gene: info["amr"].append(gene)
+            sample_info[sample] = info
+
+        # Klassifiser par
+        utbrudd_par    = [p for p in pairs if "UTBRUDD" in p["vurdering"]]
+        mulig_par      = [p for p in pairs if "TILKNYTNING" in p["vurdering"]]
+        ikke_relatert  = [p for p in pairs if "IKKE RELATERT" in p["vurdering"]]
+
+        # Referanseinformasjon
+        ref_name    = os.path.basename(REF)
+        ref_species = SPECIES or "ikke angitt"
+        ref_source  = "manuelt angitt" if "ref" in config else "automatisk valgt basert på art"
+
+        # Bygg JSON
+        rapport = {
+            "utbrudd_navn":    OUTBREAK_NAME,
+            "dato":            now,
+            "art":             ref_species,
+            "prøver":          SAMPLES,
+            "antall_prøver":   len(SAMPLES),
+            "referansegenom": {
+                "fil":         ref_name,
+                "full_sti":    REF,
+                "art":         ref_species,
+                "valg_metode": ref_source,
+            },
+            "snp_terskel":     THRESHOLD,
+            "newick":          newick_str,
+            "ct_url":          ct_url,
+            "ct_db":           "Enterobase" if SPECIES in ("Enterococcus_faecium","Enterococcus_faecalis","Escherichia_coli","Shigella_sonnei") else "cgmlst.org",
+            "kjerne_statistikk": core_stats,
+            "prøve_info":      sample_info,
+            "snp_per_prøve":   sample_snps,
+            "snp_matrise":     matrix,
+            "par_analyse": {
+                "totalt":          len(pairs),
+                "utbrudd":         len(utbrudd_par),
+                "mulig_tilknytning": len(mulig_par),
+                "ikke_relatert":   len(ikke_relatert),
+                "detaljer":        pairs,
+            },
+            "konklusjon": (
+                f"UTBRUDD PÅVIST -- {len(utbrudd_par)} prøvepar innenfor {THRESHOLD} SNP-er"
+                if utbrudd_par else
+                f"INGEN UTBRUDD -- alle prøvepar > {THRESHOLD} SNP-er"
+            ),
+        }
+
+        with open(output.json, 'w') as f:
+            json.dump(rapport, f, indent=2, ensure_ascii=False)
+
+        # Skriv TXT-rapport
+        with open(output.txt, 'w', encoding='utf-8') as f:
+            f.write(f"{'='*60}\n")
+            f.write(f"UTBRUDDSRAPPORT -- {OUTBREAK_NAME}\n")
+            f.write(f"{'='*60}\n")
+            f.write(f"Dato:          {now}\n")
+            f.write(f"Art:           {ref_species}\n")
+            f.write(f"Antall prøver: {len(SAMPLES)}\n\n")
+            f.write(f"[Referansegenom]\n")
+            f.write(f"Fil:           {ref_name}\n")
+            f.write(f"Full sti:      {REF}\n")
+            f.write(f"Valgmetode:    {ref_source}\n\n")
+            f.write(f"[SNP-terskel]\n")
+            f.write(f"Terskel:       {THRESHOLD} SNP-er\n")
+            f.write(f"Kilde:         Publisert litteratur for {ref_species}\n\n")
+            f.write(f"[Kjerne-statistikk]\n")
+            for k, v in core_stats.items():
+                f.write(f"{k}: {v}\n")
+            f.write(f"\n[Prøveoversikt]\n")
+            f.write(f"{'Prøve':<12} {'Art':<30} {'ST':<10} {'CT':<10} {'SNPs vs ref':<14} {'AMR-gener'}\n")
+            f.write(f"{'-'*90}\n")
+            for sample in SAMPLES:
+                info  = sample_info[sample]
+                snps  = sample_snps.get(sample, '-')
+                amr   = ', '.join(info['amr'][:5]) + ('...' if len(info['amr'])>5 else '')
+                art   = info['art'][:28] if len(info['art'])>28 else info['art']
+                ct    = info.get('CT', '-')
+                f.write(f"{sample:<12} {art:<30} {info['ST']:<10} {ct:<10} {str(snps):<14} {amr}\n")
+            f.write(f"\n[SNP-avstandsmatrise]\n")
+            with open(input.matrix) as mf:
+                f.write(mf.read())
+            f.write(f"\n[Parvis analyse]\n")
+            f.write(f"{'Prøve 1':<12} {'Prøve 2':<12} {'SNP-avstand':<14} {'Vurdering'}\n")
+            f.write(f"{'-'*60}\n")
+            for p in sorted(pairs, key=lambda x: x['snp_avstand']):
+                f.write(f"{p['prøve_1']:<12} {p['prøve_2']:<12} {p['snp_avstand']:<14} {p['vurdering']}\n")
+            f.write(f"\n[Konklusjon]\n{rapport['konklusjon']}\n")
+
+        # Skriv HTML
+        with open(output.html, 'w', encoding='utf-8') as f:
+            f.write(f"""<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<title>Utbruddsrapport -- {OUTBREAK_NAME}</title>
+<style>
+  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background:#f5f7fa; color:#1a1a2e; margin:0; padding:20px; }}
+  h1   {{ color:#1a3a5c; border-bottom:3px solid #1a3a5c; padding-bottom:8px; }}
+  h2   {{ color:#2e6da4; margin-top:24px; }}
+  .card {{ background:white; border-radius:8px; padding:16px 20px;
+           margin:12px 0; box-shadow:0 1px 4px rgba(0,0,0,0.1); }}
+  .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }}
+  .stat {{ background:#f0f4f8; border-radius:6px; padding:12px; text-align:center; }}
+  .stat .value {{ font-size:2em; font-weight:bold; color:#1a3a5c; }}
+  .stat .label {{ font-size:0.85em; color:#666; margin-top:4px; }}
+  table {{ width:100%; border-collapse:collapse; font-size:0.9em; }}
+  th    {{ background:#1a3a5c; color:white; padding:8px 12px; text-align:left; }}
+  td    {{ padding:6px 12px; border-bottom:1px solid #eee; }}
+  tr:nth-child(even) td {{ background:#f8f8f8; }}
+  .utbrudd  {{ background:#f8d7da; border-left:4px solid #dc3545;
+               padding:10px 14px; border-radius:4px; margin:8px 0; }}
+  .mulig    {{ background:#fff3cd; border-left:4px solid #ffc107;
+               padding:10px 14px; border-radius:4px; margin:8px 0; }}
+  .ok       {{ background:#d4edda; border-left:4px solid #28a745;
+               padding:10px 14px; border-radius:4px; margin:8px 0; }}
+  .ref-box  {{ background:#e8f4f8; border-left:4px solid #17a2b8;
+               padding:10px 14px; border-radius:4px; margin:8px 0; font-family:monospace; }}
+  .badge    {{ display:inline-block; padding:2px 8px; border-radius:12px;
+               font-size:0.8em; font-weight:bold; margin:2px; }}
+  .red      {{ background:#ffe0e0; color:#c00; }}
+  .yellow   {{ background:#fff8e0; color:#a60; }}
+  .green    {{ background:#e0ffe0; color:#060; }}
+</style>
+</head>
+<body>
+<h1>&#128737; Utbruddsrapport</h1>
+<div id="content">
+<script>
+const data = {json.dumps(rapport, indent=2, ensure_ascii=False)};
+
+function badge(text, cls) {{
+  return `<span class="badge ${{cls}}">${{text}}</span>`;
+}}
+
+function render() {{
+  const d = data;
+  let html = '';
+
+  // Toppseksjon
+  const cls = d.par_analyse.utbrudd > 0 ? 'utbrudd' : 'ok';
+  html += `<div class="${{cls}}"><strong>${{d.konklusjon}}</strong></div>`;
+
+  // Statistikk
+  html += `<div class="card"><div class="grid">
+    <div class="stat"><div class="value">${{d.antall_prøver}}</div><div class="label">Prøver</div></div>
+    <div class="stat"><div class="value">${{d.snp_terskel}}</div><div class="label">SNP-terskel</div></div>
+    <div class="stat"><div class="value" style="color:${{d.par_analyse.utbrudd>0?'#c00':'#060'}}">${{d.par_analyse.utbrudd}}</div><div class="label">Utbruddpar</div></div>
+    <div class="stat"><div class="value">${{d.par_analyse.totalt}}</div><div class="label">Par totalt</div></div>
+    <div class="stat"><div class="value" style="font-size:1em">${{d.art.replace(/_/g,' ')}}</div><div class="label">Art</div></div>
+  </div></div>`;
+
+  // Referansegenom -- viktig for sporbarhet
+  html += `<h2>&#128196; Referansegenom</h2>
+  <div class="card">
+    <div class="ref-box">
+      <strong>Fil:</strong> ${{d.referansegenom.fil}}<br>
+      <strong>Full sti:</strong> ${{d.referansegenom.full_sti}}<br>
+      <strong>Art:</strong> ${{d.referansegenom.art}}<br>
+      <strong>Valg:</strong> ${{d.referansegenom.valg_metode}}<br>
+      <strong>SNP-terskel:</strong> ${{d.snp_terskel}} SNP-er (publisert litteratur for ${{d.art.replace(/_/g,' ')}})
+    </div>
+  </div>`;
+
+  // Prøveoversikt
+  html += `<h2>Prøveoversikt</h2><div class="card">`;
+  const harCT = Object.values(d.prøve_info).some(i => i.CT && i.CT !== '-');
+  html += `<table><tr><th>Prøve</th><th>Art</th><th>ST</th>${{harCT ? '<th>CT (Enterobase)</th>' : ''}}<th>SNPs vs ref</th><th>AMR-gener</th></tr>`;
+  for (const [sample, info] of Object.entries(d.prøve_info)) {{
+    const snps = d.snp_per_prøve[sample] ?? '-';
+    const amr  = info.amr.slice(0,5).join(', ') + (info.amr.length>5?'...':'');
+    html += `<tr>
+      <td><strong>${{sample}}</strong></td>
+      <td>${{info.art.replace(/_/g,' ')}}</td>
+      <td>ST${{info.ST}}</td>
+      ${{harCT ? `<td><strong>${{info.CT || '-'}}</strong></td>` : ''}}
+      <td>${{snps}}</td>
+      <td>${{amr || '-'}}</td>
+    </tr>`;
+  }}
+  html += '</table>';
+  if (!harCT) {{
+    const ctUrl  = d.ct_url || 'https://www.cgmlst.org';
+    const ctDb   = d.ct_db  || 'cgmlst.org';
+    const isEnterobas = d.ct_db === 'Enterobase';
+    const uploadInstr = isEnterobas
+      ? 'Last opp assembly-filen (.fasta) til Enterobase under "Upload" og velg riktig art. Etter analyse finner du HC-nivå (f.eks. HC5, HC10) under "Experimental Data".'
+      : 'Last opp allelprofil-filen (results_alleles.tsv fra cgMLST-analyse) til cgmlst.org og velg riktig skjema. CT-nummeret vises etter sammenligning.';
+    html += `<div style="background:#fff8e0;border-left:4px solid #ffc107;border-radius:4px;padding:12px 16px;margin-top:10px;font-size:0.85em">
+      <strong>CT/HC ikke angitt</strong> -- slik gjør du oppslag:<br><br>
+      <strong>Steg 1:</strong> Åpne <a href="${{ctUrl}}" target="_blank" style="color:#0c6478">${{ctDb}}</a><br>
+      <strong>Steg 2:</strong> ${{uploadInstr}}<br>
+      <strong>Steg 3:</strong> Noter CT/HC-nummeret for hver prøve<br>
+      <strong>Steg 4:</strong> Kjør analysen på nytt med CT-numrene:<br>
+      <code style="display:block;margin-top:6px;background:#f5f5f5;padding:6px;border-radius:3px">
+        snakemake --snakefile slektskap_Snakefile --cores 8 \<br>
+        &nbsp;&nbsp;--config outbreak_name="${{d.utbrudd_navn}}" \<br>
+        &nbsp;&nbsp;'cluster_types={{"001k":"CT5","002k":"CT5"}}'
+      </code>
+    </div>`;
+  }}
+  html += '</div>';
+
+  // SNP-matrise
+  html += `<h2>&#128202; SNP-avstandsmatrise</h2><div class="card">`;
+  const samples = Object.keys(d.snp_matrise);
+  if (samples.length > 0) {{
+    html += '<div style="overflow-x:auto"><table><tr><th>Prøve</th>';
+    for (const s of samples) html += `<th>${{s}}</th>`;
+    html += '</tr>';
+    for (const s1 of samples) {{
+      html += `<tr><td><strong>${{s1}}</strong></td>`;
+      for (const s2 of samples) {{
+        const dist = d.snp_matrise[s1]?.[s2] ?? '-';
+        let bg = '';
+        if (s1 !== s2 && typeof dist === 'number') {{
+          if (dist <= d.snp_terskel) bg = 'style="background:#f8d7da;font-weight:bold"';
+          else if (dist <= d.snp_terskel*2) bg = 'style="background:#fff3cd"';
+        }}
+        html += `<td ${{bg}}>${{dist}}</td>`;
+      }}
+      html += '</tr>';
+    }}
+    html += '</table></div>';
+  }}
+  html += '</div>';
+
+  // Parvis analyse
+  html += `<h2>&#128279; Parvis analyse</h2><div class="card">
+  <table><tr><th>Prøve 1</th><th>Prøve 2</th><th>SNP-avstand</th><th>Terskel</th><th>Vurdering</th></tr>`;
+  for (const p of d.par_analyse.detaljer.sort((a,b) => a.snp_avstand - b.snp_avstand)) {{
+    const cls = p.vurdering.includes('UTBRUDD') ? 'red' :
+                p.vurdering.includes('TILKNYTNING') ? 'yellow' : 'green';
+    html += `<tr>
+      <td>${{p.prøve_1}}</td>
+      <td>${{p.prøve_2}}</td>
+      <td><strong>${{p.snp_avstand}}</strong></td>
+      <td>${{p.terskel}}</td>
+      <td>${{badge(p.vurdering, cls)}}</td>
+    </tr>`;
+  }}
+  html += '</table></div>';
+
+  // Fylogenetisk tre (rå Newick)
+  html += `<h2>&#127795; Fylogenetisk tre</h2><div class="card">
+    <p>Treformat: Newick (IQ-TREE, GTR+G modell, 1000 bootstrap-replikasjoner)</p>
+    <details><summary>Vis Newick-streng</summary>
+    <pre id="newick" style="font-size:0.75em;overflow-x:auto;background:#f8f8f8;padding:10px"></pre>
+    </details>
+    <p><em>Lim inn Newick-strengen i <a href="https://itol.embl.de" target="_blank">iTOL</a>,
+    <a href="https://microreact.org" target="_blank">Microreact</a> eller
+    <a href="https://auspice.us" target="_blank">Auspice</a> for visualisering.</em></p>
+  </div>`;
+
+  // Kjerne-statistikk
+  html += `<h2>&#128300; Kjerne-SNP-statistikk</h2><div class="card">
+  <table><tr><th>Parameter</th><th>Verdi</th></tr>`;
+  for (const [k,v] of Object.entries(d.kjerne_statistikk)) {{
+    html += `<tr><td>${{k}}</td><td>${{v}}</td></tr>`;
+  }}
+  html += '</table></div>';
+
+  // Bunntekst
+  html += `<p style="color:#999;font-size:0.8em;margin-top:24px">
+    Generert: ${{d.dato}} | Utbruddspipeline v1.0 |
+    Referanse: ${{d.referansegenom.fil}}
+  </p>`;
+
+  document.getElementById('content').innerHTML = html;
+
+  // Last inn tre
+  fetch('outbreak_tree.treefile')
+    .then(r => r.text())
+    .then(t => {{ document.getElementById('newick').textContent = t; }})
+    .catch(() => {{ document.getElementById('newick').textContent = 'Trefil ikke funnet'; }});
+}}
+render();
+</script>
+</div>
+</body>
+</html>""")
+
+        # Terminal-sammendrag
+        logm(f"Utbrudd:         {OUTBREAK_NAME}")
+        logm(f"Art:             {ref_species}")
+        logm(f"Referanse:       {ref_name}")
+        logm(f"SNP-terskel:     {THRESHOLD}")
+        logm(f"Prøver:          {len(SAMPLES)}")
+        logm(f"Utbruddpar:      {len(utbrudd_par)}")
+        if utbrudd_par:
+            error(f"UTBRUDD PÅVIST -- {len(utbrudd_par)} par:")
+            for p in sorted(utbrudd_par, key=lambda x: x['snp_avstand']):
+                error(f"  {p['prøve_1']} <-> {p['prøve_2']}: {p['snp_avstand']} SNP-er")
+        else:
+            success(f"Ingen utbrudd påvist -- alle par > {THRESHOLD} SNP-er")
+
+        success(f"Utbruddsrapport ferdig")
+        logm(f"TXT:  {output.txt}")
+        logm(f"JSON: {output.json}")
+        logm(f"HTML: {output.html}")

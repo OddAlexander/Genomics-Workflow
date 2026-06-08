@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Variant-calling report -- __SAMPLE_NAME__</title>
+<style>
+  :root {
+    --blue:   #1a3a5c;
+    --blue2:  #2e6da4;
+    --teal:   #17a2b8;
+    --green:  #28a745;
+    --yellow: #ffc107;
+    --red:    #dc3545;
+    --bg:     #f5f7fa;
+    --card:   #ffffff;
+    --border: #e2e8f0;
+    --text:   #1a1a2e;
+    --muted:  #6c757d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); padding: 24px; font-size: 14px; }
+  h1 { color: var(--blue); font-size: 1.5rem; padding-bottom: 10px;
+       border-bottom: 2px solid var(--blue); margin-bottom: 20px; }
+  h2 { color: var(--blue2); font-size: 1.05rem; margin: 18px 0 8px; }
+  h3 { color: var(--blue); font-size: 0.9rem; margin: 14px 0 6px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+          padding: 16px; margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .stat { background: var(--bg); border-radius: 6px; padding: 12px; text-align: center; }
+  .stat .val { font-size: 1.5rem; font-weight: 700; color: var(--blue); line-height: 1; }
+  .stat .lbl { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: var(--blue); color: white; padding: 7px 12px; text-align: left;
+       font-weight: 600; }
+  td { padding: 5px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: #f8fafc; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px;
+           font-size: 0.75rem; font-weight: 600; }
+  .red    { background: #fde8ea; color: #b02a37; }
+  .yellow { background: #fff3cd; color: #856404; }
+  .green  { background: #d1e7dd; color: #0a3622; }
+  .blue   { background: #cfe2ff; color: #084298; }
+  .mono   { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.82rem; }
+  .scroll-x { overflow-x: auto; }
+  .footer  { font-size: 0.78rem; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>Variant-calling report &mdash; <span class="mono">__SAMPLE_NAME__</span></h1>
+<div id="root"></div>
+<script>
+const D = __VARCALL_JSON_DATA__;
+
+const fmt = n => (n == null ? '-' : Number(n).toLocaleString());
+const pct = (n, d=1) => (n == null ? '-' : Number(n).toFixed(d) + '%');
+const num = (n, d=1) => (n == null ? '-' : Number(n).toFixed(d));
+const badge = (t, c) => `<span class="badge ${c}">${t}</span>`;
+function colorThreshold(v, warn, flag) {
+  if (v == null) return 'inherit';
+  if (v < flag) return 'var(--red)';
+  if (v < warn) return 'var(--yellow)';
+  return 'inherit';
+}
+
+function render() {
+  let h = '';
+
+  // ── Header tiles ─────────────────────────────────────────────────────────────
+  const r  = D.reference;
+  const c  = D.coverage  || {};
+  const f  = D.flagstat  || {};
+  const fp = D.fastp     || {};
+  const vs = D.vcf_summary || {};
+
+  h += `<div class="card"><div class="grid">
+    <div class="stat"><div class="val mono" style="font-size:1.05rem">${D.sample}</div><div class="lbl">Sample</div></div>
+    <div class="stat"><div class="val" style="font-size:0.95rem"><em>${r.species_display}</em></div><div class="lbl">Reference species</div></div>
+    <div class="stat"><div class="val" style="color:${colorThreshold(f.mapped_pct, 95, 80)}">${pct(f.mapped_pct)}</div><div class="lbl">Reads mapped</div></div>
+    <div class="stat" title="Real mean coverage from samtools coverage">
+      <div class="val" style="color:${colorThreshold(c.mean_depth, 40, 20)}">${c.mean_depth != null ? c.mean_depth + '×' : '-'}</div>
+      <div class="lbl">Mean depth</div>
+    </div>
+    <div class="stat" title="Fraction of reference bases covered by &ge;1 read">
+      <div class="val" style="color:${colorThreshold(c.breadth_pct, 95, 90)}">${pct(c.breadth_pct, 2)}</div>
+      <div class="lbl">Breadth</div>
+    </div>
+    <div class="stat"><div class="val" style="color:${vs.snps > 0 ? 'var(--blue2)' : 'inherit'}">${fmt(vs.n_pass)}</div><div class="lbl">Variants (PASS)</div></div>
+    <div class="stat"><div class="val">${fmt(vs.snps)}</div><div class="lbl">SNPs</div></div>
+    <div class="stat"><div class="val">${fmt(vs.indels)}</div><div class="lbl">Indels</div></div>
+  </div></div>`;
+
+  // ── Reference ────────────────────────────────────────────────────────────────
+  h += `<h2>Chosen reference</h2><div class="card">
+    <table>
+      <tbody>
+        <tr><td style="width:130px">Species</td><td><em>${r.species_display}</em>${r.species !== r.species_display ? ` <span class="footer">(<span class="mono">${r.species}</span>)</span>` : ''}</td></tr>
+        <tr><td>FASTA</td><td class="mono">${r.fasta}</td></tr>
+        <tr><td>GFF (annotation)</td><td class="mono">${r.gff ? r.gff : '<span class="footer">none &mdash; bcftools csq skipped</span>'}</td></tr>
+      </tbody>
+    </table>
+    <p class="footer">Picked from the top Mash screen hit (containment identity &ge; threshold).
+       Reference path resolved via <code>refseq_list.json</code>.</p>
+  </div>`;
+
+  // ── Mash screen ──────────────────────────────────────────────────────────────
+  if (D.mash && D.mash.length) {
+    h += `<h2>Mash screen &mdash; top hits</h2>
+    <p class="footer" style="margin-bottom:6px">
+      First row = chosen reference. Subsequent rows surface contamination or close relatives.
+    </p>
+    <div class="card scroll-x"><table>
+      <thead><tr><th>#</th><th>Identity</th><th>Shared hashes</th><th>Median mult.</th><th>p-value</th><th>Species</th><th>Query</th></tr></thead>
+      <tbody>
+        ${D.mash.map((m, i) => `<tr>
+          <td>${i + 1}</td>
+          <td><strong>${m.identity}</strong></td>
+          <td>${m.shared_hashes}</td>
+          <td>${m.median_mult}</td>
+          <td class="mono">${m.p_value}</td>
+          <td><em>${m.species}</em></td>
+          <td class="mono" style="font-size:0.75rem">${m.query}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+  }
+
+  // ── Read QC ──────────────────────────────────────────────────────────────────
+  const q30Color = colorThreshold(fp.q30_pct, 90, 80);
+  const purityColor = colorThreshold(D.bracken_pct, 90, 80);
+  h += `<h2>Read QC</h2><div class="card">
+    <div class="grid">
+      <div class="stat"><div class="val">${fp.reads != null ? (fp.reads / 1e6).toFixed(2) : '-'}</div><div class="lbl">Mreads (trimmed)</div></div>
+      <div class="stat"><div class="val" style="color:${q30Color}">${pct(fp.q30_pct)}</div><div class="lbl">Q30</div></div>
+      <div class="stat"><div class="val">${pct(fp.dup_pct)}</div><div class="lbl">Duplication (fastp)</div></div>
+      <div class="stat" title="Bracken top-species fraction"><div class="val" style="color:${purityColor}">${pct(D.bracken_pct)}</div><div class="lbl">Top species (Kraken2)</div></div>
+      <div class="stat"><div class="val">${fmt(f.total_reads)}</div><div class="lbl">Alignments total</div></div>
+      <div class="stat"><div class="val">${pct(f.properly_paired_pct)}</div><div class="lbl">Properly paired</div></div>
+      <div class="stat"><div class="val">${fmt(f.duplicates)}</div><div class="lbl">Duplicates (BAM)</div></div>
+    </div>
+    <p class="footer">Recommended: Q30 &ge;90%, mapped &ge;95%, mean depth &ge;40&times;, breadth &ge;95%.
+      <span style="color:var(--yellow);font-weight:600">■</span> warn
+      &ensp;<span style="color:var(--red);font-weight:600">■</span> flag
+    </p>
+  </div>`;
+
+  // ── Per-contig coverage ──────────────────────────────────────────────────────
+  if (c.contigs && c.contigs.length) {
+    h += `<h2>Per-contig coverage</h2><div class="card scroll-x"><table>
+      <thead><tr><th>Contig</th><th>Length</th><th>Covered (bp)</th><th>Breadth</th><th>Mean depth</th></tr></thead>
+      <tbody>
+        ${c.contigs.map(co => `<tr>
+          <td class="mono">${co.name}</td>
+          <td>${fmt(co.length)}</td>
+          <td>${fmt(co.covered)}</td>
+          <td style="color:${colorThreshold(co.breadth, 95, 90)}">${pct(co.breadth, 2)}</td>
+          <td style="color:${colorThreshold(co.mean_depth, 40, 20)}">${num(co.mean_depth)}×</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+  }
+
+  // ── Variants ─────────────────────────────────────────────────────────────────
+  h += `<h2>Variant summary</h2><div class="card">
+    <div class="grid">
+      <div class="stat"><div class="val">${fmt(vs.n_records)}</div><div class="lbl">Total records</div></div>
+      <div class="stat"><div class="val">${fmt(vs.n_pass)}</div><div class="lbl">PASS</div></div>
+      <div class="stat"><div class="val" style="color:${vs.n_filtered > 0 ? 'var(--yellow)' : 'inherit'}">${fmt(vs.n_filtered)}</div><div class="lbl">Filtered (LOW_QUAL)</div></div>
+      <div class="stat"><div class="val">${fmt(vs.snps)}</div><div class="lbl">SNPs</div></div>
+      <div class="stat"><div class="val">${fmt(vs.indels)}</div><div class="lbl">Indels</div></div>
+      <div class="stat"><div class="val">${num(vs.titv, 2)}</div><div class="lbl">Ts/Tv ratio</div></div>
+    </div>
+    <p class="footer">PASS = QUAL &ge; threshold and DP &ge; threshold (configurable via
+      <code>bcftools_min_qual</code> / <code>bcftools_min_dp</code>).
+      Ploidy = 1 (haploid bacteria).</p>
+  </div>`;
+
+  if (D.vcf_records && D.vcf_records.length) {
+    h += `<h2>Variants (top ${D.vcf_records.length})</h2><div class="card scroll-x"><table>
+      <thead><tr><th>Chrom</th><th>Pos</th><th>Ref</th><th>Alt</th><th>QUAL</th><th>DP</th><th>Filter</th><th>Gene</th><th>Consequence</th><th>Change</th></tr></thead>
+      <tbody>
+        ${D.vcf_records.map(v => {
+          const filtBadge = v.filter === 'PASS' || v.filter === '.'
+            ? badge('PASS', 'green') : badge(v.filter, 'yellow');
+          return `<tr>
+            <td class="mono">${v.chrom}</td>
+            <td class="mono">${v.pos}</td>
+            <td class="mono">${v.ref}</td>
+            <td class="mono">${v.alt}</td>
+            <td>${v.qual}</td>
+            <td>${v.depth}</td>
+            <td>${filtBadge}</td>
+            <td class="mono">${v.gene}</td>
+            <td>${v.csq}</td>
+            <td class="mono">${v.change}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`;
+  } else {
+    h += `<div class="card"><p class="footer">No variants in VCF.</p></div>`;
+  }
+
+  // ── Tool versions ────────────────────────────────────────────────────────────
+  h += `<h2>Tool versions</h2><div class="card scroll-x"><table>
+    <thead><tr><th>Tool</th><th>Version</th></tr></thead>
+    <tbody>
+      ${Object.entries(D.tool_versions).map(([k, v]) =>
+        `<tr><td>${k}</td><td class="mono">${v}</td></tr>`).join('')}
+    </tbody>
+  </table></div>`;
+
+  h += `<p class="footer">Report generated ${D.completed}.</p>`;
+
+  document.getElementById('root').innerHTML = h;
+}
+render();
+</script>
+</body>
+</html>

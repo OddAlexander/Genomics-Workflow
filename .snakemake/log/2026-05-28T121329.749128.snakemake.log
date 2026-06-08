@@ -1,0 +1,418 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Updating checkpoint dependencies.
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+amrfinder               1
+checkm                  2
+fastqc                  1
+identify_species        1
+kraken2_qc              2
+plasmidfinder           2
+quast                   1
+self_coverage           1
+staphscope              1
+multiqc                 2
+report                  3
+all                     1
+total                  18
+
+Select jobs to execute...
+Execute 2 jobs...
+[Thu May 28 12:13:30 2026]
+localrule checkm:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/CheckM/quality.tsv
+    log: /srv/results/27-05-2026/3yous/logs/checkm.log
+    jobid: 17
+    reason: Missing output files: /srv/results/27-05-2026/3yous/CheckM/quality.tsv
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+[Thu May 28 12:13:30 2026]
+localrule amrfinder:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa, /srv/results/27-05-2026/3wous/species.txt
+    output: /srv/results/27-05-2026/3wous/AMRFinder/amrfinder.tsv
+    log: /srv/results/27-05-2026/3wous/logs/amrfinder.log
+    jobid: 34
+    reason: Missing output files: /srv/results/27-05-2026/3wous/AMRFinder/amrfinder.tsv
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:13:35 2026]
+Finished jobid: 34 (Rule: amrfinder)
+1 of 18 steps (6%) done
+Execute 1 jobs...
+[Thu May 28 12:13:35 2026]
+localrule staphscope:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    log: /srv/results/27-05-2026/3yous/logs/staphscope.log
+    jobid: 27
+    reason: Missing output files: /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:14:35 2026]
+Finished jobid: 27 (Rule: staphscope)
+2 of 18 steps (11%) done
+Execute 1 jobs...
+[Thu May 28 12:14:35 2026]
+localrule quast:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/QUAST/report.html
+    log: /srv/results/27-05-2026/3wous/logs/quast.log
+    jobid: 29
+    reason: Missing output files: /srv/results/27-05-2026/3wous/QUAST/report.html
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:14:36 2026]
+Finished jobid: 29 (Rule: quast)
+3 of 18 steps (17%) done
+Execute 1 jobs...
+[Thu May 28 12:14:36 2026]
+localcheckpoint identify_species:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3xous/species.txt, /srv/results/27-05-2026/3xous/ID_Skani/skani.tsv
+    log: /srv/results/27-05-2026/3xous/logs/identify_species.log
+    jobid: 6
+    reason: Missing output files: /srv/results/27-05-2026/3xous/species.txt
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=4000, mem=4 GB, mem_mib=3815
+DAG of jobs will be updated after completion.
+Select jobs to execute...
+[Thu May 28 12:14:37 2026]
+Finished jobid: 6 (Rule: identify_species)
+4 of 18 steps (22%) done
+Updating checkpoint dependencies.
+Execute 6 jobs...
+[Thu May 28 12:14:37 2026]
+localrule plasmidfinder:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3yous/logs/plasmidfinder.log
+    jobid: 23
+    reason: Missing output files: /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Thu May 28 12:14:37 2026]
+localrule plasmidfinder:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3wous/logs/plasmidfinder.log
+    jobid: 36
+    reason: Missing output files: /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+[Thu May 28 12:14:37 2026]
+localrule fastqc:
+    input: /srv/results/27-05-2026/3xous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3xous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3xous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3xous/QC/fastqc/R2_fastqc.html
+    log: /srv/results/27-05-2026/3xous/logs/fastqc.log
+    jobid: 47
+    reason: Missing output files: /srv/results/27-05-2026/3xous/QC/fastqc/R1_fastqc.html
+    wildcards: sample=27-05-2026/3xous
+    threads: 2
+    resources: tmpdir=/tmp
+[Thu May 28 12:14:37 2026]
+localrule mob_typer:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3xous/MOBSuite/mobtyper.tsv
+    log: /srv/results/27-05-2026/3xous/logs/mob_typer.log
+    jobid: 50
+    reason: Missing output files: /srv/results/27-05-2026/3xous/MOBSuite/mobtyper.tsv
+    wildcards: sample=27-05-2026/3xous
+    resources: tmpdir=/tmp
+[Thu May 28 12:14:37 2026]
+localrule fastqc:
+    input: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3yous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3yous/QC/fastqc/R2_fastqc.html
+    log: /srv/results/27-05-2026/3yous/logs/fastqc.log
+    jobid: 19
+    reason: Missing output files: /srv/results/27-05-2026/3yous/QC/fastqc/R1_fastqc.html
+    wildcards: sample=27-05-2026/3yous
+    threads: 2
+    resources: tmpdir=/tmp
+[Thu May 28 12:14:37 2026]
+localrule mefinder:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa, /srv/results/.mefinder_db/mge_records.nhr
+    output: /srv/results/27-05-2026/3xous/MEfinder/mefinder.tsv
+    log: /srv/results/27-05-2026/3xous/logs/mefinder.log
+    jobid: 52
+    reason: Missing output files: /srv/results/27-05-2026/3xous/MEfinder/mefinder.tsv
+    wildcards: sample=27-05-2026/3xous
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:14:41 2026]
+Finished jobid: 23 (Rule: plasmidfinder)
+5 of 30 steps (17%) done
+Execute 1 jobs...
+[Thu May 28 12:14:41 2026]
+localrule mlst:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa, /srv/results/27-05-2026/3xous/species.txt
+    output: /srv/results/27-05-2026/3xous/MLST/mlst.tsv
+    log: /srv/results/27-05-2026/3xous/logs/mlst.log
+    jobid: 48
+    reason: Missing output files: /srv/results/27-05-2026/3xous/MLST/mlst.tsv
+    wildcards: sample=27-05-2026/3xous
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:14:41 2026]
+Finished jobid: 36 (Rule: plasmidfinder)
+6 of 30 steps (20%) done
+Execute 1 jobs...
+[Thu May 28 12:14:41 2026]
+localrule plasmidfinder:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3xous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3xous/logs/plasmidfinder.log
+    jobid: 51
+    reason: Missing output files: /srv/results/27-05-2026/3xous/PlasmidFinder/results_tab.tsv
+    wildcards: sample=27-05-2026/3xous
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:14:42 2026]
+Finished jobid: 48 (Rule: mlst)
+7 of 30 steps (23%) done
+[Thu May 28 12:14:43 2026]
+Finished jobid: 19 (Rule: fastqc)
+8 of 30 steps (27%) done
+[Thu May 28 12:14:44 2026]
+Finished jobid: 51 (Rule: plasmidfinder)
+9 of 30 steps (30%) done
+[Thu May 28 12:14:44 2026]
+Finished jobid: 47 (Rule: fastqc)
+10 of 30 steps (33%) done
+[Thu May 28 12:14:54 2026]
+Finished jobid: 17 (Rule: checkm)
+11 of 30 steps (37%) done
+Execute 1 jobs...
+[Thu May 28 12:14:54 2026]
+localrule amrfinder:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa, /srv/results/27-05-2026/3xous/species.txt
+    output: /srv/results/27-05-2026/3xous/AMRFinder/amrfinder.tsv
+    log: /srv/results/27-05-2026/3xous/logs/amrfinder.log
+    jobid: 49
+    reason: Missing output files: /srv/results/27-05-2026/3xous/AMRFinder/amrfinder.tsv
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:14:59 2026]
+Finished jobid: 49 (Rule: amrfinder)
+12 of 30 steps (40%) done
+Execute 1 jobs...
+[Thu May 28 12:14:59 2026]
+localrule staphscope:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3xous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    log: /srv/results/27-05-2026/3xous/logs/staphscope.log
+    jobid: 54
+    reason: Missing output files: /srv/results/27-05-2026/3xous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:15:01 2026]
+Finished jobid: 52 (Rule: mefinder)
+13 of 30 steps (43%) done
+[Thu May 28 12:15:17 2026]
+Finished jobid: 50 (Rule: mob_typer)
+14 of 30 steps (47%) done
+Execute 1 jobs...
+[Thu May 28 12:15:17 2026]
+localrule kraken2_qc:
+    input: /srv/results/27-05-2026/3xous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3xous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3xous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3xous/ID_Kraken2/bracken_species.txt
+    log: /srv/results/27-05-2026/3xous/logs/kraken2_qc.log
+    jobid: 53
+    reason: Missing output files: /srv/results/27-05-2026/3xous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3xous/ID_Kraken2/bracken_species.txt
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Thu May 28 12:15:23 2026]
+Finished jobid: 53 (Rule: kraken2_qc)
+15 of 30 steps (50%) done
+Execute 1 jobs...
+[Thu May 28 12:15:23 2026]
+localrule quast:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3xous/QUAST/report.html
+    log: /srv/results/27-05-2026/3xous/logs/quast.log
+    jobid: 44
+    reason: Missing output files: /srv/results/27-05-2026/3xous/QUAST/report.html
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:15:24 2026]
+Finished jobid: 44 (Rule: quast)
+16 of 30 steps (53%) done
+Execute 1 jobs...
+[Thu May 28 12:15:24 2026]
+localrule self_coverage:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa, /srv/results/27-05-2026/3xous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3xous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3xous/QC/self_coverage.tsv
+    log: /srv/results/27-05-2026/3xous/logs/self_coverage.log
+    jobid: 43
+    reason: Missing output files: /srv/results/27-05-2026/3xous/QC/self_coverage.tsv
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:15:36 2026]
+Finished jobid: 43 (Rule: self_coverage)
+17 of 30 steps (57%) done
+Execute 1 jobs...
+[Thu May 28 12:15:36 2026]
+localrule checkm:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/CheckM/quality.tsv
+    log: /srv/results/27-05-2026/3wous/logs/checkm.log
+    jobid: 30
+    reason: Missing output files: /srv/results/27-05-2026/3wous/CheckM/quality.tsv
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Thu May 28 12:16:00 2026]
+Finished jobid: 54 (Rule: staphscope)
+18 of 30 steps (60%) done
+Execute 1 jobs...
+[Thu May 28 12:16:00 2026]
+localrule kraken2_qc:
+    input: /srv/results/27-05-2026/3wous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3wous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3wous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3wous/ID_Kraken2/bracken_species.txt
+    log: /srv/results/27-05-2026/3wous/logs/kraken2_qc.log
+    jobid: 38
+    reason: Missing output files: /srv/results/27-05-2026/3wous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3wous/ID_Kraken2/bracken_species.txt
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Thu May 28 12:16:06 2026]
+Finished jobid: 38 (Rule: kraken2_qc)
+19 of 30 steps (63%) done
+Execute 1 jobs...
+[Thu May 28 12:16:06 2026]
+localrule kraken2_qc:
+    input: /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt
+    log: /srv/results/27-05-2026/3yous/logs/kraken2_qc.log
+    jobid: 26
+    reason: Missing output files: /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt; Params have changed since last execution: Union of exclusive params before and now across all output: before: '/databases/kraken2_db_light/' now: '/databases/kraken2_db/' 
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Thu May 28 12:16:11 2026]
+Finished jobid: 26 (Rule: kraken2_qc)
+20 of 30 steps (67%) done
+Execute 1 jobs...
+[Thu May 28 12:16:11 2026]
+localrule self_coverage:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa, /srv/results/27-05-2026/3wous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3wous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3wous/QC/self_coverage.tsv
+    log: /srv/results/27-05-2026/3wous/logs/self_coverage.log
+    jobid: 28
+    reason: Missing output files: /srv/results/27-05-2026/3wous/QC/self_coverage.tsv
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:16:25 2026]
+Finished jobid: 28 (Rule: self_coverage)
+21 of 30 steps (70%) done
+Execute 1 jobs...
+[Thu May 28 12:16:25 2026]
+localrule checkm:
+    input: /srv/results/27-05-2026/3xous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3xous/CheckM/quality.tsv
+    log: /srv/results/27-05-2026/3xous/logs/checkm.log
+    jobid: 45
+    reason: Missing output files: /srv/results/27-05-2026/3xous/CheckM/quality.tsv
+    wildcards: sample=27-05-2026/3xous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Thu May 28 12:16:59 2026]
+Finished jobid: 30 (Rule: checkm)
+22 of 30 steps (73%) done
+Execute 2 jobs...
+[Thu May 28 12:16:59 2026]
+localrule multiqc:
+    input: /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/self_coverage.tsv, /srv/results/27-05-2026/3wous/QUAST/report.html, /srv/results/27-05-2026/3wous/CheckM/quality.tsv, /srv/results/27-05-2026/3wous/MLST/mlst.tsv, /srv/results/27-05-2026/3wous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3wous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3wous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3wous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3wous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3wous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3wous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3wous/MultiQC/multiqc_report.html
+    log: /srv/results/27-05-2026/3wous/logs/multiqc.log
+    jobid: 31
+    reason: Missing output files: /srv/results/27-05-2026/3wous/MultiQC/multiqc_report.html; Input files updated by another job: /srv/results/27-05-2026/3wous/CheckM/quality.tsv, /srv/results/27-05-2026/3wous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3wous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3wous/QUAST/report.html, /srv/results/27-05-2026/3wous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3wous/QC/self_coverage.tsv
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+[Thu May 28 12:16:59 2026]
+localrule multiqc:
+    input: /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/self_coverage.tsv, /srv/results/27-05-2026/3yous/QUAST/report.html, /srv/results/27-05-2026/3yous/CheckM/quality.tsv, /srv/results/27-05-2026/3yous/MLST/mlst.tsv, /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html
+    log: /srv/results/27-05-2026/3yous/logs/multiqc.log
+    jobid: 18
+    reason: Missing output files: /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html; Input files updated by another job: /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv, /srv/results/27-05-2026/3yous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3yous/CheckM/quality.tsv
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Thu May 28 12:17:02 2026]
+Finished jobid: 18 (Rule: multiqc)
+23 of 30 steps (77%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Thu May 28 12:17:02 2026]
+localrule report:
+    input: /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/self_coverage.tsv, /srv/results/27-05-2026/3yous/QUAST/report.html, /srv/results/27-05-2026/3yous/CheckM/quality.tsv, /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3yous/MLST/mlst.tsv, /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3yous/pipeline_summary.html
+    jobid: 1
+    reason: Missing output files: /srv/results/27-05-2026/3yous/pipeline_summary.html; Input files updated by another job: /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/CheckM/quality.tsv
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+RuleException:
+CalledProcessError in file "/home/bruker/genomics/Snakefile", line 139:
+Command 'set -euo pipefail;  python scripts/make_report.py --sample 27-05-2026/3yous --results-dir /srv/results --template scripts/templates/report_template.html --output /srv/results/27-05-2026/3yous/pipeline_summary.html --kraken2-db /databases/kraken2_db/ --log-path /srv/results/run_log.tsv' returned non-zero exit status 1.
+[Thu May 28 12:17:02 2026]
+Error in rule report:
+    message: None
+    jobid: 1
+    input: /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/self_coverage.tsv, /srv/results/27-05-2026/3yous/QUAST/report.html, /srv/results/27-05-2026/3yous/CheckM/quality.tsv, /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3yous/MLST/mlst.tsv, /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3yous/pipeline_summary.html
+    shell:
+        python scripts/make_report.py --sample 27-05-2026/3yous --results-dir /srv/results --template scripts/templates/report_template.html --output /srv/results/27-05-2026/3yous/pipeline_summary.html --kraken2-db /databases/kraken2_db/ --log-path /srv/results/run_log.tsv
+        (command exited with non-zero exit code)
+Removing output files of failed job report since they might be corrupted:
+/srv/results/27-05-2026/3yous/pipeline_summary.html
+[Thu May 28 12:17:02 2026]
+Finished jobid: 31 (Rule: multiqc)
+24 of 30 steps (80%) done
+[Thu May 28 12:17:47 2026]
+Finished jobid: 45 (Rule: checkm)
+25 of 30 steps (83%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Thu May 28 12:17:47 2026]
+Error in rule report:
+    message: None
+    jobid: 1
+    input: /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/self_coverage.tsv, /srv/results/27-05-2026/3yous/QUAST/report.html, /srv/results/27-05-2026/3yous/CheckM/quality.tsv, /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3yous/MLST/mlst.tsv, /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3yous/pipeline_summary.html
+    shell:
+        python scripts/make_report.py --sample 27-05-2026/3yous --results-dir /srv/results --template scripts/templates/report_template.html --output /srv/results/27-05-2026/3yous/pipeline_summary.html --kraken2-db /databases/kraken2_db/ --log-path /srv/results/run_log.tsv
+        (command exited with non-zero exit code)
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-05-28T121329.749128.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

@@ -1,0 +1,49 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Traceback (most recent call last):
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/cli.py", line 2308, in args_to_api
+    dag_api.execute_workflow(
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/api.py", line 646, in execute_workflow
+    workflow.execute(
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/workflow.py", line 1296, in execute
+    self._build_dag()
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/workflow.py", line 1239, in _build_dag
+    self.async_run(self.dag.init())
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/workflow.py", line 268, in async_run
+    return runner.run(coro)
+           ^^^^^^^^^^^^^^^^
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/dag.py", line 252, in init
+    job = await self.update([job], progress=progress, create_inventory=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/dag.py", line 1171, in update
+    await self.update_(
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/dag.py", line 1297, in update_
+    await res.file.inventory()
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/io/__init__.py", line 357, in inventory
+    await asyncio.gather(*tasks)
+
+  File "/home/bruker/genomics/.pixi/envs/default/lib/python3.11/site-packages/snakemake/io/__init__.py", line 382, in _local_inventory
+    with os.scandir(path) as scan:
+         ^^^^^^^^^^^^^^^^
+
+NotADirectoryError: [Errno 20] Not a directory: '/srv/results/27-05-2026/3yous'
+

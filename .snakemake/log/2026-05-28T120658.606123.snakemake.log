@@ -1,0 +1,99 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Updating checkpoint dependencies.
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+amrfinder               1
+checkm                  2
+fastqc                  1
+identify_species        1
+kraken2_qc              2
+plasmidfinder           2
+quast                   1
+self_coverage           1
+staphscope              2
+multiqc                 2
+report                  3
+all                     1
+total                  19
+
+Select jobs to execute...
+Execute 2 jobs...
+[Thu May 28 12:06:58 2026]
+localrule staphscope:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    log: /srv/results/27-05-2026/3wous/logs/staphscope.log
+    jobid: 39
+    reason: Missing output files: /srv/results/27-05-2026/3wous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp
+[Thu May 28 12:06:58 2026]
+localrule checkm:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/CheckM/quality.tsv
+    log: /srv/results/27-05-2026/3yous/logs/checkm.log
+    jobid: 17
+    reason: Missing output files: /srv/results/27-05-2026/3yous/CheckM/quality.tsv
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+RuleException:
+CalledProcessError in file "/home/bruker/genomics/Snakefile", line 297:
+Command 'set -euo pipefail;  
+        outdir=$(dirname /srv/results/27-05-2026/3yous/CheckM/quality.tsv)
+        rm -rf "$outdir/input" "$outdir/bins" "$outdir/storage"
+        mkdir -p "$outdir/input"
+        ln -sf "$(readlink -f /srv/results/27-05-2026/3yous/Assembly/contigs.fa)" "$outdir/input/contigs.fasta"
+        pixi run --environment checkm checkm lineage_wf             "$outdir/input" "$outdir" -t 8 -x fasta             --reduced_tree --tab_table -f /srv/results/27-05-2026/3yous/CheckM/quality.tsv 2>&1 | tee /srv/results/27-05-2026/3yous/logs/checkm.log
+        rm -rf "$outdir/input" "$outdir/bins" "$outdir/storage" "$outdir/lineage.ms"' returned non-zero exit status 1.
+[Thu May 28 12:07:13 2026]
+Error in rule checkm:
+    message: None
+    jobid: 17
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/CheckM/quality.tsv
+    log: /srv/results/27-05-2026/3yous/logs/checkm.log (check log file(s) for error details)
+    shell:
+        
+        outdir=$(dirname /srv/results/27-05-2026/3yous/CheckM/quality.tsv)
+        rm -rf "$outdir/input" "$outdir/bins" "$outdir/storage"
+        mkdir -p "$outdir/input"
+        ln -sf "$(readlink -f /srv/results/27-05-2026/3yous/Assembly/contigs.fa)" "$outdir/input/contigs.fasta"
+        pixi run --environment checkm checkm lineage_wf             "$outdir/input" "$outdir" -t 8 -x fasta             --reduced_tree --tab_table -f /srv/results/27-05-2026/3yous/CheckM/quality.tsv 2>&1 | tee /srv/results/27-05-2026/3yous/logs/checkm.log
+        rm -rf "$outdir/input" "$outdir/bins" "$outdir/storage" "$outdir/lineage.ms"
+        
+        (command exited with non-zero exit code)
+[Thu May 28 12:08:45 2026]
+Finished jobid: 39 (Rule: staphscope)
+1 of 19 steps (5%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Thu May 28 12:08:45 2026]
+Error in rule checkm:
+    message: None
+    jobid: 17
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/CheckM/quality.tsv
+    log: /srv/results/27-05-2026/3yous/logs/checkm.log (check log file(s) for error details)
+    shell:
+        
+        outdir=$(dirname /srv/results/27-05-2026/3yous/CheckM/quality.tsv)
+        rm -rf "$outdir/input" "$outdir/bins" "$outdir/storage"
+        mkdir -p "$outdir/input"
+        ln -sf "$(readlink -f /srv/results/27-05-2026/3yous/Assembly/contigs.fa)" "$outdir/input/contigs.fasta"
+        pixi run --environment checkm checkm lineage_wf             "$outdir/input" "$outdir" -t 8 -x fasta             --reduced_tree --tab_table -f /srv/results/27-05-2026/3yous/CheckM/quality.tsv 2>&1 | tee /srv/results/27-05-2026/3yous/logs/checkm.log
+        rm -rf "$outdir/input" "$outdir/bins" "$outdir/storage" "$outdir/lineage.ms"
+        
+        (command exited with non-zero exit code)
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-05-28T120658.606123.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

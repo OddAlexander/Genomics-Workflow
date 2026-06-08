@@ -1,0 +1,231 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Updating checkpoint dependencies.
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+checkm                  1
+fastqc                  1
+identify_species        2
+kraken2_qc              1
+mefinder                1
+mlst                    1
+mob_typer               1
+plasmidfinder           1
+quast                   1
+self_coverage           1
+staphscope              1
+multiqc                 1
+report                  3
+all                     1
+total                  17
+
+Select jobs to execute...
+Execute 2 jobs...
+[Thu May 28 12:03:48 2026]
+localrule self_coverage:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa, /srv/results/27-05-2026/3yous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3yous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3yous/QC/self_coverage.tsv
+    log: /srv/results/27-05-2026/3yous/logs/self_coverage.log
+    jobid: 14
+    reason: Missing output files: /srv/results/27-05-2026/3yous/QC/self_coverage.tsv
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp
+[Thu May 28 12:03:48 2026]
+localrule quast:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/QUAST/report.html
+    log: /srv/results/27-05-2026/3yous/logs/quast.log
+    jobid: 15
+    reason: Missing output files: /srv/results/27-05-2026/3yous/QUAST/report.html
+    wildcards: sample=27-05-2026/3yous
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:03:51 2026]
+Finished jobid: 15 (Rule: quast)
+1 of 17 steps (6%) done
+Execute 1 jobs...
+[Thu May 28 12:03:51 2026]
+localcheckpoint identify_species:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/species.txt, /srv/results/27-05-2026/3wous/ID_Skani/skani.tsv
+    log: /srv/results/27-05-2026/3wous/logs/identify_species.log
+    jobid: 10
+    reason: Missing output files: /srv/results/27-05-2026/3wous/species.txt
+    wildcards: sample=27-05-2026/3wous
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=4000, mem=4 GB, mem_mib=3815
+DAG of jobs will be updated after completion.
+Select jobs to execute...
+[Thu May 28 12:03:52 2026]
+Finished jobid: 10 (Rule: identify_species)
+2 of 17 steps (12%) done
+Updating checkpoint dependencies.
+Execute 8 jobs...
+[Thu May 28 12:03:52 2026]
+localrule mob_typer:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv
+    log: /srv/results/27-05-2026/3yous/logs/mob_typer.log
+    jobid: 21
+    reason: Missing output files: /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Thu May 28 12:03:52 2026]
+localrule plasmidfinder:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3yous/logs/plasmidfinder.log
+    jobid: 22
+    reason: Missing output files: /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Thu May 28 12:03:52 2026]
+localrule mefinder:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa, /srv/results/.mefinder_db/mge_records.nhr
+    output: /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv
+    log: /srv/results/27-05-2026/3yous/logs/mefinder.log
+    jobid: 23
+    reason: Missing output files: /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Thu May 28 12:03:52 2026]
+localrule mefinder:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa, /srv/results/.mefinder_db/mge_records.nhr
+    output: /srv/results/27-05-2026/3wous/MEfinder/mefinder.tsv
+    log: /srv/results/27-05-2026/3wous/logs/mefinder.log
+    jobid: 41
+    reason: Missing output files: /srv/results/27-05-2026/3wous/MEfinder/mefinder.tsv
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+[Thu May 28 12:03:52 2026]
+localrule mlst:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa, /srv/results/27-05-2026/3wous/species.txt
+    output: /srv/results/27-05-2026/3wous/MLST/mlst.tsv
+    log: /srv/results/27-05-2026/3wous/logs/mlst.log
+    jobid: 37
+    reason: Missing output files: /srv/results/27-05-2026/3wous/MLST/mlst.tsv
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+[Thu May 28 12:03:52 2026]
+localrule plasmidfinder:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3wous/logs/plasmidfinder.log
+    jobid: 40
+    reason: Missing output files: /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+[Thu May 28 12:03:52 2026]
+localrule mlst:
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa, /srv/results/27-05-2026/3yous/species.txt
+    output: /srv/results/27-05-2026/3yous/MLST/mlst.tsv
+    log: /srv/results/27-05-2026/3yous/logs/mlst.log
+    jobid: 19
+    reason: Missing output files: /srv/results/27-05-2026/3yous/MLST/mlst.tsv
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Thu May 28 12:03:52 2026]
+localrule mob_typer:
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/MOBSuite/mobtyper.tsv
+    log: /srv/results/27-05-2026/3wous/logs/mob_typer.log
+    jobid: 39
+    reason: Missing output files: /srv/results/27-05-2026/3wous/MOBSuite/mobtyper.tsv
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Thu May 28 12:03:53 2026]
+Finished jobid: 37 (Rule: mlst)
+3 of 29 steps (10%) done
+[Thu May 28 12:03:54 2026]
+Finished jobid: 19 (Rule: mlst)
+4 of 29 steps (14%) done
+Execute 1 jobs...
+[Thu May 28 12:03:54 2026]
+localrule fastqc:
+    input: /srv/results/27-05-2026/3wous/Trimmed/R1.fastq.gz, /srv/results/27-05-2026/3wous/Trimmed/R2.fastq.gz
+    output: /srv/results/27-05-2026/3wous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3wous/QC/fastqc/R2_fastqc.html
+    log: /srv/results/27-05-2026/3wous/logs/fastqc.log
+    jobid: 36
+    reason: Missing output files: /srv/results/27-05-2026/3wous/QC/fastqc/R1_fastqc.html
+    wildcards: sample=27-05-2026/3wous
+    threads: 2
+    resources: tmpdir=/tmp
+Select jobs to execute...
+RuleException:
+CalledProcessError in file "/home/bruker/genomics/Snakefile", line 416:
+Command 'set -euo pipefail;  pixi run --environment plasmidfinder plasmidfinder.py -i /srv/results/27-05-2026/3wous/Assembly/contigs.fa -o $(dirname /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv) -p /databases/plasmidfinder_db/ -x 2>&1 | tee /srv/results/27-05-2026/3wous/logs/plasmidfinder.log' returned non-zero exit status 1.
+[Thu May 28 12:03:55 2026]
+Error in rule plasmidfinder:
+    message: None
+    jobid: 40
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3wous/logs/plasmidfinder.log (check log file(s) for error details)
+    shell:
+        pixi run --environment plasmidfinder plasmidfinder.py -i /srv/results/27-05-2026/3wous/Assembly/contigs.fa -o $(dirname /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv) -p /databases/plasmidfinder_db/ -x 2>&1 | tee /srv/results/27-05-2026/3wous/logs/plasmidfinder.log
+        (command exited with non-zero exit code)
+RuleException:
+CalledProcessError in file "/home/bruker/genomics/Snakefile", line 416:
+Command 'set -euo pipefail;  pixi run --environment plasmidfinder plasmidfinder.py -i /srv/results/27-05-2026/3yous/Assembly/contigs.fa -o $(dirname /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv) -p /databases/plasmidfinder_db/ -x 2>&1 | tee /srv/results/27-05-2026/3yous/logs/plasmidfinder.log' returned non-zero exit status 139.
+[Thu May 28 12:03:55 2026]
+Error in rule plasmidfinder:
+    message: None
+    jobid: 22
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3yous/logs/plasmidfinder.log (check log file(s) for error details)
+    shell:
+        pixi run --environment plasmidfinder plasmidfinder.py -i /srv/results/27-05-2026/3yous/Assembly/contigs.fa -o $(dirname /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv) -p /databases/plasmidfinder_db/ -x 2>&1 | tee /srv/results/27-05-2026/3yous/logs/plasmidfinder.log
+        (command exited with non-zero exit code)
+[Thu May 28 12:04:01 2026]
+Finished jobid: 36 (Rule: fastqc)
+5 of 29 steps (17%) done
+[Thu May 28 12:04:02 2026]
+Finished jobid: 14 (Rule: self_coverage)
+6 of 29 steps (21%) done
+[Thu May 28 12:04:19 2026]
+Finished jobid: 23 (Rule: mefinder)
+7 of 29 steps (24%) done
+[Thu May 28 12:04:21 2026]
+Finished jobid: 41 (Rule: mefinder)
+8 of 29 steps (28%) done
+[Thu May 28 12:04:30 2026]
+Finished jobid: 21 (Rule: mob_typer)
+9 of 29 steps (31%) done
+[Thu May 28 12:04:30 2026]
+Finished jobid: 39 (Rule: mob_typer)
+10 of 29 steps (34%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look below for error messages
+[Thu May 28 12:04:30 2026]
+Error in rule plasmidfinder:
+    message: None
+    jobid: 40
+    input: /srv/results/27-05-2026/3wous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3wous/logs/plasmidfinder.log (check log file(s) for error details)
+    shell:
+        pixi run --environment plasmidfinder plasmidfinder.py -i /srv/results/27-05-2026/3wous/Assembly/contigs.fa -o $(dirname /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv) -p /databases/plasmidfinder_db/ -x 2>&1 | tee /srv/results/27-05-2026/3wous/logs/plasmidfinder.log
+        (command exited with non-zero exit code)
+[Thu May 28 12:04:30 2026]
+Error in rule plasmidfinder:
+    message: None
+    jobid: 22
+    input: /srv/results/27-05-2026/3yous/Assembly/contigs.fa
+    output: /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv
+    log: /srv/results/27-05-2026/3yous/logs/plasmidfinder.log (check log file(s) for error details)
+    shell:
+        pixi run --environment plasmidfinder plasmidfinder.py -i /srv/results/27-05-2026/3yous/Assembly/contigs.fa -o $(dirname /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv) -p /databases/plasmidfinder_db/ -x 2>&1 | tee /srv/results/27-05-2026/3yous/logs/plasmidfinder.log
+        (command exited with non-zero exit code)
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-05-28T120348.548390.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

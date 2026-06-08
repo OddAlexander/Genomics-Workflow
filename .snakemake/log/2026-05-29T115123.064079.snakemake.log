@@ -1,0 +1,1964 @@
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Updating checkpoint dependencies.
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job          count
+---------  -------
+lrefinder       13
+multiqc         67
+report          67
+all              1
+total          148
+
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:24 2026]
+localrule lrefinder:
+    input: /srv/results/11-03-2026/002p/Trimmed/R1.fastq.gz, /srv/results/11-03-2026/002p/Trimmed/R2.fastq.gz
+    output: /srv/results/11-03-2026/002p/LRE-Finder/lre.res
+    log: /srv/results/11-03-2026/002p/logs/lrefinder.log
+    jobid: 1106
+    reason: Missing output files: /srv/results/11-03-2026/002p/LRE-Finder/lre.res
+    wildcards: sample=11-03-2026/002p
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:24 2026]
+localrule lrefinder:
+    input: /srv/results/11-03-2026/002n/Trimmed/R1.fastq.gz, /srv/results/11-03-2026/002n/Trimmed/R2.fastq.gz
+    output: /srv/results/11-03-2026/002n/LRE-Finder/lre.res
+    log: /srv/results/11-03-2026/002n/logs/lrefinder.log
+    jobid: 1118
+    reason: Missing output files: /srv/results/11-03-2026/002n/LRE-Finder/lre.res
+    wildcards: sample=11-03-2026/002n
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:24 2026]
+Finished jobid: 1106 (Rule: lrefinder)
+1 of 148 steps (1%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:24 2026]
+localrule lrefinder:
+    input: /srv/results/26-03-2026/2q/Trimmed/R1.fastq.gz, /srv/results/26-03-2026/2q/Trimmed/R2.fastq.gz
+    output: /srv/results/26-03-2026/2q/LRE-Finder/lre.res
+    log: /srv/results/26-03-2026/2q/logs/lrefinder.log
+    jobid: 683
+    reason: Missing output files: /srv/results/26-03-2026/2q/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/2q
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:24 2026]
+Finished jobid: 1118 (Rule: lrefinder)
+2 of 148 steps (1%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:25 2026]
+localrule lrefinder:
+    input: /srv/results/26-03-2026/2w/Trimmed/R1.fastq.gz, /srv/results/26-03-2026/2w/Trimmed/R2.fastq.gz
+    output: /srv/results/26-03-2026/2w/LRE-Finder/lre.res
+    log: /srv/results/26-03-2026/2w/logs/lrefinder.log
+    jobid: 695
+    reason: Missing output files: /srv/results/26-03-2026/2w/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/2w
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:26 2026]
+Finished jobid: 695 (Rule: lrefinder)
+3 of 148 steps (2%) done
+Execute 1 jobs...
+[Fri May 29 11:51:26 2026]
+localrule lrefinder:
+    input: /srv/results/11-03-2026/002ntl/Trimmed/R1.fastq.gz, /srv/results/11-03-2026/002ntl/Trimmed/R2.fastq.gz
+    output: /srv/results/11-03-2026/002ntl/LRE-Finder/lre.res
+    log: /srv/results/11-03-2026/002ntl/logs/lrefinder.log
+    jobid: 1094
+    reason: Missing output files: /srv/results/11-03-2026/002ntl/LRE-Finder/lre.res
+    wildcards: sample=11-03-2026/002ntl
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:26 2026]
+Finished jobid: 683 (Rule: lrefinder)
+4 of 148 steps (3%) done
+Select jobs to execute...
+Execute 8 jobs...
+[Fri May 29 11:51:26 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/2j/QC/fastp.json, /srv/results/30-04-2026/2j/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/2j/QC/fastp.json, /srv/results/30-04-2026/2j/QC/self_coverage.tsv, /srv/results/30-04-2026/2j/QUAST/report.html, /srv/results/30-04-2026/2j/CheckM/quality.tsv, /srv/results/30-04-2026/2j/MLST/mlst.tsv, /srv/results/30-04-2026/2j/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/2j/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/2j/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/2j/MEfinder/mefinder.tsv, /srv/results/30-04-2026/2j/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/2j/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/2j/ID_Skani/skani.tsv, /srv/results/30-04-2026/2j/Kleborate/kleborate_output.tsv, /srv/results/30-04-2026/2j/ECTyper/ectyper.tsv
+    output: /srv/results/30-04-2026/2j/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/2j/logs/multiqc.log
+    jobid: 783
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/2j
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:26 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/3q/QC/fastp.json, /srv/results/30-04-2026/3q/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/3q/QC/fastp.json, /srv/results/30-04-2026/3q/QC/self_coverage.tsv, /srv/results/30-04-2026/3q/QUAST/report.html, /srv/results/30-04-2026/3q/CheckM/quality.tsv, /srv/results/30-04-2026/3q/MLST/mlst.tsv, /srv/results/30-04-2026/3q/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3q/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3q/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3q/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3q/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3q/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3q/ID_Skani/skani.tsv, /srv/results/30-04-2026/3q/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/30-04-2026/3q/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/3q/logs/multiqc.log
+    jobid: 723
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/3q
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:26 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2a/QC/fastp.json, /srv/results/26-03-2026/2a/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2a/QC/fastp.json, /srv/results/26-03-2026/2a/QC/self_coverage.tsv, /srv/results/26-03-2026/2a/QUAST/report.html, /srv/results/26-03-2026/2a/CheckM/quality.tsv, /srv/results/26-03-2026/2a/MLST/mlst.tsv, /srv/results/26-03-2026/2a/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2a/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2a/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2a/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2a/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2a/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2a/ID_Skani/skani.tsv
+    output: /srv/results/26-03-2026/2a/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2a/logs/multiqc.log
+    jobid: 580
+    reason: Code has changed since last execution
+    wildcards: sample=26-03-2026/2a
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:26 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/001a/QC/fastp.json, /srv/results/11-03-2026/001a/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/001a/QC/fastp.json, /srv/results/11-03-2026/001a/QC/self_coverage.tsv, /srv/results/11-03-2026/001a/QUAST/report.html, /srv/results/11-03-2026/001a/CheckM/quality.tsv, /srv/results/11-03-2026/001a/MLST/mlst.tsv, /srv/results/11-03-2026/001a/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001a/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001a/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001a/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001a/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001a/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001a/ID_Skani/skani.tsv, /srv/results/11-03-2026/001a/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001a/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/001a/logs/multiqc.log
+    jobid: 1038
+    reason: Code has changed since last execution
+    wildcards: sample=11-03-2026/001a
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:26 2026]
+localrule multiqc:
+    input: /srv/results/05-03-2026/001k/QC/fastp.json, /srv/results/05-03-2026/001k/QC/fastqc/R1_fastqc.html, /srv/results/05-03-2026/001k/QC/fastp.json, /srv/results/05-03-2026/001k/QC/self_coverage.tsv, /srv/results/05-03-2026/001k/QUAST/report.html, /srv/results/05-03-2026/001k/CheckM/quality.tsv, /srv/results/05-03-2026/001k/MLST/mlst.tsv, /srv/results/05-03-2026/001k/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001k/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001k/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001k/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001k/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001k/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001k/ID_Skani/skani.tsv, /srv/results/05-03-2026/001k/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001k/MultiQC/multiqc_report.html
+    log: /srv/results/05-03-2026/001k/logs/multiqc.log
+    jobid: 509
+    reason: Code has changed since last execution
+    wildcards: sample=05-03-2026/001k
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:26 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/3u/QC/fastp.json, /srv/results/30-04-2026/3u/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/3u/QC/fastp.json, /srv/results/30-04-2026/3u/QC/self_coverage.tsv, /srv/results/30-04-2026/3u/QUAST/report.html, /srv/results/30-04-2026/3u/CheckM/quality.tsv, /srv/results/30-04-2026/3u/MLST/mlst.tsv, /srv/results/30-04-2026/3u/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3u/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3u/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3u/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3u/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3u/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3u/ID_Skani/skani.tsv, /srv/results/30-04-2026/3u/Kleborate/kleborate_output.tsv
+    output: /srv/results/30-04-2026/3u/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/3u/logs/multiqc.log
+    jobid: 820
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/3u
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:26 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/005a/QC/fastp.json, /srv/results/19-03-2026/005a/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/005a/QC/fastp.json, /srv/results/19-03-2026/005a/QC/self_coverage.tsv, /srv/results/19-03-2026/005a/QUAST/report.html, /srv/results/19-03-2026/005a/CheckM/quality.tsv, /srv/results/19-03-2026/005a/MLST/mlst.tsv, /srv/results/19-03-2026/005a/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/005a/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/005a/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/005a/MEfinder/mefinder.tsv, /srv/results/19-03-2026/005a/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/005a/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/005a/ID_Skani/skani.tsv, /srv/results/19-03-2026/005a/Pasty/pasty.tsv
+    output: /srv/results/19-03-2026/005a/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/005a/logs/multiqc.log
+    jobid: 930
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/005a
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:26 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/001g/QC/fastp.json, /srv/results/11-03-2026/001g/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/001g/QC/fastp.json, /srv/results/11-03-2026/001g/QC/self_coverage.tsv, /srv/results/11-03-2026/001g/QUAST/report.html, /srv/results/11-03-2026/001g/CheckM/quality.tsv, /srv/results/11-03-2026/001g/MLST/mlst.tsv, /srv/results/11-03-2026/001g/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001g/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001g/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001g/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001g/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001g/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001g/ID_Skani/skani.tsv, /srv/results/11-03-2026/001g/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001g/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/001g/logs/multiqc.log
+    jobid: 1014
+    reason: Code has changed since last execution
+    wildcards: sample=11-03-2026/001g
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:27 2026]
+Finished jobid: 1094 (Rule: lrefinder)
+5 of 148 steps (3%) done
+Execute 1 jobs...
+[Fri May 29 11:51:27 2026]
+localrule lrefinder:
+    input: /srv/results/26-03-2026/3f/Trimmed/R1.fastq.gz, /srv/results/26-03-2026/3f/Trimmed/R2.fastq.gz
+    output: /srv/results/26-03-2026/3f/LRE-Finder/lre.res
+    log: /srv/results/26-03-2026/3f/logs/lrefinder.log
+    jobid: 623
+    reason: Missing output files: /srv/results/26-03-2026/3f/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/3f
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:28 2026]
+Finished jobid: 623 (Rule: lrefinder)
+6 of 148 steps (4%) done
+Execute 8 jobs...
+[Fri May 29 11:51:28 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2g/QC/fastp.json, /srv/results/26-03-2026/2g/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2g/QC/fastp.json, /srv/results/26-03-2026/2g/QC/self_coverage.tsv, /srv/results/26-03-2026/2g/QUAST/report.html, /srv/results/26-03-2026/2g/CheckM/quality.tsv, /srv/results/26-03-2026/2g/MLST/mlst.tsv, /srv/results/26-03-2026/2g/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2g/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2g/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2g/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2g/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2g/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2g/ID_Skani/skani.tsv, /srv/results/26-03-2026/2g/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2g/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2g/logs/multiqc.log
+    jobid: 591
+    reason: Code has changed since last execution
+    wildcards: sample=26-03-2026/2g
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:28 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2q/QC/fastp.json, /srv/results/26-03-2026/2q/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2q/QC/fastp.json, /srv/results/26-03-2026/2q/QC/self_coverage.tsv, /srv/results/26-03-2026/2q/QUAST/report.html, /srv/results/26-03-2026/2q/CheckM/quality.tsv, /srv/results/26-03-2026/2q/MLST/mlst.tsv, /srv/results/26-03-2026/2q/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2q/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2q/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2q/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2q/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2q/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2q/ID_Skani/skani.tsv, /srv/results/26-03-2026/2q/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/2q/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2q/logs/multiqc.log
+    jobid: 675
+    reason: Input files updated by another job: /srv/results/26-03-2026/2q/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=26-03-2026/2q
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:28 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/3v/QC/fastp.json, /srv/results/30-04-2026/3v/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/3v/QC/fastp.json, /srv/results/30-04-2026/3v/QC/self_coverage.tsv, /srv/results/30-04-2026/3v/QUAST/report.html, /srv/results/30-04-2026/3v/CheckM/quality.tsv, /srv/results/30-04-2026/3v/MLST/mlst.tsv, /srv/results/30-04-2026/3v/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3v/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3v/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3v/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3v/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3v/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3v/ID_Skani/skani.tsv, /srv/results/30-04-2026/3v/Kleborate/kleborate_output.tsv
+    output: /srv/results/30-04-2026/3v/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/3v/logs/multiqc.log
+    jobid: 759
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/3v
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:28 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/002ntl/QC/fastp.json, /srv/results/11-03-2026/002ntl/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/002ntl/QC/fastp.json, /srv/results/11-03-2026/002ntl/QC/self_coverage.tsv, /srv/results/11-03-2026/002ntl/QUAST/report.html, /srv/results/11-03-2026/002ntl/CheckM/quality.tsv, /srv/results/11-03-2026/002ntl/MLST/mlst.tsv, /srv/results/11-03-2026/002ntl/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/002ntl/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/002ntl/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/002ntl/MEfinder/mefinder.tsv, /srv/results/11-03-2026/002ntl/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/002ntl/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/002ntl/ID_Skani/skani.tsv, /srv/results/11-03-2026/002ntl/LRE-Finder/lre.res
+    output: /srv/results/11-03-2026/002ntl/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/002ntl/logs/multiqc.log
+    jobid: 1086
+    reason: Input files updated by another job: /srv/results/11-03-2026/002ntl/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=11-03-2026/002ntl
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:28 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/003b/QC/fastp.json, /srv/results/19-03-2026/003b/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/003b/QC/fastp.json, /srv/results/19-03-2026/003b/QC/self_coverage.tsv, /srv/results/19-03-2026/003b/QUAST/report.html, /srv/results/19-03-2026/003b/CheckM/quality.tsv, /srv/results/19-03-2026/003b/MLST/mlst.tsv, /srv/results/19-03-2026/003b/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/003b/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/003b/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/003b/MEfinder/mefinder.tsv, /srv/results/19-03-2026/003b/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/003b/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/003b/ID_Skani/skani.tsv, /srv/results/19-03-2026/003b/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/19-03-2026/003b/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/003b/logs/multiqc.log
+    jobid: 881
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/003b
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:28 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/002p/QC/fastp.json, /srv/results/11-03-2026/002p/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/002p/QC/fastp.json, /srv/results/11-03-2026/002p/QC/self_coverage.tsv, /srv/results/11-03-2026/002p/QUAST/report.html, /srv/results/11-03-2026/002p/CheckM/quality.tsv, /srv/results/11-03-2026/002p/MLST/mlst.tsv, /srv/results/11-03-2026/002p/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/002p/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/002p/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/002p/MEfinder/mefinder.tsv, /srv/results/11-03-2026/002p/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/002p/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/002p/ID_Skani/skani.tsv, /srv/results/11-03-2026/002p/LRE-Finder/lre.res
+    output: /srv/results/11-03-2026/002p/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/002p/logs/multiqc.log
+    jobid: 1098
+    reason: Input files updated by another job: /srv/results/11-03-2026/002p/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=11-03-2026/002p
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:28 2026]
+localrule multiqc:
+    input: /srv/results/05-03-2026/001u/QC/fastp.json, /srv/results/05-03-2026/001u/QC/fastqc/R1_fastqc.html, /srv/results/05-03-2026/001u/QC/fastp.json, /srv/results/05-03-2026/001u/QC/self_coverage.tsv, /srv/results/05-03-2026/001u/QUAST/report.html, /srv/results/05-03-2026/001u/CheckM/quality.tsv, /srv/results/05-03-2026/001u/MLST/mlst.tsv, /srv/results/05-03-2026/001u/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001u/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001u/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001u/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001u/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001u/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001u/ID_Skani/skani.tsv, /srv/results/05-03-2026/001u/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001u/MultiQC/multiqc_report.html
+    log: /srv/results/05-03-2026/001u/logs/multiqc.log
+    jobid: 473
+    reason: Code has changed since last execution
+    wildcards: sample=05-03-2026/001u
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:28 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/001x/QC/fastp.json, /srv/results/19-03-2026/001x/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/001x/QC/fastp.json, /srv/results/19-03-2026/001x/QC/self_coverage.tsv, /srv/results/19-03-2026/001x/QUAST/report.html, /srv/results/19-03-2026/001x/CheckM/quality.tsv, /srv/results/19-03-2026/001x/MLST/mlst.tsv, /srv/results/19-03-2026/001x/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001x/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001x/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001x/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001x/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001x/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001x/ID_Skani/skani.tsv, /srv/results/19-03-2026/001x/Kleborate/kleborate_output.tsv
+    output: /srv/results/19-03-2026/001x/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/001x/logs/multiqc.log
+    jobid: 893
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/001x
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:29 2026]
+Finished jobid: 723 (Rule: multiqc)
+7 of 148 steps (5%) done
+Execute 1 jobs...
+[Fri May 29 11:51:29 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2e/QC/fastp.json, /srv/results/26-03-2026/2e/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2e/QC/fastp.json, /srv/results/26-03-2026/2e/QC/self_coverage.tsv, /srv/results/26-03-2026/2e/QUAST/report.html, /srv/results/26-03-2026/2e/CheckM/quality.tsv, /srv/results/26-03-2026/2e/MLST/mlst.tsv, /srv/results/26-03-2026/2e/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2e/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2e/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2e/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2e/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2e/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2e/ID_Skani/skani.tsv, /srv/results/26-03-2026/2e/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2e/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2e/logs/multiqc.log
+    jobid: 663
+    reason: Code has changed since last execution
+    wildcards: sample=26-03-2026/2e
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:29 2026]
+Finished jobid: 1038 (Rule: multiqc)
+8 of 148 steps (5%) done
+[Fri May 29 11:51:29 2026]
+Finished jobid: 820 (Rule: multiqc)
+9 of 148 steps (6%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:29 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/004b/QC/fastp.json, /srv/results/19-03-2026/004b/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/004b/QC/fastp.json, /srv/results/19-03-2026/004b/QC/self_coverage.tsv, /srv/results/19-03-2026/004b/QUAST/report.html, /srv/results/19-03-2026/004b/CheckM/quality.tsv, /srv/results/19-03-2026/004b/MLST/mlst.tsv, /srv/results/19-03-2026/004b/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/004b/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/004b/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/004b/MEfinder/mefinder.tsv, /srv/results/19-03-2026/004b/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/004b/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/004b/ID_Skani/skani.tsv, /srv/results/19-03-2026/004b/Kleborate/kleborate_output.tsv, /srv/results/19-03-2026/004b/ECTyper/ectyper.tsv
+    output: /srv/results/19-03-2026/004b/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/004b/logs/multiqc.log
+    jobid: 868
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/004b
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:29 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/3f/QC/fastp.json, /srv/results/26-03-2026/3f/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/3f/QC/fastp.json, /srv/results/26-03-2026/3f/QC/self_coverage.tsv, /srv/results/26-03-2026/3f/QUAST/report.html, /srv/results/26-03-2026/3f/CheckM/quality.tsv, /srv/results/26-03-2026/3f/MLST/mlst.tsv, /srv/results/26-03-2026/3f/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/3f/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/3f/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/3f/MEfinder/mefinder.tsv, /srv/results/26-03-2026/3f/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/3f/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/3f/ID_Skani/skani.tsv, /srv/results/26-03-2026/3f/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/3f/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/3f/logs/multiqc.log
+    jobid: 615
+    reason: Input files updated by another job: /srv/results/26-03-2026/3f/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=26-03-2026/3f
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:29 2026]
+Finished jobid: 509 (Rule: multiqc)
+10 of 148 steps (7%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:29 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/001z/QC/fastp.json, /srv/results/19-03-2026/001z/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/001z/QC/fastp.json, /srv/results/19-03-2026/001z/QC/self_coverage.tsv, /srv/results/19-03-2026/001z/QUAST/report.html, /srv/results/19-03-2026/001z/CheckM/quality.tsv, /srv/results/19-03-2026/001z/MLST/mlst.tsv, /srv/results/19-03-2026/001z/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001z/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001z/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001z/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001z/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001z/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001z/ID_Skani/skani.tsv, /srv/results/19-03-2026/001z/Kleborate/kleborate_output.tsv
+    output: /srv/results/19-03-2026/001z/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/001z/logs/multiqc.log
+    jobid: 918
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/001z
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:29 2026]
+Finished jobid: 930 (Rule: multiqc)
+11 of 148 steps (7%) done
+Execute 1 jobs...
+[Fri May 29 11:51:29 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/004c/QC/fastp.json, /srv/results/19-03-2026/004c/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/004c/QC/fastp.json, /srv/results/19-03-2026/004c/QC/self_coverage.tsv, /srv/results/19-03-2026/004c/QUAST/report.html, /srv/results/19-03-2026/004c/CheckM/quality.tsv, /srv/results/19-03-2026/004c/MLST/mlst.tsv, /srv/results/19-03-2026/004c/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/004c/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/004c/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/004c/MEfinder/mefinder.tsv, /srv/results/19-03-2026/004c/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/004c/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/004c/ID_Skani/skani.tsv, /srv/results/19-03-2026/004c/Kleborate/kleborate_output.tsv, /srv/results/19-03-2026/004c/ECTyper/ectyper.tsv
+    output: /srv/results/19-03-2026/004c/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/004c/logs/multiqc.log
+    jobid: 844
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/004c
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:29 2026]
+Finished jobid: 580 (Rule: multiqc)
+12 of 148 steps (8%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:29 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2f/QC/fastp.json, /srv/results/26-03-2026/2f/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2f/QC/fastp.json, /srv/results/26-03-2026/2f/QC/self_coverage.tsv, /srv/results/26-03-2026/2f/QUAST/report.html, /srv/results/26-03-2026/2f/CheckM/quality.tsv, /srv/results/26-03-2026/2f/MLST/mlst.tsv, /srv/results/26-03-2026/2f/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2f/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2f/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2f/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2f/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2f/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2f/ID_Skani/skani.tsv, /srv/results/26-03-2026/2f/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2f/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2f/logs/multiqc.log
+    jobid: 544
+    reason: Code has changed since last execution
+    wildcards: sample=26-03-2026/2f
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:29 2026]
+Finished jobid: 783 (Rule: multiqc)
+13 of 148 steps (9%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:30 2026]
+localrule multiqc:
+    input: /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/self_coverage.tsv, /srv/results/27-05-2026/3wous/QUAST/report.html, /srv/results/27-05-2026/3wous/CheckM/quality.tsv, /srv/results/27-05-2026/3wous/MLST/mlst.tsv, /srv/results/27-05-2026/3wous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3wous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3wous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3wous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3wous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3wous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3wous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3wous/MultiQC/multiqc_report.html
+    log: /srv/results/27-05-2026/3wous/logs/multiqc.log
+    jobid: 990
+    reason: Code has changed since last execution
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:30 2026]
+Finished jobid: 1014 (Rule: multiqc)
+14 of 148 steps (9%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:30 2026]
+localrule multiqc:
+    input: /srv/results/05-03-2026/001o/QC/fastp.json, /srv/results/05-03-2026/001o/QC/fastqc/R1_fastqc.html, /srv/results/05-03-2026/001o/QC/fastp.json, /srv/results/05-03-2026/001o/QC/self_coverage.tsv, /srv/results/05-03-2026/001o/QUAST/report.html, /srv/results/05-03-2026/001o/CheckM/quality.tsv, /srv/results/05-03-2026/001o/MLST/mlst.tsv, /srv/results/05-03-2026/001o/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001o/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001o/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001o/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001o/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001o/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001o/ID_Skani/skani.tsv, /srv/results/05-03-2026/001o/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001o/MultiQC/multiqc_report.html
+    log: /srv/results/05-03-2026/001o/logs/multiqc.log
+    jobid: 461
+    reason: Code has changed since last execution
+    wildcards: sample=05-03-2026/001o
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:30 2026]
+Finished jobid: 881 (Rule: multiqc)
+15 of 148 steps (10%) done
+Execute 1 jobs...
+[Fri May 29 11:51:30 2026]
+localrule multiqc:
+    input: /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/27-05-2026/3xous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/27-05-2026/3xous/QC/self_coverage.tsv, /srv/results/27-05-2026/3xous/QUAST/report.html, /srv/results/27-05-2026/3xous/CheckM/quality.tsv, /srv/results/27-05-2026/3xous/MLST/mlst.tsv, /srv/results/27-05-2026/3xous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3xous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3xous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3xous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3xous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3xous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3xous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3xous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3xous/MultiQC/multiqc_report.html
+    log: /srv/results/27-05-2026/3xous/logs/multiqc.log
+    jobid: 978
+    reason: Code has changed since last execution
+    wildcards: sample=27-05-2026/3xous
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:30 2026]
+Finished jobid: 759 (Rule: multiqc)
+16 of 148 steps (11%) done
+Execute 1 jobs...
+[Fri May 29 11:51:30 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/3h/QC/fastp.json, /srv/results/22-04-2026/3h/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/3h/QC/fastp.json, /srv/results/22-04-2026/3h/QC/self_coverage.tsv, /srv/results/22-04-2026/3h/QUAST/report.html, /srv/results/22-04-2026/3h/CheckM/quality.tsv, /srv/results/22-04-2026/3h/MLST/mlst.tsv, /srv/results/22-04-2026/3h/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3h/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3h/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3h/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3h/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3h/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3h/ID_Skani/skani.tsv, /srv/results/22-04-2026/3h/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3h/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/3h/logs/multiqc.log
+    jobid: 437
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/3h
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:30 2026]
+Finished jobid: 675 (Rule: multiqc)
+17 of 148 steps (11%) done
+[Fri May 29 11:51:30 2026]
+Finished jobid: 1086 (Rule: multiqc)
+18 of 148 steps (12%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:30 2026]
+localrule multiqc:
+    input: /srv/results/05-03-2026/001i/QC/fastp.json, /srv/results/05-03-2026/001i/QC/fastqc/R1_fastqc.html, /srv/results/05-03-2026/001i/QC/fastp.json, /srv/results/05-03-2026/001i/QC/self_coverage.tsv, /srv/results/05-03-2026/001i/QUAST/report.html, /srv/results/05-03-2026/001i/CheckM/quality.tsv, /srv/results/05-03-2026/001i/MLST/mlst.tsv, /srv/results/05-03-2026/001i/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001i/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001i/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001i/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001i/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001i/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001i/ID_Skani/skani.tsv, /srv/results/05-03-2026/001i/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001i/MultiQC/multiqc_report.html
+    log: /srv/results/05-03-2026/001i/logs/multiqc.log
+    jobid: 485
+    reason: Code has changed since last execution
+    wildcards: sample=05-03-2026/001i
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:30 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2q/QC/fastp.json, /srv/results/26-03-2026/2q/QC/self_coverage.tsv, /srv/results/26-03-2026/2q/QUAST/report.html, /srv/results/26-03-2026/2q/CheckM/quality.tsv, /srv/results/26-03-2026/2q/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2q/MLST/mlst.tsv, /srv/results/26-03-2026/2q/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2q/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2q/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2q/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2q/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2q/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2q/ID_Skani/skani.tsv, /srv/results/26-03-2026/2q/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/2q/pipeline_summary.html
+    jobid: 113
+    reason: Input files updated by another job: /srv/results/26-03-2026/2q/LRE-Finder/lre.res, /srv/results/26-03-2026/2q/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2q
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:30 2026]
+Finished jobid: 113 (Rule: report)
+19 of 148 steps (13%) done
+Execute 1 jobs...
+[Fri May 29 11:51:31 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2b/QC/fastp.json, /srv/results/26-03-2026/2b/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2b/QC/fastp.json, /srv/results/26-03-2026/2b/QC/self_coverage.tsv, /srv/results/26-03-2026/2b/QUAST/report.html, /srv/results/26-03-2026/2b/CheckM/quality.tsv, /srv/results/26-03-2026/2b/MLST/mlst.tsv, /srv/results/26-03-2026/2b/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2b/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2b/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2b/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2b/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2b/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2b/ID_Skani/skani.tsv
+    output: /srv/results/26-03-2026/2b/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2b/logs/multiqc.log
+    jobid: 533
+    reason: Code has changed since last execution
+    wildcards: sample=26-03-2026/2b
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:31 2026]
+Finished jobid: 473 (Rule: multiqc)
+20 of 148 steps (14%) done
+Execute 1 jobs...
+[Fri May 29 11:51:31 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/3j/QC/fastp.json, /srv/results/22-04-2026/3j/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/3j/QC/fastp.json, /srv/results/22-04-2026/3j/QC/self_coverage.tsv, /srv/results/22-04-2026/3j/QUAST/report.html, /srv/results/22-04-2026/3j/CheckM/quality.tsv, /srv/results/22-04-2026/3j/MLST/mlst.tsv, /srv/results/22-04-2026/3j/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3j/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3j/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3j/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3j/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3j/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3j/ID_Skani/skani.tsv, /srv/results/22-04-2026/3j/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3j/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/3j/logs/multiqc.log
+    jobid: 389
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/3j
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:31 2026]
+Finished jobid: 1098 (Rule: multiqc)
+21 of 148 steps (14%) done
+Execute 1 jobs...
+[Fri May 29 11:51:31 2026]
+localrule report:
+    input: /srv/results/11-03-2026/002p/QC/fastp.json, /srv/results/11-03-2026/002p/QC/self_coverage.tsv, /srv/results/11-03-2026/002p/QUAST/report.html, /srv/results/11-03-2026/002p/CheckM/quality.tsv, /srv/results/11-03-2026/002p/MultiQC/multiqc_report.html, /srv/results/11-03-2026/002p/MLST/mlst.tsv, /srv/results/11-03-2026/002p/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/002p/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/002p/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/002p/MEfinder/mefinder.tsv, /srv/results/11-03-2026/002p/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/002p/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/002p/ID_Skani/skani.tsv, /srv/results/11-03-2026/002p/LRE-Finder/lre.res
+    output: /srv/results/11-03-2026/002p/pipeline_summary.html
+    jobid: 253
+    reason: Input files updated by another job: /srv/results/11-03-2026/002p/MultiQC/multiqc_report.html, /srv/results/11-03-2026/002p/LRE-Finder/lre.res
+    wildcards: sample=11-03-2026/002p
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:31 2026]
+Finished jobid: 591 (Rule: multiqc)
+22 of 148 steps (15%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:31 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/001p/QC/fastp.json, /srv/results/11-03-2026/001p/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/001p/QC/fastp.json, /srv/results/11-03-2026/001p/QC/self_coverage.tsv, /srv/results/11-03-2026/001p/QUAST/report.html, /srv/results/11-03-2026/001p/CheckM/quality.tsv, /srv/results/11-03-2026/001p/MLST/mlst.tsv, /srv/results/11-03-2026/001p/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001p/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001p/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001p/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001p/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001p/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001p/ID_Skani/skani.tsv, /srv/results/11-03-2026/001p/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001p/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/001p/logs/multiqc.log
+    jobid: 1002
+    reason: Code has changed since last execution
+    wildcards: sample=11-03-2026/001p
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:31 2026]
+Finished jobid: 253 (Rule: report)
+23 of 148 steps (16%) done
+[Fri May 29 11:51:31 2026]
+Finished jobid: 893 (Rule: multiqc)
+24 of 148 steps (16%) done
+Execute 2 jobs...
+[Fri May 29 11:51:31 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/3k/QC/fastp.json, /srv/results/22-04-2026/3k/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/3k/QC/fastp.json, /srv/results/22-04-2026/3k/QC/self_coverage.tsv, /srv/results/22-04-2026/3k/QUAST/report.html, /srv/results/22-04-2026/3k/CheckM/quality.tsv, /srv/results/22-04-2026/3k/MLST/mlst.tsv, /srv/results/22-04-2026/3k/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3k/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3k/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3k/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3k/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3k/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3k/ID_Skani/skani.tsv, /srv/results/22-04-2026/3k/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3k/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/3k/logs/multiqc.log
+    jobid: 401
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/3k
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:31 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2c/QC/fastp.json, /srv/results/26-03-2026/2c/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2c/QC/fastp.json, /srv/results/26-03-2026/2c/QC/self_coverage.tsv, /srv/results/26-03-2026/2c/QUAST/report.html, /srv/results/26-03-2026/2c/CheckM/quality.tsv, /srv/results/26-03-2026/2c/MLST/mlst.tsv, /srv/results/26-03-2026/2c/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2c/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2c/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2c/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2c/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2c/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2c/ID_Skani/skani.tsv, /srv/results/26-03-2026/2c/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2c/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2c/logs/multiqc.log
+    jobid: 699
+    reason: Code has changed since last execution
+    wildcards: sample=26-03-2026/2c
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:32 2026]
+Finished jobid: 615 (Rule: multiqc)
+25 of 148 steps (17%) done
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule report:
+    input: /srv/results/19-03-2026/001x/QC/fastp.json, /srv/results/19-03-2026/001x/QC/self_coverage.tsv, /srv/results/19-03-2026/001x/QUAST/report.html, /srv/results/19-03-2026/001x/CheckM/quality.tsv, /srv/results/19-03-2026/001x/MultiQC/multiqc_report.html, /srv/results/19-03-2026/001x/MLST/mlst.tsv, /srv/results/19-03-2026/001x/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001x/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001x/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001x/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001x/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001x/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001x/ID_Skani/skani.tsv, /srv/results/19-03-2026/001x/Kleborate/kleborate_output.tsv
+    output: /srv/results/19-03-2026/001x/pipeline_summary.html
+    jobid: 185
+    reason: Input files updated by another job: /srv/results/19-03-2026/001x/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/001x
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:32 2026]
+Finished jobid: 185 (Rule: report)
+26 of 148 steps (18%) done
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2w/QC/fastp.json, /srv/results/26-03-2026/2w/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2w/QC/fastp.json, /srv/results/26-03-2026/2w/QC/self_coverage.tsv, /srv/results/26-03-2026/2w/QUAST/report.html, /srv/results/26-03-2026/2w/CheckM/quality.tsv, /srv/results/26-03-2026/2w/MLST/mlst.tsv, /srv/results/26-03-2026/2w/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2w/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2w/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2w/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2w/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2w/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2w/ID_Skani/skani.tsv, /srv/results/26-03-2026/2w/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/2w/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2w/logs/multiqc.log
+    jobid: 687
+    reason: Input files updated by another job: /srv/results/26-03-2026/2w/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=26-03-2026/2w
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:32 2026]
+Finished jobid: 844 (Rule: multiqc)
+27 of 148 steps (18%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule report:
+    input: /srv/results/19-03-2026/004c/QC/fastp.json, /srv/results/19-03-2026/004c/QC/self_coverage.tsv, /srv/results/19-03-2026/004c/QUAST/report.html, /srv/results/19-03-2026/004c/CheckM/quality.tsv, /srv/results/19-03-2026/004c/MultiQC/multiqc_report.html, /srv/results/19-03-2026/004c/MLST/mlst.tsv, /srv/results/19-03-2026/004c/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/004c/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/004c/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/004c/MEfinder/mefinder.tsv, /srv/results/19-03-2026/004c/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/004c/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/004c/ID_Skani/skani.tsv, /srv/results/19-03-2026/004c/Kleborate/kleborate_output.tsv, /srv/results/19-03-2026/004c/ECTyper/ectyper.tsv
+    output: /srv/results/19-03-2026/004c/pipeline_summary.html
+    jobid: 169
+    reason: Input files updated by another job: /srv/results/19-03-2026/004c/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/004c
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:32 2026]
+Finished jobid: 663 (Rule: multiqc)
+28 of 148 steps (19%) done
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2e/QC/fastp.json, /srv/results/26-03-2026/2e/QC/self_coverage.tsv, /srv/results/26-03-2026/2e/QUAST/report.html, /srv/results/26-03-2026/2e/CheckM/quality.tsv, /srv/results/26-03-2026/2e/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2e/MLST/mlst.tsv, /srv/results/26-03-2026/2e/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2e/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2e/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2e/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2e/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2e/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2e/ID_Skani/skani.tsv, /srv/results/26-03-2026/2e/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2e/pipeline_summary.html
+    jobid: 109
+    reason: Input files updated by another job: /srv/results/26-03-2026/2e/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2e
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:32 2026]
+Finished jobid: 544 (Rule: multiqc)
+29 of 148 steps (20%) done
+[Fri May 29 11:51:32 2026]
+Finished jobid: 169 (Rule: report)
+30 of 148 steps (20%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:32 2026]
+localrule report:
+    input: /srv/results/05-03-2026/001u/QC/fastp.json, /srv/results/05-03-2026/001u/QC/self_coverage.tsv, /srv/results/05-03-2026/001u/QUAST/report.html, /srv/results/05-03-2026/001u/CheckM/quality.tsv, /srv/results/05-03-2026/001u/MultiQC/multiqc_report.html, /srv/results/05-03-2026/001u/MLST/mlst.tsv, /srv/results/05-03-2026/001u/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001u/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001u/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001u/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001u/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001u/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001u/ID_Skani/skani.tsv, /srv/results/05-03-2026/001u/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001u/pipeline_summary.html
+    jobid: 45
+    reason: Input files updated by another job: /srv/results/05-03-2026/001u/MultiQC/multiqc_report.html
+    wildcards: sample=05-03-2026/001u
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:32 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/002n/QC/fastp.json, /srv/results/11-03-2026/002n/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/002n/QC/fastp.json, /srv/results/11-03-2026/002n/QC/self_coverage.tsv, /srv/results/11-03-2026/002n/QUAST/report.html, /srv/results/11-03-2026/002n/CheckM/quality.tsv, /srv/results/11-03-2026/002n/MLST/mlst.tsv, /srv/results/11-03-2026/002n/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/002n/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/002n/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/002n/MEfinder/mefinder.tsv, /srv/results/11-03-2026/002n/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/002n/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/002n/ID_Skani/skani.tsv, /srv/results/11-03-2026/002n/LRE-Finder/lre.res
+    output: /srv/results/11-03-2026/002n/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/002n/logs/multiqc.log
+    jobid: 1110
+    reason: Input files updated by another job: /srv/results/11-03-2026/002n/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=11-03-2026/002n
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:32 2026]
+Finished jobid: 918 (Rule: multiqc)
+31 of 148 steps (21%) done
+[Fri May 29 11:51:32 2026]
+Finished jobid: 109 (Rule: report)
+32 of 148 steps (22%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:32 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/001b/QC/fastp.json, /srv/results/11-03-2026/001b/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/001b/QC/fastp.json, /srv/results/11-03-2026/001b/QC/self_coverage.tsv, /srv/results/11-03-2026/001b/QUAST/report.html, /srv/results/11-03-2026/001b/CheckM/quality.tsv, /srv/results/11-03-2026/001b/MLST/mlst.tsv, /srv/results/11-03-2026/001b/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001b/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001b/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001b/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001b/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001b/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001b/ID_Skani/skani.tsv, /srv/results/11-03-2026/001b/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001b/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/001b/logs/multiqc.log
+    jobid: 1122
+    reason: Code has changed since last execution
+    wildcards: sample=11-03-2026/001b
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:32 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/001s/QC/fastp.json, /srv/results/11-03-2026/001s/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/001s/QC/fastp.json, /srv/results/11-03-2026/001s/QC/self_coverage.tsv, /srv/results/11-03-2026/001s/QUAST/report.html, /srv/results/11-03-2026/001s/CheckM/quality.tsv, /srv/results/11-03-2026/001s/MLST/mlst.tsv, /srv/results/11-03-2026/001s/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001s/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001s/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001s/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001s/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001s/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001s/ID_Skani/skani.tsv, /srv/results/11-03-2026/001s/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001s/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/001s/logs/multiqc.log
+    jobid: 1050
+    reason: Code has changed since last execution
+    wildcards: sample=11-03-2026/001s
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:32 2026]
+Finished jobid: 45 (Rule: report)
+33 of 148 steps (22%) done
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/3l/QC/fastp.json, /srv/results/22-04-2026/3l/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/3l/QC/fastp.json, /srv/results/22-04-2026/3l/QC/self_coverage.tsv, /srv/results/22-04-2026/3l/QUAST/report.html, /srv/results/22-04-2026/3l/CheckM/quality.tsv, /srv/results/22-04-2026/3l/MLST/mlst.tsv, /srv/results/22-04-2026/3l/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3l/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3l/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3l/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3l/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3l/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3l/ID_Skani/skani.tsv, /srv/results/22-04-2026/3l/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3l/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/3l/logs/multiqc.log
+    jobid: 364
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/3l
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:32 2026]
+Finished jobid: 868 (Rule: multiqc)
+34 of 148 steps (23%) done
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/3i/QC/fastp.json, /srv/results/22-04-2026/3i/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/3i/QC/fastp.json, /srv/results/22-04-2026/3i/QC/self_coverage.tsv, /srv/results/22-04-2026/3i/QUAST/report.html, /srv/results/22-04-2026/3i/CheckM/quality.tsv, /srv/results/22-04-2026/3i/MLST/mlst.tsv, /srv/results/22-04-2026/3i/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3i/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3i/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3i/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3i/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3i/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3i/ID_Skani/skani.tsv, /srv/results/22-04-2026/3i/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3i/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/3i/logs/multiqc.log
+    jobid: 425
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/3i
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:32 2026]
+Finished jobid: 990 (Rule: multiqc)
+35 of 148 steps (24%) done
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/2i/QC/fastp.json, /srv/results/30-04-2026/2i/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/2i/QC/fastp.json, /srv/results/30-04-2026/2i/QC/self_coverage.tsv, /srv/results/30-04-2026/2i/QUAST/report.html, /srv/results/30-04-2026/2i/CheckM/quality.tsv, /srv/results/30-04-2026/2i/MLST/mlst.tsv, /srv/results/30-04-2026/2i/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/2i/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/2i/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/2i/MEfinder/mefinder.tsv, /srv/results/30-04-2026/2i/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/2i/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/2i/ID_Skani/skani.tsv, /srv/results/30-04-2026/2i/ECTyper/ectyper.tsv
+    output: /srv/results/30-04-2026/2i/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/2i/logs/multiqc.log
+    jobid: 771
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/2i
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:32 2026]
+Finished jobid: 461 (Rule: multiqc)
+36 of 148 steps (24%) done
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule report:
+    input: /srv/results/11-03-2026/001a/QC/fastp.json, /srv/results/11-03-2026/001a/QC/self_coverage.tsv, /srv/results/11-03-2026/001a/QUAST/report.html, /srv/results/11-03-2026/001a/CheckM/quality.tsv, /srv/results/11-03-2026/001a/MultiQC/multiqc_report.html, /srv/results/11-03-2026/001a/MLST/mlst.tsv, /srv/results/11-03-2026/001a/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001a/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001a/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001a/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001a/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001a/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001a/ID_Skani/skani.tsv, /srv/results/11-03-2026/001a/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001a/pipeline_summary.html
+    jobid: 233
+    reason: Input files updated by another job: /srv/results/11-03-2026/001a/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/001a
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:32 2026]
+Finished jobid: 233 (Rule: report)
+37 of 148 steps (25%) done
+Execute 1 jobs...
+[Fri May 29 11:51:32 2026]
+localrule report:
+    input: /srv/results/19-03-2026/001z/QC/fastp.json, /srv/results/19-03-2026/001z/QC/self_coverage.tsv, /srv/results/19-03-2026/001z/QUAST/report.html, /srv/results/19-03-2026/001z/CheckM/quality.tsv, /srv/results/19-03-2026/001z/MultiQC/multiqc_report.html, /srv/results/19-03-2026/001z/MLST/mlst.tsv, /srv/results/19-03-2026/001z/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001z/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001z/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001z/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001z/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001z/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001z/ID_Skani/skani.tsv, /srv/results/19-03-2026/001z/Kleborate/kleborate_output.tsv
+    output: /srv/results/19-03-2026/001z/pipeline_summary.html
+    jobid: 193
+    reason: Input files updated by another job: /srv/results/19-03-2026/001z/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/001z
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 193 (Rule: report)
+38 of 148 steps (26%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2f/QC/fastp.json, /srv/results/26-03-2026/2f/QC/self_coverage.tsv, /srv/results/26-03-2026/2f/QUAST/report.html, /srv/results/26-03-2026/2f/CheckM/quality.tsv, /srv/results/26-03-2026/2f/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2f/MLST/mlst.tsv, /srv/results/26-03-2026/2f/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2f/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2f/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2f/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2f/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2f/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2f/ID_Skani/skani.tsv, /srv/results/26-03-2026/2f/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2f/pipeline_summary.html
+    jobid: 69
+    reason: Input files updated by another job: /srv/results/26-03-2026/2f/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2f
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 69 (Rule: report)
+39 of 148 steps (26%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/19-03-2026/004b/QC/fastp.json, /srv/results/19-03-2026/004b/QC/self_coverage.tsv, /srv/results/19-03-2026/004b/QUAST/report.html, /srv/results/19-03-2026/004b/CheckM/quality.tsv, /srv/results/19-03-2026/004b/MultiQC/multiqc_report.html, /srv/results/19-03-2026/004b/MLST/mlst.tsv, /srv/results/19-03-2026/004b/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/004b/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/004b/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/004b/MEfinder/mefinder.tsv, /srv/results/19-03-2026/004b/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/004b/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/004b/ID_Skani/skani.tsv, /srv/results/19-03-2026/004b/Kleborate/kleborate_output.tsv, /srv/results/19-03-2026/004b/ECTyper/ectyper.tsv
+    output: /srv/results/19-03-2026/004b/pipeline_summary.html
+    jobid: 177
+    reason: Input files updated by another job: /srv/results/19-03-2026/004b/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/004b
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 177 (Rule: report)
+40 of 148 steps (27%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/30-04-2026/3q/QC/fastp.json, /srv/results/30-04-2026/3q/QC/self_coverage.tsv, /srv/results/30-04-2026/3q/QUAST/report.html, /srv/results/30-04-2026/3q/CheckM/quality.tsv, /srv/results/30-04-2026/3q/MultiQC/multiqc_report.html, /srv/results/30-04-2026/3q/MLST/mlst.tsv, /srv/results/30-04-2026/3q/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3q/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3q/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3q/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3q/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3q/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3q/ID_Skani/skani.tsv, /srv/results/30-04-2026/3q/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/30-04-2026/3q/pipeline_summary.html
+    jobid: 129
+    reason: Input files updated by another job: /srv/results/30-04-2026/3q/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/3q
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 129 (Rule: report)
+41 of 148 steps (28%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/30-04-2026/3u/QC/fastp.json, /srv/results/30-04-2026/3u/QC/self_coverage.tsv, /srv/results/30-04-2026/3u/QUAST/report.html, /srv/results/30-04-2026/3u/CheckM/quality.tsv, /srv/results/30-04-2026/3u/MultiQC/multiqc_report.html, /srv/results/30-04-2026/3u/MLST/mlst.tsv, /srv/results/30-04-2026/3u/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3u/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3u/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3u/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3u/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3u/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3u/ID_Skani/skani.tsv, /srv/results/30-04-2026/3u/Kleborate/kleborate_output.tsv
+    output: /srv/results/30-04-2026/3u/pipeline_summary.html
+    jobid: 161
+    reason: Input files updated by another job: /srv/results/30-04-2026/3u/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/3u
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 161 (Rule: report)
+42 of 148 steps (28%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/3g/QC/fastp.json, /srv/results/22-04-2026/3g/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/3g/QC/fastp.json, /srv/results/22-04-2026/3g/QC/self_coverage.tsv, /srv/results/22-04-2026/3g/QUAST/report.html, /srv/results/22-04-2026/3g/CheckM/quality.tsv, /srv/results/22-04-2026/3g/MLST/mlst.tsv, /srv/results/22-04-2026/3g/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3g/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3g/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3g/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3g/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3g/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3g/ID_Skani/skani.tsv, /srv/results/22-04-2026/3g/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3g/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/3g/logs/multiqc.log
+    jobid: 413
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/3g
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 485 (Rule: multiqc)
+43 of 148 steps (29%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/001y/QC/fastp.json, /srv/results/19-03-2026/001y/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/001y/QC/fastp.json, /srv/results/19-03-2026/001y/QC/self_coverage.tsv, /srv/results/19-03-2026/001y/QUAST/report.html, /srv/results/19-03-2026/001y/CheckM/quality.tsv, /srv/results/19-03-2026/001y/MLST/mlst.tsv, /srv/results/19-03-2026/001y/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001y/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001y/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001y/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001y/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001y/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001y/ID_Skani/skani.tsv
+    output: /srv/results/19-03-2026/001y/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/001y/logs/multiqc.log
+    jobid: 857
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/001y
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 437 (Rule: multiqc)
+44 of 148 steps (30%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/2h/QC/fastp.json, /srv/results/22-04-2026/2h/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/2h/QC/fastp.json, /srv/results/22-04-2026/2h/QC/self_coverage.tsv, /srv/results/22-04-2026/2h/QUAST/report.html, /srv/results/22-04-2026/2h/CheckM/quality.tsv, /srv/results/22-04-2026/2h/MLST/mlst.tsv, /srv/results/22-04-2026/2h/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/2h/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/2h/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/2h/MEfinder/mefinder.tsv, /srv/results/22-04-2026/2h/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/2h/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/2h/ID_Skani/skani.tsv, /srv/results/22-04-2026/2h/Kleborate/kleborate_output.tsv, /srv/results/22-04-2026/2h/ECTyper/ectyper.tsv
+    output: /srv/results/22-04-2026/2h/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/2h/logs/multiqc.log
+    jobid: 376
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/2h
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 533 (Rule: multiqc)
+45 of 148 steps (30%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2b/QC/fastp.json, /srv/results/26-03-2026/2b/QC/self_coverage.tsv, /srv/results/26-03-2026/2b/QUAST/report.html, /srv/results/26-03-2026/2b/CheckM/quality.tsv, /srv/results/26-03-2026/2b/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2b/MLST/mlst.tsv, /srv/results/26-03-2026/2b/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2b/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2b/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2b/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2b/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2b/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2b/ID_Skani/skani.tsv
+    output: /srv/results/26-03-2026/2b/pipeline_summary.html
+    jobid: 65
+    reason: Input files updated by another job: /srv/results/26-03-2026/2b/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2b
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 978 (Rule: multiqc)
+46 of 148 steps (31%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/27-05-2026/3xous/QC/fastp.json, /srv/results/27-05-2026/3xous/QC/self_coverage.tsv, /srv/results/27-05-2026/3xous/QUAST/report.html, /srv/results/27-05-2026/3xous/CheckM/quality.tsv, /srv/results/27-05-2026/3xous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3xous/MLST/mlst.tsv, /srv/results/27-05-2026/3xous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3xous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3xous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3xous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3xous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3xous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3xous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3xous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3xous/pipeline_summary.html
+    jobid: 213
+    reason: Input files updated by another job: /srv/results/27-05-2026/3xous/MultiQC/multiqc_report.html
+    wildcards: sample=27-05-2026/3xous
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:33 2026]
+Finished jobid: 65 (Rule: report)
+47 of 148 steps (32%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/05-03-2026/001k/QC/fastp.json, /srv/results/05-03-2026/001k/QC/self_coverage.tsv, /srv/results/05-03-2026/001k/QUAST/report.html, /srv/results/05-03-2026/001k/CheckM/quality.tsv, /srv/results/05-03-2026/001k/MultiQC/multiqc_report.html, /srv/results/05-03-2026/001k/MLST/mlst.tsv, /srv/results/05-03-2026/001k/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001k/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001k/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001k/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001k/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001k/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001k/ID_Skani/skani.tsv, /srv/results/05-03-2026/001k/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001k/pipeline_summary.html
+    jobid: 57
+    reason: Input files updated by another job: /srv/results/05-03-2026/001k/MultiQC/multiqc_report.html
+    wildcards: sample=05-03-2026/001k
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:33 2026]
+Finished jobid: 389 (Rule: multiqc)
+48 of 148 steps (32%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule multiqc:
+    input: /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/fastqc/R1_fastqc.html, /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/self_coverage.tsv, /srv/results/27-05-2026/3yous/QUAST/report.html, /srv/results/27-05-2026/3yous/CheckM/quality.tsv, /srv/results/27-05-2026/3yous/MLST/mlst.tsv, /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html
+    log: /srv/results/27-05-2026/3yous/logs/multiqc.log
+    jobid: 966
+    reason: Code has changed since last execution
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:33 2026]
+Finished jobid: 213 (Rule: report)
+49 of 148 steps (33%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/11-03-2026/001g/QC/fastp.json, /srv/results/11-03-2026/001g/QC/self_coverage.tsv, /srv/results/11-03-2026/001g/QUAST/report.html, /srv/results/11-03-2026/001g/CheckM/quality.tsv, /srv/results/11-03-2026/001g/MultiQC/multiqc_report.html, /srv/results/11-03-2026/001g/MLST/mlst.tsv, /srv/results/11-03-2026/001g/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001g/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001g/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001g/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001g/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001g/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001g/ID_Skani/skani.tsv, /srv/results/11-03-2026/001g/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001g/pipeline_summary.html
+    jobid: 225
+    reason: Input files updated by another job: /srv/results/11-03-2026/001g/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/001g
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:33 2026]
+Finished jobid: 57 (Rule: report)
+50 of 148 steps (34%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/05-03-2026/001i/QC/fastp.json, /srv/results/05-03-2026/001i/QC/self_coverage.tsv, /srv/results/05-03-2026/001i/QUAST/report.html, /srv/results/05-03-2026/001i/CheckM/quality.tsv, /srv/results/05-03-2026/001i/MultiQC/multiqc_report.html, /srv/results/05-03-2026/001i/MLST/mlst.tsv, /srv/results/05-03-2026/001i/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001i/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001i/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001i/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001i/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001i/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001i/ID_Skani/skani.tsv, /srv/results/05-03-2026/001i/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001i/pipeline_summary.html
+    jobid: 49
+    reason: Input files updated by another job: /srv/results/05-03-2026/001i/MultiQC/multiqc_report.html
+    wildcards: sample=05-03-2026/001i
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:33 2026]
+Finished jobid: 699 (Rule: multiqc)
+51 of 148 steps (34%) done
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/001t/QC/fastp.json, /srv/results/11-03-2026/001t/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/001t/QC/fastp.json, /srv/results/11-03-2026/001t/QC/self_coverage.tsv, /srv/results/11-03-2026/001t/QUAST/report.html, /srv/results/11-03-2026/001t/CheckM/quality.tsv, /srv/results/11-03-2026/001t/MLST/mlst.tsv, /srv/results/11-03-2026/001t/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001t/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001t/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001t/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001t/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001t/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001t/ID_Skani/skani.tsv, /srv/results/11-03-2026/001t/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001t/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/001t/logs/multiqc.log
+    jobid: 1134
+    reason: Code has changed since last execution
+    wildcards: sample=11-03-2026/001t
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:33 2026]
+Finished jobid: 225 (Rule: report)
+52 of 148 steps (35%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/22-04-2026/3h/QC/fastp.json, /srv/results/22-04-2026/3h/QC/self_coverage.tsv, /srv/results/22-04-2026/3h/QUAST/report.html, /srv/results/22-04-2026/3h/CheckM/quality.tsv, /srv/results/22-04-2026/3h/MultiQC/multiqc_report.html, /srv/results/22-04-2026/3h/MLST/mlst.tsv, /srv/results/22-04-2026/3h/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3h/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3h/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3h/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3h/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3h/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3h/ID_Skani/skani.tsv, /srv/results/22-04-2026/3h/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3h/pipeline_summary.html
+    jobid: 33
+    reason: Input files updated by another job: /srv/results/22-04-2026/3h/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/3h
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:33 2026]
+Finished jobid: 49 (Rule: report)
+53 of 148 steps (36%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:33 2026]
+localrule report:
+    input: /srv/results/27-05-2026/3wous/QC/fastp.json, /srv/results/27-05-2026/3wous/QC/self_coverage.tsv, /srv/results/27-05-2026/3wous/QUAST/report.html, /srv/results/27-05-2026/3wous/CheckM/quality.tsv, /srv/results/27-05-2026/3wous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3wous/MLST/mlst.tsv, /srv/results/27-05-2026/3wous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3wous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3wous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3wous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3wous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3wous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3wous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3wous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3wous/pipeline_summary.html
+    jobid: 217
+    reason: Input files updated by another job: /srv/results/27-05-2026/3wous/MultiQC/multiqc_report.html
+    wildcards: sample=27-05-2026/3wous
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:33 2026]
+Finished jobid: 1002 (Rule: multiqc)
+54 of 148 steps (36%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:34 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/001w/QC/fastp.json, /srv/results/19-03-2026/001w/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/001w/QC/fastp.json, /srv/results/19-03-2026/001w/QC/self_coverage.tsv, /srv/results/19-03-2026/001w/QUAST/report.html, /srv/results/19-03-2026/001w/CheckM/quality.tsv, /srv/results/19-03-2026/001w/MLST/mlst.tsv, /srv/results/19-03-2026/001w/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001w/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001w/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001w/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001w/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001w/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001w/ID_Skani/skani.tsv, /srv/results/19-03-2026/001w/Kleborate/kleborate_output.tsv
+    output: /srv/results/19-03-2026/001w/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/001w/logs/multiqc.log
+    jobid: 942
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/001w
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:34 2026]
+Finished jobid: 33 (Rule: report)
+55 of 148 steps (37%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:34 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2g/QC/fastp.json, /srv/results/26-03-2026/2g/QC/self_coverage.tsv, /srv/results/26-03-2026/2g/QUAST/report.html, /srv/results/26-03-2026/2g/CheckM/quality.tsv, /srv/results/26-03-2026/2g/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2g/MLST/mlst.tsv, /srv/results/26-03-2026/2g/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2g/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2g/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2g/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2g/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2g/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2g/ID_Skani/skani.tsv, /srv/results/26-03-2026/2g/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2g/pipeline_summary.html
+    jobid: 85
+    reason: Input files updated by another job: /srv/results/26-03-2026/2g/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2g
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:34 2026]
+Finished jobid: 401 (Rule: multiqc)
+56 of 148 steps (38%) done
+[Fri May 29 11:51:34 2026]
+Finished jobid: 217 (Rule: report)
+57 of 148 steps (39%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:34 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/001ptl/QC/fastp.json, /srv/results/11-03-2026/001ptl/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/001ptl/QC/fastp.json, /srv/results/11-03-2026/001ptl/QC/self_coverage.tsv, /srv/results/11-03-2026/001ptl/QUAST/report.html, /srv/results/11-03-2026/001ptl/CheckM/quality.tsv, /srv/results/11-03-2026/001ptl/MLST/mlst.tsv, /srv/results/11-03-2026/001ptl/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001ptl/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001ptl/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001ptl/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001ptl/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001ptl/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001ptl/ID_Skani/skani.tsv, /srv/results/11-03-2026/001ptl/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001ptl/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/001ptl/logs/multiqc.log
+    jobid: 1026
+    reason: Code has changed since last execution
+    wildcards: sample=11-03-2026/001ptl
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:34 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/3o/QC/fastp.json, /srv/results/22-04-2026/3o/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/3o/QC/fastp.json, /srv/results/22-04-2026/3o/QC/self_coverage.tsv, /srv/results/22-04-2026/3o/QUAST/report.html, /srv/results/22-04-2026/3o/CheckM/quality.tsv, /srv/results/22-04-2026/3o/MLST/mlst.tsv, /srv/results/22-04-2026/3o/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3o/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3o/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3o/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3o/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3o/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3o/ID_Skani/skani.tsv, /srv/results/22-04-2026/3o/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/22-04-2026/3o/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/3o/logs/multiqc.log
+    jobid: 352
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/3o
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:34 2026]
+Finished jobid: 85 (Rule: report)
+58 of 148 steps (39%) done
+Execute 1 jobs...
+[Fri May 29 11:51:34 2026]
+localrule report:
+    input: /srv/results/30-04-2026/2j/QC/fastp.json, /srv/results/30-04-2026/2j/QC/self_coverage.tsv, /srv/results/30-04-2026/2j/QUAST/report.html, /srv/results/30-04-2026/2j/CheckM/quality.tsv, /srv/results/30-04-2026/2j/MultiQC/multiqc_report.html, /srv/results/30-04-2026/2j/MLST/mlst.tsv, /srv/results/30-04-2026/2j/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/2j/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/2j/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/2j/MEfinder/mefinder.tsv, /srv/results/30-04-2026/2j/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/2j/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/2j/ID_Skani/skani.tsv, /srv/results/30-04-2026/2j/Kleborate/kleborate_output.tsv, /srv/results/30-04-2026/2j/ECTyper/ectyper.tsv
+    output: /srv/results/30-04-2026/2j/pipeline_summary.html
+    jobid: 149
+    reason: Input files updated by another job: /srv/results/30-04-2026/2j/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/2j
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:34 2026]
+Finished jobid: 149 (Rule: report)
+59 of 148 steps (40%) done
+Execute 1 jobs...
+[Fri May 29 11:51:34 2026]
+localrule report:
+    input: /srv/results/11-03-2026/001p/QC/fastp.json, /srv/results/11-03-2026/001p/QC/self_coverage.tsv, /srv/results/11-03-2026/001p/QUAST/report.html, /srv/results/11-03-2026/001p/CheckM/quality.tsv, /srv/results/11-03-2026/001p/MultiQC/multiqc_report.html, /srv/results/11-03-2026/001p/MLST/mlst.tsv, /srv/results/11-03-2026/001p/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001p/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001p/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001p/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001p/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001p/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001p/ID_Skani/skani.tsv, /srv/results/11-03-2026/001p/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001p/pipeline_summary.html
+    jobid: 221
+    reason: Input files updated by another job: /srv/results/11-03-2026/001p/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/001p
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:34 2026]
+Finished jobid: 221 (Rule: report)
+60 of 148 steps (41%) done
+Execute 1 jobs...
+[Fri May 29 11:51:34 2026]
+localrule multiqc:
+    input: /srv/results/05-03-2026/001j/QC/fastp.json, /srv/results/05-03-2026/001j/QC/fastqc/R1_fastqc.html, /srv/results/05-03-2026/001j/QC/fastp.json, /srv/results/05-03-2026/001j/QC/self_coverage.tsv, /srv/results/05-03-2026/001j/QUAST/report.html, /srv/results/05-03-2026/001j/CheckM/quality.tsv, /srv/results/05-03-2026/001j/MLST/mlst.tsv, /srv/results/05-03-2026/001j/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001j/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001j/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001j/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001j/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001j/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001j/ID_Skani/skani.tsv, /srv/results/05-03-2026/001j/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001j/MultiQC/multiqc_report.html
+    log: /srv/results/05-03-2026/001j/logs/multiqc.log
+    jobid: 449
+    reason: Code has changed since last execution
+    wildcards: sample=05-03-2026/001j
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:34 2026]
+Finished jobid: 687 (Rule: multiqc)
+61 of 148 steps (41%) done
+Execute 1 jobs...
+[Fri May 29 11:51:34 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2w/QC/fastp.json, /srv/results/26-03-2026/2w/QC/self_coverage.tsv, /srv/results/26-03-2026/2w/QUAST/report.html, /srv/results/26-03-2026/2w/CheckM/quality.tsv, /srv/results/26-03-2026/2w/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2w/MLST/mlst.tsv, /srv/results/26-03-2026/2w/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2w/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2w/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2w/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2w/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2w/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2w/ID_Skani/skani.tsv, /srv/results/26-03-2026/2w/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/2w/pipeline_summary.html
+    jobid: 117
+    reason: Input files updated by another job: /srv/results/26-03-2026/2w/LRE-Finder/lre.res, /srv/results/26-03-2026/2w/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2w
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:34 2026]
+Finished jobid: 1122 (Rule: multiqc)
+62 of 148 steps (42%) done
+Execute 1 jobs...
+[Fri May 29 11:51:34 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/2k/QC/fastp.json, /srv/results/30-04-2026/2k/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/2k/QC/fastp.json, /srv/results/30-04-2026/2k/QC/self_coverage.tsv, /srv/results/30-04-2026/2k/QUAST/report.html, /srv/results/30-04-2026/2k/CheckM/quality.tsv, /srv/results/30-04-2026/2k/MLST/mlst.tsv, /srv/results/30-04-2026/2k/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/2k/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/2k/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/2k/MEfinder/mefinder.tsv, /srv/results/30-04-2026/2k/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/2k/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/2k/ID_Skani/skani.tsv, /srv/results/30-04-2026/2k/Kleborate/kleborate_output.tsv, /srv/results/30-04-2026/2k/ECTyper/ectyper.tsv
+    output: /srv/results/30-04-2026/2k/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/2k/logs/multiqc.log
+    jobid: 807
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/2k
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:34 2026]
+Finished jobid: 117 (Rule: report)
+63 of 148 steps (43%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/3t/QC/fastp.json, /srv/results/30-04-2026/3t/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/3t/QC/fastp.json, /srv/results/30-04-2026/3t/QC/self_coverage.tsv, /srv/results/30-04-2026/3t/QUAST/report.html, /srv/results/30-04-2026/3t/CheckM/quality.tsv, /srv/results/30-04-2026/3t/MLST/mlst.tsv, /srv/results/30-04-2026/3t/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3t/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3t/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3t/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3t/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3t/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3t/ID_Skani/skani.tsv
+    output: /srv/results/30-04-2026/3t/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/3t/logs/multiqc.log
+    jobid: 796
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/3t
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:35 2026]
+Finished jobid: 1110 (Rule: multiqc)
+64 of 148 steps (43%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule multiqc:
+    input: /srv/results/05-03-2026/001v/QC/fastp.json, /srv/results/05-03-2026/001v/QC/fastqc/R1_fastqc.html, /srv/results/05-03-2026/001v/QC/fastp.json, /srv/results/05-03-2026/001v/QC/self_coverage.tsv, /srv/results/05-03-2026/001v/QUAST/report.html, /srv/results/05-03-2026/001v/CheckM/quality.tsv, /srv/results/05-03-2026/001v/MLST/mlst.tsv, /srv/results/05-03-2026/001v/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001v/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001v/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001v/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001v/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001v/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001v/ID_Skani/skani.tsv, /srv/results/05-03-2026/001v/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001v/MultiQC/multiqc_report.html
+    log: /srv/results/05-03-2026/001v/logs/multiqc.log
+    jobid: 497
+    reason: Code has changed since last execution
+    wildcards: sample=05-03-2026/001v
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:35 2026]
+Finished jobid: 364 (Rule: multiqc)
+65 of 148 steps (44%) done
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule report:
+    input: /srv/results/22-04-2026/3k/QC/fastp.json, /srv/results/22-04-2026/3k/QC/self_coverage.tsv, /srv/results/22-04-2026/3k/QUAST/report.html, /srv/results/22-04-2026/3k/CheckM/quality.tsv, /srv/results/22-04-2026/3k/MultiQC/multiqc_report.html, /srv/results/22-04-2026/3k/MLST/mlst.tsv, /srv/results/22-04-2026/3k/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3k/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3k/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3k/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3k/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3k/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3k/ID_Skani/skani.tsv, /srv/results/22-04-2026/3k/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3k/pipeline_summary.html
+    jobid: 21
+    reason: Input files updated by another job: /srv/results/22-04-2026/3k/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/3k
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:35 2026]
+Finished jobid: 21 (Rule: report)
+66 of 148 steps (45%) done
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2d/QC/fastp.json, /srv/results/26-03-2026/2d/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2d/QC/fastp.json, /srv/results/26-03-2026/2d/QC/self_coverage.tsv, /srv/results/26-03-2026/2d/QUAST/report.html, /srv/results/26-03-2026/2d/CheckM/quality.tsv, /srv/results/26-03-2026/2d/MLST/mlst.tsv, /srv/results/26-03-2026/2d/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2d/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2d/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2d/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2d/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2d/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2d/ID_Skani/skani.tsv, /srv/results/26-03-2026/2d/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2d/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2d/logs/multiqc.log
+    jobid: 556
+    reason: Code has changed since last execution
+    wildcards: sample=26-03-2026/2d
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:35 2026]
+Finished jobid: 425 (Rule: multiqc)
+67 of 148 steps (45%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule report:
+    input: /srv/results/22-04-2026/3i/QC/fastp.json, /srv/results/22-04-2026/3i/QC/self_coverage.tsv, /srv/results/22-04-2026/3i/QUAST/report.html, /srv/results/22-04-2026/3i/CheckM/quality.tsv, /srv/results/22-04-2026/3i/MultiQC/multiqc_report.html, /srv/results/22-04-2026/3i/MLST/mlst.tsv, /srv/results/22-04-2026/3i/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3i/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3i/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3i/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3i/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3i/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3i/ID_Skani/skani.tsv, /srv/results/22-04-2026/3i/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3i/pipeline_summary.html
+    jobid: 29
+    reason: Input files updated by another job: /srv/results/22-04-2026/3i/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/3i
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:35 2026]
+Finished jobid: 1050 (Rule: multiqc)
+68 of 148 steps (46%) done
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule report:
+    input: /srv/results/11-03-2026/001b/QC/fastp.json, /srv/results/11-03-2026/001b/QC/self_coverage.tsv, /srv/results/11-03-2026/001b/QUAST/report.html, /srv/results/11-03-2026/001b/CheckM/quality.tsv, /srv/results/11-03-2026/001b/MultiQC/multiqc_report.html, /srv/results/11-03-2026/001b/MLST/mlst.tsv, /srv/results/11-03-2026/001b/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001b/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001b/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001b/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001b/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001b/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001b/ID_Skani/skani.tsv, /srv/results/11-03-2026/001b/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001b/pipeline_summary.html
+    jobid: 261
+    reason: Input files updated by another job: /srv/results/11-03-2026/001b/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/001b
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:35 2026]
+Finished jobid: 29 (Rule: report)
+69 of 148 steps (47%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/3s/QC/fastp.json, /srv/results/30-04-2026/3s/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/3s/QC/fastp.json, /srv/results/30-04-2026/3s/QC/self_coverage.tsv, /srv/results/30-04-2026/3s/QUAST/report.html, /srv/results/30-04-2026/3s/CheckM/quality.tsv, /srv/results/30-04-2026/3s/MLST/mlst.tsv, /srv/results/30-04-2026/3s/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3s/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3s/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3s/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3s/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3s/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3s/ID_Skani/skani.tsv, /srv/results/30-04-2026/3s/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/30-04-2026/3s/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/3s/logs/multiqc.log
+    jobid: 735
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/3s
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:35 2026]
+Finished jobid: 261 (Rule: report)
+70 of 148 steps (47%) done
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule multiqc:
+    input: /srv/results/22-04-2026/3n/QC/fastp.json, /srv/results/22-04-2026/3n/QC/fastqc/R1_fastqc.html, /srv/results/22-04-2026/3n/QC/fastp.json, /srv/results/22-04-2026/3n/QC/self_coverage.tsv, /srv/results/22-04-2026/3n/QUAST/report.html, /srv/results/22-04-2026/3n/CheckM/quality.tsv, /srv/results/22-04-2026/3n/MLST/mlst.tsv, /srv/results/22-04-2026/3n/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3n/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3n/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3n/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3n/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3n/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3n/ID_Skani/skani.tsv, /srv/results/22-04-2026/3n/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/22-04-2026/3n/MultiQC/multiqc_report.html
+    log: /srv/results/22-04-2026/3n/logs/multiqc.log
+    jobid: 339
+    reason: Code has changed since last execution
+    wildcards: sample=22-04-2026/3n
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:35 2026]
+Finished jobid: 771 (Rule: multiqc)
+71 of 148 steps (48%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule report:
+    input: /srv/results/30-04-2026/2i/QC/fastp.json, /srv/results/30-04-2026/2i/QC/self_coverage.tsv, /srv/results/30-04-2026/2i/QUAST/report.html, /srv/results/30-04-2026/2i/CheckM/quality.tsv, /srv/results/30-04-2026/2i/MultiQC/multiqc_report.html, /srv/results/30-04-2026/2i/MLST/mlst.tsv, /srv/results/30-04-2026/2i/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/2i/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/2i/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/2i/MEfinder/mefinder.tsv, /srv/results/30-04-2026/2i/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/2i/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/2i/ID_Skani/skani.tsv, /srv/results/30-04-2026/2i/ECTyper/ectyper.tsv
+    output: /srv/results/30-04-2026/2i/pipeline_summary.html
+    jobid: 145
+    reason: Input files updated by another job: /srv/results/30-04-2026/2i/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/2i
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:35 2026]
+Finished jobid: 145 (Rule: report)
+72 of 148 steps (49%) done
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule report:
+    input: /srv/results/22-04-2026/3l/QC/fastp.json, /srv/results/22-04-2026/3l/QC/self_coverage.tsv, /srv/results/22-04-2026/3l/QUAST/report.html, /srv/results/22-04-2026/3l/CheckM/quality.tsv, /srv/results/22-04-2026/3l/MultiQC/multiqc_report.html, /srv/results/22-04-2026/3l/MLST/mlst.tsv, /srv/results/22-04-2026/3l/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3l/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3l/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3l/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3l/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3l/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3l/ID_Skani/skani.tsv, /srv/results/22-04-2026/3l/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3l/pipeline_summary.html
+    jobid: 9
+    reason: Input files updated by another job: /srv/results/22-04-2026/3l/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/3l
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:35 2026]
+Finished jobid: 9 (Rule: report)
+73 of 148 steps (49%) done
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule report:
+    input: /srv/results/05-03-2026/001o/QC/fastp.json, /srv/results/05-03-2026/001o/QC/self_coverage.tsv, /srv/results/05-03-2026/001o/QUAST/report.html, /srv/results/05-03-2026/001o/CheckM/quality.tsv, /srv/results/05-03-2026/001o/MultiQC/multiqc_report.html, /srv/results/05-03-2026/001o/MLST/mlst.tsv, /srv/results/05-03-2026/001o/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001o/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001o/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001o/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001o/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001o/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001o/ID_Skani/skani.tsv, /srv/results/05-03-2026/001o/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001o/pipeline_summary.html
+    jobid: 41
+    reason: Input files updated by another job: /srv/results/05-03-2026/001o/MultiQC/multiqc_report.html
+    wildcards: sample=05-03-2026/001o
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:35 2026]
+Finished jobid: 41 (Rule: report)
+74 of 148 steps (50%) done
+Execute 1 jobs...
+[Fri May 29 11:51:35 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/001r/QC/fastp.json, /srv/results/11-03-2026/001r/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/001r/QC/fastp.json, /srv/results/11-03-2026/001r/QC/self_coverage.tsv, /srv/results/11-03-2026/001r/QUAST/report.html, /srv/results/11-03-2026/001r/CheckM/quality.tsv, /srv/results/11-03-2026/001r/MLST/mlst.tsv, /srv/results/11-03-2026/001r/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001r/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001r/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001r/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001r/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001r/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001r/ID_Skani/skani.tsv, /srv/results/11-03-2026/001r/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001r/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/001r/logs/multiqc.log
+    jobid: 1074
+    reason: Code has changed since last execution
+    wildcards: sample=11-03-2026/001r
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 413 (Rule: multiqc)
+75 of 148 steps (51%) done
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/004a/QC/fastp.json, /srv/results/19-03-2026/004a/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/004a/QC/fastp.json, /srv/results/19-03-2026/004a/QC/self_coverage.tsv, /srv/results/19-03-2026/004a/QUAST/report.html, /srv/results/19-03-2026/004a/CheckM/quality.tsv, /srv/results/19-03-2026/004a/MLST/mlst.tsv, /srv/results/19-03-2026/004a/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/004a/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/004a/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/004a/MEfinder/mefinder.tsv, /srv/results/19-03-2026/004a/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/004a/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/004a/ID_Skani/skani.tsv, /srv/results/19-03-2026/004a/Kleborate/kleborate_output.tsv, /srv/results/19-03-2026/004a/ECTyper/ectyper.tsv
+    output: /srv/results/19-03-2026/004a/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/004a/logs/multiqc.log
+    jobid: 905
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/004a
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 857 (Rule: multiqc)
+76 of 148 steps (51%) done
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/19-03-2026/001y/QC/fastp.json, /srv/results/19-03-2026/001y/QC/self_coverage.tsv, /srv/results/19-03-2026/001y/QUAST/report.html, /srv/results/19-03-2026/001y/CheckM/quality.tsv, /srv/results/19-03-2026/001y/MultiQC/multiqc_report.html, /srv/results/19-03-2026/001y/MLST/mlst.tsv, /srv/results/19-03-2026/001y/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001y/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001y/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001y/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001y/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001y/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001y/ID_Skani/skani.tsv
+    output: /srv/results/19-03-2026/001y/pipeline_summary.html
+    jobid: 173
+    reason: Input files updated by another job: /srv/results/19-03-2026/001y/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/001y
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 173 (Rule: report)
+77 of 148 steps (52%) done
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/22-04-2026/3j/QC/fastp.json, /srv/results/22-04-2026/3j/QC/self_coverage.tsv, /srv/results/22-04-2026/3j/QUAST/report.html, /srv/results/22-04-2026/3j/CheckM/quality.tsv, /srv/results/22-04-2026/3j/MultiQC/multiqc_report.html, /srv/results/22-04-2026/3j/MLST/mlst.tsv, /srv/results/22-04-2026/3j/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3j/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3j/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3j/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3j/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3j/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3j/ID_Skani/skani.tsv, /srv/results/22-04-2026/3j/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3j/pipeline_summary.html
+    jobid: 17
+    reason: Input files updated by another job: /srv/results/22-04-2026/3j/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/3j
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 17 (Rule: report)
+78 of 148 steps (53%) done
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/22-04-2026/3g/QC/fastp.json, /srv/results/22-04-2026/3g/QC/self_coverage.tsv, /srv/results/22-04-2026/3g/QUAST/report.html, /srv/results/22-04-2026/3g/CheckM/quality.tsv, /srv/results/22-04-2026/3g/MultiQC/multiqc_report.html, /srv/results/22-04-2026/3g/MLST/mlst.tsv, /srv/results/22-04-2026/3g/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3g/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3g/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3g/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3g/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3g/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3g/ID_Skani/skani.tsv, /srv/results/22-04-2026/3g/Kleborate/kleborate_output.tsv
+    output: /srv/results/22-04-2026/3g/pipeline_summary.html
+    jobid: 25
+    reason: Input files updated by another job: /srv/results/22-04-2026/3g/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/3g
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 376 (Rule: multiqc)
+79 of 148 steps (53%) done
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/22-04-2026/2h/QC/fastp.json, /srv/results/22-04-2026/2h/QC/self_coverage.tsv, /srv/results/22-04-2026/2h/QUAST/report.html, /srv/results/22-04-2026/2h/CheckM/quality.tsv, /srv/results/22-04-2026/2h/MultiQC/multiqc_report.html, /srv/results/22-04-2026/2h/MLST/mlst.tsv, /srv/results/22-04-2026/2h/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/2h/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/2h/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/2h/MEfinder/mefinder.tsv, /srv/results/22-04-2026/2h/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/2h/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/2h/ID_Skani/skani.tsv, /srv/results/22-04-2026/2h/Kleborate/kleborate_output.tsv, /srv/results/22-04-2026/2h/ECTyper/ectyper.tsv
+    output: /srv/results/22-04-2026/2h/pipeline_summary.html
+    jobid: 13
+    reason: Input files updated by another job: /srv/results/22-04-2026/2h/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/2h
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 25 (Rule: report)
+80 of 148 steps (54%) done
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2a/QC/fastp.json, /srv/results/26-03-2026/2a/QC/self_coverage.tsv, /srv/results/26-03-2026/2a/QUAST/report.html, /srv/results/26-03-2026/2a/CheckM/quality.tsv, /srv/results/26-03-2026/2a/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2a/MLST/mlst.tsv, /srv/results/26-03-2026/2a/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2a/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2a/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2a/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2a/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2a/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2a/ID_Skani/skani.tsv
+    output: /srv/results/26-03-2026/2a/pipeline_summary.html
+    jobid: 81
+    reason: Input files updated by another job: /srv/results/26-03-2026/2a/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2a
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 13 (Rule: report)
+81 of 148 steps (55%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/30-04-2026/3v/QC/fastp.json, /srv/results/30-04-2026/3v/QC/self_coverage.tsv, /srv/results/30-04-2026/3v/QUAST/report.html, /srv/results/30-04-2026/3v/CheckM/quality.tsv, /srv/results/30-04-2026/3v/MultiQC/multiqc_report.html, /srv/results/30-04-2026/3v/MLST/mlst.tsv, /srv/results/30-04-2026/3v/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3v/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3v/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3v/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3v/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3v/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3v/ID_Skani/skani.tsv, /srv/results/30-04-2026/3v/Kleborate/kleborate_output.tsv
+    output: /srv/results/30-04-2026/3v/pipeline_summary.html
+    jobid: 141
+    reason: Input files updated by another job: /srv/results/30-04-2026/3v/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/3v
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 81 (Rule: report)
+82 of 148 steps (55%) done
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/11-03-2026/002n/QC/fastp.json, /srv/results/11-03-2026/002n/QC/self_coverage.tsv, /srv/results/11-03-2026/002n/QUAST/report.html, /srv/results/11-03-2026/002n/CheckM/quality.tsv, /srv/results/11-03-2026/002n/MultiQC/multiqc_report.html, /srv/results/11-03-2026/002n/MLST/mlst.tsv, /srv/results/11-03-2026/002n/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/002n/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/002n/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/002n/MEfinder/mefinder.tsv, /srv/results/11-03-2026/002n/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/002n/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/002n/ID_Skani/skani.tsv, /srv/results/11-03-2026/002n/LRE-Finder/lre.res
+    output: /srv/results/11-03-2026/002n/pipeline_summary.html
+    jobid: 257
+    reason: Input files updated by another job: /srv/results/11-03-2026/002n/MultiQC/multiqc_report.html, /srv/results/11-03-2026/002n/LRE-Finder/lre.res
+    wildcards: sample=11-03-2026/002n
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 141 (Rule: report)
+83 of 148 steps (56%) done
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/11-03-2026/002ntl/QC/fastp.json, /srv/results/11-03-2026/002ntl/QC/self_coverage.tsv, /srv/results/11-03-2026/002ntl/QUAST/report.html, /srv/results/11-03-2026/002ntl/CheckM/quality.tsv, /srv/results/11-03-2026/002ntl/MultiQC/multiqc_report.html, /srv/results/11-03-2026/002ntl/MLST/mlst.tsv, /srv/results/11-03-2026/002ntl/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/002ntl/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/002ntl/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/002ntl/MEfinder/mefinder.tsv, /srv/results/11-03-2026/002ntl/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/002ntl/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/002ntl/ID_Skani/skani.tsv, /srv/results/11-03-2026/002ntl/LRE-Finder/lre.res
+    output: /srv/results/11-03-2026/002ntl/pipeline_summary.html
+    jobid: 249
+    reason: Input files updated by another job: /srv/results/11-03-2026/002ntl/MultiQC/multiqc_report.html, /srv/results/11-03-2026/002ntl/LRE-Finder/lre.res
+    wildcards: sample=11-03-2026/002ntl
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 942 (Rule: multiqc)
+84 of 148 steps (57%) done
+[Fri May 29 11:51:36 2026]
+Finished jobid: 966 (Rule: multiqc)
+85 of 148 steps (57%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/27-05-2026/3yous/QC/fastp.json, /srv/results/27-05-2026/3yous/QC/self_coverage.tsv, /srv/results/27-05-2026/3yous/QUAST/report.html, /srv/results/27-05-2026/3yous/CheckM/quality.tsv, /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html, /srv/results/27-05-2026/3yous/MLST/mlst.tsv, /srv/results/27-05-2026/3yous/AMRFinder/amrfinder.tsv, /srv/results/27-05-2026/3yous/MOBSuite/mobtyper.tsv, /srv/results/27-05-2026/3yous/PlasmidFinder/results_tab.tsv, /srv/results/27-05-2026/3yous/MEfinder/mefinder.tsv, /srv/results/27-05-2026/3yous/ID_Kraken2/kraken2_report.txt, /srv/results/27-05-2026/3yous/ID_Kraken2/bracken_species.txt, /srv/results/27-05-2026/3yous/ID_Skani/skani.tsv, /srv/results/27-05-2026/3yous/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/27-05-2026/3yous/pipeline_summary.html
+    jobid: 209
+    reason: Input files updated by another job: /srv/results/27-05-2026/3yous/MultiQC/multiqc_report.html
+    wildcards: sample=27-05-2026/3yous
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2c/QC/fastp.json, /srv/results/26-03-2026/2c/QC/self_coverage.tsv, /srv/results/26-03-2026/2c/QUAST/report.html, /srv/results/26-03-2026/2c/CheckM/quality.tsv, /srv/results/26-03-2026/2c/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2c/MLST/mlst.tsv, /srv/results/26-03-2026/2c/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2c/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2c/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2c/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2c/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2c/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2c/ID_Skani/skani.tsv, /srv/results/26-03-2026/2c/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2c/pipeline_summary.html
+    jobid: 121
+    reason: Input files updated by another job: /srv/results/26-03-2026/2c/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2c
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 1134 (Rule: multiqc)
+86 of 148 steps (58%) done
+[Fri May 29 11:51:36 2026]
+Finished jobid: 257 (Rule: report)
+87 of 148 steps (59%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/19-03-2026/001w/QC/fastp.json, /srv/results/19-03-2026/001w/QC/self_coverage.tsv, /srv/results/19-03-2026/001w/QUAST/report.html, /srv/results/19-03-2026/001w/CheckM/quality.tsv, /srv/results/19-03-2026/001w/MultiQC/multiqc_report.html, /srv/results/19-03-2026/001w/MLST/mlst.tsv, /srv/results/19-03-2026/001w/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001w/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001w/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001w/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001w/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001w/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001w/ID_Skani/skani.tsv, /srv/results/19-03-2026/001w/Kleborate/kleborate_output.tsv
+    output: /srv/results/19-03-2026/001w/pipeline_summary.html
+    jobid: 201
+    reason: Input files updated by another job: /srv/results/19-03-2026/001w/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/001w
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/26-03-2026/3f/QC/fastp.json, /srv/results/26-03-2026/3f/QC/self_coverage.tsv, /srv/results/26-03-2026/3f/QUAST/report.html, /srv/results/26-03-2026/3f/CheckM/quality.tsv, /srv/results/26-03-2026/3f/MultiQC/multiqc_report.html, /srv/results/26-03-2026/3f/MLST/mlst.tsv, /srv/results/26-03-2026/3f/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/3f/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/3f/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/3f/MEfinder/mefinder.tsv, /srv/results/26-03-2026/3f/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/3f/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/3f/ID_Skani/skani.tsv, /srv/results/26-03-2026/3f/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/3f/pipeline_summary.html
+    jobid: 93
+    reason: Input files updated by another job: /srv/results/26-03-2026/3f/LRE-Finder/lre.res, /srv/results/26-03-2026/3f/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/3f
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 249 (Rule: report)
+88 of 148 steps (59%) done
+[Fri May 29 11:51:36 2026]
+Finished jobid: 352 (Rule: multiqc)
+89 of 148 steps (60%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:36 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/003a/QC/fastp.json, /srv/results/19-03-2026/003a/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/003a/QC/fastp.json, /srv/results/19-03-2026/003a/QC/self_coverage.tsv, /srv/results/19-03-2026/003a/QUAST/report.html, /srv/results/19-03-2026/003a/CheckM/quality.tsv, /srv/results/19-03-2026/003a/MLST/mlst.tsv, /srv/results/19-03-2026/003a/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/003a/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/003a/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/003a/MEfinder/mefinder.tsv, /srv/results/19-03-2026/003a/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/003a/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/003a/ID_Skani/skani.tsv, /srv/results/19-03-2026/003a/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/19-03-2026/003a/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/003a/logs/multiqc.log
+    jobid: 954
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/003a
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/19-03-2026/005a/QC/fastp.json, /srv/results/19-03-2026/005a/QC/self_coverage.tsv, /srv/results/19-03-2026/005a/QUAST/report.html, /srv/results/19-03-2026/005a/CheckM/quality.tsv, /srv/results/19-03-2026/005a/MultiQC/multiqc_report.html, /srv/results/19-03-2026/005a/MLST/mlst.tsv, /srv/results/19-03-2026/005a/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/005a/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/005a/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/005a/MEfinder/mefinder.tsv, /srv/results/19-03-2026/005a/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/005a/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/005a/ID_Skani/skani.tsv, /srv/results/19-03-2026/005a/Pasty/pasty.tsv
+    output: /srv/results/19-03-2026/005a/pipeline_summary.html
+    jobid: 197
+    reason: Input files updated by another job: /srv/results/19-03-2026/005a/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/005a
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 209 (Rule: report)
+90 of 148 steps (61%) done
+[Fri May 29 11:51:36 2026]
+Finished jobid: 121 (Rule: report)
+91 of 148 steps (61%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/11-03-2026/001t/QC/fastp.json, /srv/results/11-03-2026/001t/QC/self_coverage.tsv, /srv/results/11-03-2026/001t/QUAST/report.html, /srv/results/11-03-2026/001t/CheckM/quality.tsv, /srv/results/11-03-2026/001t/MultiQC/multiqc_report.html, /srv/results/11-03-2026/001t/MLST/mlst.tsv, /srv/results/11-03-2026/001t/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001t/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001t/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001t/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001t/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001t/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001t/ID_Skani/skani.tsv, /srv/results/11-03-2026/001t/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001t/pipeline_summary.html
+    jobid: 265
+    reason: Input files updated by another job: /srv/results/11-03-2026/001t/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/001t
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/19-03-2026/003b/QC/fastp.json, /srv/results/19-03-2026/003b/QC/self_coverage.tsv, /srv/results/19-03-2026/003b/QUAST/report.html, /srv/results/19-03-2026/003b/CheckM/quality.tsv, /srv/results/19-03-2026/003b/MultiQC/multiqc_report.html, /srv/results/19-03-2026/003b/MLST/mlst.tsv, /srv/results/19-03-2026/003b/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/003b/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/003b/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/003b/MEfinder/mefinder.tsv, /srv/results/19-03-2026/003b/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/003b/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/003b/ID_Skani/skani.tsv, /srv/results/19-03-2026/003b/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/19-03-2026/003b/pipeline_summary.html
+    jobid: 181
+    reason: Input files updated by another job: /srv/results/19-03-2026/003b/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/003b
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 93 (Rule: report)
+92 of 148 steps (62%) done
+[Fri May 29 11:51:36 2026]
+Finished jobid: 201 (Rule: report)
+93 of 148 steps (63%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Fri May 29 11:51:36 2026]
+localrule multiqc:
+    input: /srv/results/05-03-2026/001n/QC/fastp.json, /srv/results/05-03-2026/001n/QC/fastqc/R1_fastqc.html, /srv/results/05-03-2026/001n/QC/fastp.json, /srv/results/05-03-2026/001n/QC/self_coverage.tsv, /srv/results/05-03-2026/001n/QUAST/report.html, /srv/results/05-03-2026/001n/CheckM/quality.tsv, /srv/results/05-03-2026/001n/MLST/mlst.tsv, /srv/results/05-03-2026/001n/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001n/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001n/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001n/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001n/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001n/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001n/ID_Skani/skani.tsv, /srv/results/05-03-2026/001n/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001n/MultiQC/multiqc_report.html
+    log: /srv/results/05-03-2026/001n/logs/multiqc.log
+    jobid: 521
+    reason: Code has changed since last execution
+    wildcards: sample=05-03-2026/001n
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+localrule multiqc:
+    input: /srv/results/19-03-2026/001wtl/QC/fastp.json, /srv/results/19-03-2026/001wtl/QC/fastqc/R1_fastqc.html, /srv/results/19-03-2026/001wtl/QC/fastp.json, /srv/results/19-03-2026/001wtl/QC/self_coverage.tsv, /srv/results/19-03-2026/001wtl/QUAST/report.html, /srv/results/19-03-2026/001wtl/CheckM/quality.tsv, /srv/results/19-03-2026/001wtl/MLST/mlst.tsv, /srv/results/19-03-2026/001wtl/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001wtl/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001wtl/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001wtl/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001wtl/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001wtl/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001wtl/ID_Skani/skani.tsv, /srv/results/19-03-2026/001wtl/Kleborate/kleborate_output.tsv
+    output: /srv/results/19-03-2026/001wtl/MultiQC/multiqc_report.html
+    log: /srv/results/19-03-2026/001wtl/logs/multiqc.log
+    jobid: 832
+    reason: Code has changed since last execution
+    wildcards: sample=19-03-2026/001wtl
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 197 (Rule: report)
+94 of 148 steps (64%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/11-03-2026/001s/QC/fastp.json, /srv/results/11-03-2026/001s/QC/self_coverage.tsv, /srv/results/11-03-2026/001s/QUAST/report.html, /srv/results/11-03-2026/001s/CheckM/quality.tsv, /srv/results/11-03-2026/001s/MultiQC/multiqc_report.html, /srv/results/11-03-2026/001s/MLST/mlst.tsv, /srv/results/11-03-2026/001s/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001s/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001s/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001s/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001s/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001s/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001s/ID_Skani/skani.tsv, /srv/results/11-03-2026/001s/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001s/pipeline_summary.html
+    jobid: 237
+    reason: Input files updated by another job: /srv/results/11-03-2026/001s/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/001s
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 1026 (Rule: multiqc)
+95 of 148 steps (64%) done
+[Fri May 29 11:51:36 2026]
+Finished jobid: 181 (Rule: report)
+96 of 148 steps (65%) done
+[Fri May 29 11:51:36 2026]
+Finished jobid: 265 (Rule: report)
+97 of 148 steps (66%) done
+Select jobs to execute...
+Execute 3 jobs...
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/11-03-2026/001ptl/QC/fastp.json, /srv/results/11-03-2026/001ptl/QC/self_coverage.tsv, /srv/results/11-03-2026/001ptl/QUAST/report.html, /srv/results/11-03-2026/001ptl/CheckM/quality.tsv, /srv/results/11-03-2026/001ptl/MultiQC/multiqc_report.html, /srv/results/11-03-2026/001ptl/MLST/mlst.tsv, /srv/results/11-03-2026/001ptl/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001ptl/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001ptl/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001ptl/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001ptl/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001ptl/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001ptl/ID_Skani/skani.tsv, /srv/results/11-03-2026/001ptl/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001ptl/pipeline_summary.html
+    jobid: 229
+    reason: Input files updated by another job: /srv/results/11-03-2026/001ptl/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/001ptl
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/3r/QC/fastp.json, /srv/results/30-04-2026/3r/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/3r/QC/fastp.json, /srv/results/30-04-2026/3r/QC/self_coverage.tsv, /srv/results/30-04-2026/3r/QUAST/report.html, /srv/results/30-04-2026/3r/CheckM/quality.tsv, /srv/results/30-04-2026/3r/MLST/mlst.tsv, /srv/results/30-04-2026/3r/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3r/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3r/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3r/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3r/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3r/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3r/ID_Skani/skani.tsv, /srv/results/30-04-2026/3r/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/30-04-2026/3r/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/3r/logs/multiqc.log
+    jobid: 711
+    reason: Code has changed since last execution
+    wildcards: sample=30-04-2026/3r
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+localrule report:
+    input: /srv/results/22-04-2026/3o/QC/fastp.json, /srv/results/22-04-2026/3o/QC/self_coverage.tsv, /srv/results/22-04-2026/3o/QUAST/report.html, /srv/results/22-04-2026/3o/CheckM/quality.tsv, /srv/results/22-04-2026/3o/MultiQC/multiqc_report.html, /srv/results/22-04-2026/3o/MLST/mlst.tsv, /srv/results/22-04-2026/3o/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3o/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3o/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3o/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3o/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3o/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3o/ID_Skani/skani.tsv, /srv/results/22-04-2026/3o/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/22-04-2026/3o/pipeline_summary.html
+    jobid: 5
+    reason: Input files updated by another job: /srv/results/22-04-2026/3o/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/3o
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:36 2026]
+Finished jobid: 237 (Rule: report)
+98 of 148 steps (66%) done
+Select jobs to execute...
+[Fri May 29 11:51:36 2026]
+Finished jobid: 229 (Rule: report)
+99 of 148 steps (67%) done
+[Fri May 29 11:51:36 2026]
+Finished jobid: 5 (Rule: report)
+100 of 148 steps (68%) done
+[Fri May 29 11:51:37 2026]
+Finished jobid: 449 (Rule: multiqc)
+101 of 148 steps (68%) done
+Execute 1 jobs...
+[Fri May 29 11:51:37 2026]
+localrule report:
+    input: /srv/results/05-03-2026/001j/QC/fastp.json, /srv/results/05-03-2026/001j/QC/self_coverage.tsv, /srv/results/05-03-2026/001j/QUAST/report.html, /srv/results/05-03-2026/001j/CheckM/quality.tsv, /srv/results/05-03-2026/001j/MultiQC/multiqc_report.html, /srv/results/05-03-2026/001j/MLST/mlst.tsv, /srv/results/05-03-2026/001j/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001j/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001j/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001j/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001j/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001j/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001j/ID_Skani/skani.tsv, /srv/results/05-03-2026/001j/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001j/pipeline_summary.html
+    jobid: 37
+    reason: Input files updated by another job: /srv/results/05-03-2026/001j/MultiQC/multiqc_report.html
+    wildcards: sample=05-03-2026/001j
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:37 2026]
+Finished jobid: 37 (Rule: report)
+102 of 148 steps (69%) done
+[Fri May 29 11:51:37 2026]
+Finished jobid: 796 (Rule: multiqc)
+103 of 148 steps (70%) done
+Execute 1 jobs...
+[Fri May 29 11:51:37 2026]
+localrule report:
+    input: /srv/results/30-04-2026/3t/QC/fastp.json, /srv/results/30-04-2026/3t/QC/self_coverage.tsv, /srv/results/30-04-2026/3t/QUAST/report.html, /srv/results/30-04-2026/3t/CheckM/quality.tsv, /srv/results/30-04-2026/3t/MultiQC/multiqc_report.html, /srv/results/30-04-2026/3t/MLST/mlst.tsv, /srv/results/30-04-2026/3t/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3t/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3t/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3t/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3t/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3t/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3t/ID_Skani/skani.tsv
+    output: /srv/results/30-04-2026/3t/pipeline_summary.html
+    jobid: 153
+    reason: Input files updated by another job: /srv/results/30-04-2026/3t/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/3t
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:37 2026]
+Finished jobid: 807 (Rule: multiqc)
+104 of 148 steps (70%) done
+Execute 1 jobs...
+[Fri May 29 11:51:37 2026]
+localrule report:
+    input: /srv/results/30-04-2026/2k/QC/fastp.json, /srv/results/30-04-2026/2k/QC/self_coverage.tsv, /srv/results/30-04-2026/2k/QUAST/report.html, /srv/results/30-04-2026/2k/CheckM/quality.tsv, /srv/results/30-04-2026/2k/MultiQC/multiqc_report.html, /srv/results/30-04-2026/2k/MLST/mlst.tsv, /srv/results/30-04-2026/2k/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/2k/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/2k/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/2k/MEfinder/mefinder.tsv, /srv/results/30-04-2026/2k/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/2k/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/2k/ID_Skani/skani.tsv, /srv/results/30-04-2026/2k/Kleborate/kleborate_output.tsv, /srv/results/30-04-2026/2k/ECTyper/ectyper.tsv
+    output: /srv/results/30-04-2026/2k/pipeline_summary.html
+    jobid: 157
+    reason: Input files updated by another job: /srv/results/30-04-2026/2k/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/2k
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:37 2026]
+Finished jobid: 497 (Rule: multiqc)
+105 of 148 steps (71%) done
+[Fri May 29 11:51:37 2026]
+Finished jobid: 153 (Rule: report)
+106 of 148 steps (72%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:37 2026]
+localrule report:
+    input: /srv/results/05-03-2026/001v/QC/fastp.json, /srv/results/05-03-2026/001v/QC/self_coverage.tsv, /srv/results/05-03-2026/001v/QUAST/report.html, /srv/results/05-03-2026/001v/CheckM/quality.tsv, /srv/results/05-03-2026/001v/MultiQC/multiqc_report.html, /srv/results/05-03-2026/001v/MLST/mlst.tsv, /srv/results/05-03-2026/001v/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001v/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001v/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001v/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001v/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001v/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001v/ID_Skani/skani.tsv, /srv/results/05-03-2026/001v/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001v/pipeline_summary.html
+    jobid: 53
+    reason: Input files updated by another job: /srv/results/05-03-2026/001v/MultiQC/multiqc_report.html
+    wildcards: sample=05-03-2026/001v
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:37 2026]
+Finished jobid: 157 (Rule: report)
+107 of 148 steps (72%) done
+[Fri May 29 11:51:37 2026]
+Finished jobid: 53 (Rule: report)
+108 of 148 steps (73%) done
+[Fri May 29 11:51:37 2026]
+Finished jobid: 556 (Rule: multiqc)
+109 of 148 steps (74%) done
+Execute 1 jobs...
+[Fri May 29 11:51:37 2026]
+localrule lrefinder:
+    input: /srv/results/26-03-2026/3c/Trimmed/R1.fastq.gz, /srv/results/26-03-2026/3c/Trimmed/R2.fastq.gz
+    output: /srv/results/26-03-2026/3c/LRE-Finder/lre.res
+    log: /srv/results/26-03-2026/3c/logs/lrefinder.log
+    jobid: 611
+    reason: Missing output files: /srv/results/26-03-2026/3c/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/3c
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:37 2026]
+Finished jobid: 339 (Rule: multiqc)
+110 of 148 steps (74%) done
+Execute 1 jobs...
+[Fri May 29 11:51:37 2026]
+localrule report:
+    input: /srv/results/22-04-2026/3n/QC/fastp.json, /srv/results/22-04-2026/3n/QC/self_coverage.tsv, /srv/results/22-04-2026/3n/QUAST/report.html, /srv/results/22-04-2026/3n/CheckM/quality.tsv, /srv/results/22-04-2026/3n/MultiQC/multiqc_report.html, /srv/results/22-04-2026/3n/MLST/mlst.tsv, /srv/results/22-04-2026/3n/AMRFinder/amrfinder.tsv, /srv/results/22-04-2026/3n/MOBSuite/mobtyper.tsv, /srv/results/22-04-2026/3n/PlasmidFinder/results_tab.tsv, /srv/results/22-04-2026/3n/MEfinder/mefinder.tsv, /srv/results/22-04-2026/3n/ID_Kraken2/kraken2_report.txt, /srv/results/22-04-2026/3n/ID_Kraken2/bracken_species.txt, /srv/results/22-04-2026/3n/ID_Skani/skani.tsv, /srv/results/22-04-2026/3n/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/22-04-2026/3n/pipeline_summary.html
+    jobid: 1
+    reason: Input files updated by another job: /srv/results/22-04-2026/3n/MultiQC/multiqc_report.html
+    wildcards: sample=22-04-2026/3n
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:37 2026]
+Finished jobid: 735 (Rule: multiqc)
+111 of 148 steps (75%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:37 2026]
+localrule report:
+    input: /srv/results/30-04-2026/3s/QC/fastp.json, /srv/results/30-04-2026/3s/QC/self_coverage.tsv, /srv/results/30-04-2026/3s/QUAST/report.html, /srv/results/30-04-2026/3s/CheckM/quality.tsv, /srv/results/30-04-2026/3s/MultiQC/multiqc_report.html, /srv/results/30-04-2026/3s/MLST/mlst.tsv, /srv/results/30-04-2026/3s/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3s/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3s/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3s/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3s/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3s/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3s/ID_Skani/skani.tsv, /srv/results/30-04-2026/3s/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/30-04-2026/3s/pipeline_summary.html
+    jobid: 133
+    reason: Input files updated by another job: /srv/results/30-04-2026/3s/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/3s
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:37 2026]
+Finished jobid: 1 (Rule: report)
+112 of 148 steps (76%) done
+Execute 1 jobs...
+[Fri May 29 11:51:38 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2d/QC/fastp.json, /srv/results/26-03-2026/2d/QC/self_coverage.tsv, /srv/results/26-03-2026/2d/QUAST/report.html, /srv/results/26-03-2026/2d/CheckM/quality.tsv, /srv/results/26-03-2026/2d/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2d/MLST/mlst.tsv, /srv/results/26-03-2026/2d/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2d/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2d/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2d/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2d/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2d/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2d/ID_Skani/skani.tsv, /srv/results/26-03-2026/2d/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/26-03-2026/2d/pipeline_summary.html
+    jobid: 73
+    reason: Input files updated by another job: /srv/results/26-03-2026/2d/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2d
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:38 2026]
+Finished jobid: 133 (Rule: report)
+113 of 148 steps (76%) done
+Select jobs to execute...
+[Fri May 29 11:51:38 2026]
+Finished jobid: 73 (Rule: report)
+114 of 148 steps (77%) done
+[Fri May 29 11:51:38 2026]
+Finished jobid: 1074 (Rule: multiqc)
+115 of 148 steps (78%) done
+Execute 1 jobs...
+[Fri May 29 11:51:38 2026]
+localrule report:
+    input: /srv/results/11-03-2026/001r/QC/fastp.json, /srv/results/11-03-2026/001r/QC/self_coverage.tsv, /srv/results/11-03-2026/001r/QUAST/report.html, /srv/results/11-03-2026/001r/CheckM/quality.tsv, /srv/results/11-03-2026/001r/MultiQC/multiqc_report.html, /srv/results/11-03-2026/001r/MLST/mlst.tsv, /srv/results/11-03-2026/001r/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/001r/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/001r/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/001r/MEfinder/mefinder.tsv, /srv/results/11-03-2026/001r/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/001r/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/001r/ID_Skani/skani.tsv, /srv/results/11-03-2026/001r/Kleborate/kleborate_output.tsv
+    output: /srv/results/11-03-2026/001r/pipeline_summary.html
+    jobid: 245
+    reason: Input files updated by another job: /srv/results/11-03-2026/001r/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/001r
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:38 2026]
+Finished jobid: 245 (Rule: report)
+116 of 148 steps (78%) done
+[Fri May 29 11:51:38 2026]
+Finished jobid: 905 (Rule: multiqc)
+117 of 148 steps (79%) done
+Execute 1 jobs...
+[Fri May 29 11:51:38 2026]
+localrule report:
+    input: /srv/results/19-03-2026/004a/QC/fastp.json, /srv/results/19-03-2026/004a/QC/self_coverage.tsv, /srv/results/19-03-2026/004a/QUAST/report.html, /srv/results/19-03-2026/004a/CheckM/quality.tsv, /srv/results/19-03-2026/004a/MultiQC/multiqc_report.html, /srv/results/19-03-2026/004a/MLST/mlst.tsv, /srv/results/19-03-2026/004a/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/004a/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/004a/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/004a/MEfinder/mefinder.tsv, /srv/results/19-03-2026/004a/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/004a/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/004a/ID_Skani/skani.tsv, /srv/results/19-03-2026/004a/Kleborate/kleborate_output.tsv, /srv/results/19-03-2026/004a/ECTyper/ectyper.tsv
+    output: /srv/results/19-03-2026/004a/pipeline_summary.html
+    jobid: 189
+    reason: Input files updated by another job: /srv/results/19-03-2026/004a/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/004a
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:38 2026]
+Finished jobid: 189 (Rule: report)
+118 of 148 steps (80%) done
+[Fri May 29 11:51:38 2026]
+Finished jobid: 611 (Rule: lrefinder)
+119 of 148 steps (80%) done
+Execute 2 jobs...
+[Fri May 29 11:51:38 2026]
+localrule lrefinder:
+    input: /srv/results/26-03-2026/2x/Trimmed/R1.fastq.gz, /srv/results/26-03-2026/2x/Trimmed/R2.fastq.gz
+    output: /srv/results/26-03-2026/2x/LRE-Finder/lre.res
+    log: /srv/results/26-03-2026/2x/logs/lrefinder.log
+    jobid: 635
+    reason: Missing output files: /srv/results/26-03-2026/2x/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/2x
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:38 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/3c/QC/fastp.json, /srv/results/26-03-2026/3c/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/3c/QC/fastp.json, /srv/results/26-03-2026/3c/QC/self_coverage.tsv, /srv/results/26-03-2026/3c/QUAST/report.html, /srv/results/26-03-2026/3c/CheckM/quality.tsv, /srv/results/26-03-2026/3c/MLST/mlst.tsv, /srv/results/26-03-2026/3c/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/3c/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/3c/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/3c/MEfinder/mefinder.tsv, /srv/results/26-03-2026/3c/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/3c/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/3c/ID_Skani/skani.tsv, /srv/results/26-03-2026/3c/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/3c/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/3c/logs/multiqc.log
+    jobid: 603
+    reason: Input files updated by another job: /srv/results/26-03-2026/3c/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=26-03-2026/3c
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:39 2026]
+Finished jobid: 954 (Rule: multiqc)
+120 of 148 steps (81%) done
+Execute 1 jobs...
+[Fri May 29 11:51:39 2026]
+localrule report:
+    input: /srv/results/19-03-2026/003a/QC/fastp.json, /srv/results/19-03-2026/003a/QC/self_coverage.tsv, /srv/results/19-03-2026/003a/QUAST/report.html, /srv/results/19-03-2026/003a/CheckM/quality.tsv, /srv/results/19-03-2026/003a/MultiQC/multiqc_report.html, /srv/results/19-03-2026/003a/MLST/mlst.tsv, /srv/results/19-03-2026/003a/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/003a/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/003a/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/003a/MEfinder/mefinder.tsv, /srv/results/19-03-2026/003a/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/003a/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/003a/ID_Skani/skani.tsv, /srv/results/19-03-2026/003a/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/19-03-2026/003a/pipeline_summary.html
+    jobid: 205
+    reason: Input files updated by another job: /srv/results/19-03-2026/003a/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/003a
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:39 2026]
+Finished jobid: 205 (Rule: report)
+121 of 148 steps (82%) done
+[Fri May 29 11:51:39 2026]
+Finished jobid: 521 (Rule: multiqc)
+122 of 148 steps (82%) done
+Execute 1 jobs...
+[Fri May 29 11:51:39 2026]
+localrule report:
+    input: /srv/results/05-03-2026/001n/QC/fastp.json, /srv/results/05-03-2026/001n/QC/self_coverage.tsv, /srv/results/05-03-2026/001n/QUAST/report.html, /srv/results/05-03-2026/001n/CheckM/quality.tsv, /srv/results/05-03-2026/001n/MultiQC/multiqc_report.html, /srv/results/05-03-2026/001n/MLST/mlst.tsv, /srv/results/05-03-2026/001n/AMRFinder/amrfinder.tsv, /srv/results/05-03-2026/001n/MOBSuite/mobtyper.tsv, /srv/results/05-03-2026/001n/PlasmidFinder/results_tab.tsv, /srv/results/05-03-2026/001n/MEfinder/mefinder.tsv, /srv/results/05-03-2026/001n/ID_Kraken2/kraken2_report.txt, /srv/results/05-03-2026/001n/ID_Kraken2/bracken_species.txt, /srv/results/05-03-2026/001n/ID_Skani/skani.tsv, /srv/results/05-03-2026/001n/Kleborate/kleborate_output.tsv
+    output: /srv/results/05-03-2026/001n/pipeline_summary.html
+    jobid: 61
+    reason: Input files updated by another job: /srv/results/05-03-2026/001n/MultiQC/multiqc_report.html
+    wildcards: sample=05-03-2026/001n
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:39 2026]
+Finished jobid: 711 (Rule: multiqc)
+123 of 148 steps (83%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:39 2026]
+localrule report:
+    input: /srv/results/30-04-2026/3r/QC/fastp.json, /srv/results/30-04-2026/3r/QC/self_coverage.tsv, /srv/results/30-04-2026/3r/QUAST/report.html, /srv/results/30-04-2026/3r/CheckM/quality.tsv, /srv/results/30-04-2026/3r/MultiQC/multiqc_report.html, /srv/results/30-04-2026/3r/MLST/mlst.tsv, /srv/results/30-04-2026/3r/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/3r/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/3r/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/3r/MEfinder/mefinder.tsv, /srv/results/30-04-2026/3r/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/3r/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/3r/ID_Skani/skani.tsv, /srv/results/30-04-2026/3r/Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv
+    output: /srv/results/30-04-2026/3r/pipeline_summary.html
+    jobid: 125
+    reason: Input files updated by another job: /srv/results/30-04-2026/3r/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/3r
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:39 2026]
+Finished jobid: 61 (Rule: report)
+124 of 148 steps (84%) done
+[Fri May 29 11:51:39 2026]
+Finished jobid: 832 (Rule: multiqc)
+125 of 148 steps (84%) done
+Execute 1 jobs...
+[Fri May 29 11:51:39 2026]
+localrule report:
+    input: /srv/results/19-03-2026/001wtl/QC/fastp.json, /srv/results/19-03-2026/001wtl/QC/self_coverage.tsv, /srv/results/19-03-2026/001wtl/QUAST/report.html, /srv/results/19-03-2026/001wtl/CheckM/quality.tsv, /srv/results/19-03-2026/001wtl/MultiQC/multiqc_report.html, /srv/results/19-03-2026/001wtl/MLST/mlst.tsv, /srv/results/19-03-2026/001wtl/AMRFinder/amrfinder.tsv, /srv/results/19-03-2026/001wtl/MOBSuite/mobtyper.tsv, /srv/results/19-03-2026/001wtl/PlasmidFinder/results_tab.tsv, /srv/results/19-03-2026/001wtl/MEfinder/mefinder.tsv, /srv/results/19-03-2026/001wtl/ID_Kraken2/kraken2_report.txt, /srv/results/19-03-2026/001wtl/ID_Kraken2/bracken_species.txt, /srv/results/19-03-2026/001wtl/ID_Skani/skani.tsv, /srv/results/19-03-2026/001wtl/Kleborate/kleborate_output.tsv
+    output: /srv/results/19-03-2026/001wtl/pipeline_summary.html
+    jobid: 165
+    reason: Input files updated by another job: /srv/results/19-03-2026/001wtl/MultiQC/multiqc_report.html
+    wildcards: sample=19-03-2026/001wtl
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:39 2026]
+Finished jobid: 125 (Rule: report)
+126 of 148 steps (85%) done
+Select jobs to execute...
+[Fri May 29 11:51:39 2026]
+Finished jobid: 165 (Rule: report)
+127 of 148 steps (86%) done
+[Fri May 29 11:51:40 2026]
+Finished jobid: 635 (Rule: lrefinder)
+128 of 148 steps (86%) done
+Execute 2 jobs...
+[Fri May 29 11:51:40 2026]
+localrule lrefinder:
+    input: /srv/results/26-03-2026/2y/Trimmed/R1.fastq.gz, /srv/results/26-03-2026/2y/Trimmed/R2.fastq.gz
+    output: /srv/results/26-03-2026/2y/LRE-Finder/lre.res
+    log: /srv/results/26-03-2026/2y/logs/lrefinder.log
+    jobid: 647
+    reason: Missing output files: /srv/results/26-03-2026/2y/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/2y
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:40 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2x/QC/fastp.json, /srv/results/26-03-2026/2x/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2x/QC/fastp.json, /srv/results/26-03-2026/2x/QC/self_coverage.tsv, /srv/results/26-03-2026/2x/QUAST/report.html, /srv/results/26-03-2026/2x/CheckM/quality.tsv, /srv/results/26-03-2026/2x/MLST/mlst.tsv, /srv/results/26-03-2026/2x/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2x/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2x/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2x/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2x/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2x/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2x/ID_Skani/skani.tsv, /srv/results/26-03-2026/2x/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/2x/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2x/logs/multiqc.log
+    jobid: 627
+    reason: Input files updated by another job: /srv/results/26-03-2026/2x/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=26-03-2026/2x
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:40 2026]
+Finished jobid: 603 (Rule: multiqc)
+129 of 148 steps (87%) done
+Execute 1 jobs...
+[Fri May 29 11:51:40 2026]
+localrule report:
+    input: /srv/results/26-03-2026/3c/QC/fastp.json, /srv/results/26-03-2026/3c/QC/self_coverage.tsv, /srv/results/26-03-2026/3c/QUAST/report.html, /srv/results/26-03-2026/3c/CheckM/quality.tsv, /srv/results/26-03-2026/3c/MultiQC/multiqc_report.html, /srv/results/26-03-2026/3c/MLST/mlst.tsv, /srv/results/26-03-2026/3c/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/3c/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/3c/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/3c/MEfinder/mefinder.tsv, /srv/results/26-03-2026/3c/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/3c/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/3c/ID_Skani/skani.tsv, /srv/results/26-03-2026/3c/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/3c/pipeline_summary.html
+    jobid: 89
+    reason: Input files updated by another job: /srv/results/26-03-2026/3c/LRE-Finder/lre.res, /srv/results/26-03-2026/3c/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/3c
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:40 2026]
+Finished jobid: 89 (Rule: report)
+130 of 148 steps (88%) done
+[Fri May 29 11:51:41 2026]
+Finished jobid: 647 (Rule: lrefinder)
+131 of 148 steps (89%) done
+Execute 2 jobs...
+[Fri May 29 11:51:41 2026]
+localrule lrefinder:
+    input: /srv/results/30-04-2026/2z/Trimmed/R1.fastq.gz, /srv/results/30-04-2026/2z/Trimmed/R2.fastq.gz
+    output: /srv/results/30-04-2026/2z/LRE-Finder/lre.res
+    log: /srv/results/30-04-2026/2z/logs/lrefinder.log
+    jobid: 755
+    reason: Missing output files: /srv/results/30-04-2026/2z/LRE-Finder/lre.res
+    wildcards: sample=30-04-2026/2z
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:41 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/2y/QC/fastp.json, /srv/results/26-03-2026/2y/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/2y/QC/fastp.json, /srv/results/26-03-2026/2y/QC/self_coverage.tsv, /srv/results/26-03-2026/2y/QUAST/report.html, /srv/results/26-03-2026/2y/CheckM/quality.tsv, /srv/results/26-03-2026/2y/MLST/mlst.tsv, /srv/results/26-03-2026/2y/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2y/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2y/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2y/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2y/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2y/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2y/ID_Skani/skani.tsv, /srv/results/26-03-2026/2y/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/2y/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/2y/logs/multiqc.log
+    jobid: 639
+    reason: Input files updated by another job: /srv/results/26-03-2026/2y/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=26-03-2026/2y
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:41 2026]
+Finished jobid: 627 (Rule: multiqc)
+132 of 148 steps (89%) done
+Execute 1 jobs...
+[Fri May 29 11:51:41 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2x/QC/fastp.json, /srv/results/26-03-2026/2x/QC/self_coverage.tsv, /srv/results/26-03-2026/2x/QUAST/report.html, /srv/results/26-03-2026/2x/CheckM/quality.tsv, /srv/results/26-03-2026/2x/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2x/MLST/mlst.tsv, /srv/results/26-03-2026/2x/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2x/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2x/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2x/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2x/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2x/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2x/ID_Skani/skani.tsv, /srv/results/26-03-2026/2x/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/2x/pipeline_summary.html
+    jobid: 97
+    reason: Input files updated by another job: /srv/results/26-03-2026/2x/LRE-Finder/lre.res, /srv/results/26-03-2026/2x/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/2x
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:42 2026]
+Finished jobid: 97 (Rule: report)
+133 of 148 steps (90%) done
+[Fri May 29 11:51:42 2026]
+Finished jobid: 755 (Rule: lrefinder)
+134 of 148 steps (91%) done
+Execute 2 jobs...
+[Fri May 29 11:51:42 2026]
+localrule lrefinder:
+    input: /srv/results/26-03-2026/3d/Trimmed/R1.fastq.gz, /srv/results/26-03-2026/3d/Trimmed/R2.fastq.gz
+    output: /srv/results/26-03-2026/3d/LRE-Finder/lre.res
+    log: /srv/results/26-03-2026/3d/logs/lrefinder.log
+    jobid: 659
+    reason: Missing output files: /srv/results/26-03-2026/3d/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/3d
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:42 2026]
+localrule multiqc:
+    input: /srv/results/30-04-2026/2z/QC/fastp.json, /srv/results/30-04-2026/2z/QC/fastqc/R1_fastqc.html, /srv/results/30-04-2026/2z/QC/fastp.json, /srv/results/30-04-2026/2z/QC/self_coverage.tsv, /srv/results/30-04-2026/2z/QUAST/report.html, /srv/results/30-04-2026/2z/CheckM/quality.tsv, /srv/results/30-04-2026/2z/MLST/mlst.tsv, /srv/results/30-04-2026/2z/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/2z/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/2z/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/2z/MEfinder/mefinder.tsv, /srv/results/30-04-2026/2z/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/2z/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/2z/ID_Skani/skani.tsv, /srv/results/30-04-2026/2z/LRE-Finder/lre.res
+    output: /srv/results/30-04-2026/2z/MultiQC/multiqc_report.html
+    log: /srv/results/30-04-2026/2z/logs/multiqc.log
+    jobid: 747
+    reason: Input files updated by another job: /srv/results/30-04-2026/2z/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=30-04-2026/2z
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:43 2026]
+Finished jobid: 639 (Rule: multiqc)
+135 of 148 steps (91%) done
+Execute 1 jobs...
+[Fri May 29 11:51:43 2026]
+localrule report:
+    input: /srv/results/26-03-2026/2y/QC/fastp.json, /srv/results/26-03-2026/2y/QC/self_coverage.tsv, /srv/results/26-03-2026/2y/QUAST/report.html, /srv/results/26-03-2026/2y/CheckM/quality.tsv, /srv/results/26-03-2026/2y/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2y/MLST/mlst.tsv, /srv/results/26-03-2026/2y/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/2y/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/2y/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/2y/MEfinder/mefinder.tsv, /srv/results/26-03-2026/2y/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/2y/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/2y/ID_Skani/skani.tsv, /srv/results/26-03-2026/2y/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/2y/pipeline_summary.html
+    jobid: 101
+    reason: Input files updated by another job: /srv/results/26-03-2026/2y/MultiQC/multiqc_report.html, /srv/results/26-03-2026/2y/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/2y
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:43 2026]
+Finished jobid: 101 (Rule: report)
+136 of 148 steps (92%) done
+[Fri May 29 11:51:43 2026]
+Finished jobid: 659 (Rule: lrefinder)
+137 of 148 steps (93%) done
+Execute 2 jobs...
+[Fri May 29 11:51:43 2026]
+localrule lrefinder:
+    input: /srv/results/26-03-2026/3e/Trimmed/R1.fastq.gz, /srv/results/26-03-2026/3e/Trimmed/R2.fastq.gz
+    output: /srv/results/26-03-2026/3e/LRE-Finder/lre.res
+    log: /srv/results/26-03-2026/3e/logs/lrefinder.log
+    jobid: 576
+    reason: Missing output files: /srv/results/26-03-2026/3e/LRE-Finder/lre.res
+    wildcards: sample=26-03-2026/3e
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:43 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/3d/QC/fastp.json, /srv/results/26-03-2026/3d/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/3d/QC/fastp.json, /srv/results/26-03-2026/3d/QC/self_coverage.tsv, /srv/results/26-03-2026/3d/QUAST/report.html, /srv/results/26-03-2026/3d/CheckM/quality.tsv, /srv/results/26-03-2026/3d/MLST/mlst.tsv, /srv/results/26-03-2026/3d/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/3d/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/3d/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/3d/MEfinder/mefinder.tsv, /srv/results/26-03-2026/3d/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/3d/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/3d/ID_Skani/skani.tsv, /srv/results/26-03-2026/3d/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/3d/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/3d/logs/multiqc.log
+    jobid: 651
+    reason: Input files updated by another job: /srv/results/26-03-2026/3d/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=26-03-2026/3d
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Fri May 29 11:51:43 2026]
+Finished jobid: 576 (Rule: lrefinder)
+138 of 148 steps (93%) done
+Execute 2 jobs...
+[Fri May 29 11:51:43 2026]
+localrule lrefinder:
+    input: /srv/results/11-03-2026/002o/Trimmed/R1.fastq.gz, /srv/results/11-03-2026/002o/Trimmed/R2.fastq.gz
+    output: /srv/results/11-03-2026/002o/LRE-Finder/lre.res
+    log: /srv/results/11-03-2026/002o/logs/lrefinder.log
+    jobid: 1070
+    reason: Missing output files: /srv/results/11-03-2026/002o/LRE-Finder/lre.res
+    wildcards: sample=11-03-2026/002o
+    threads: 8
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:43 2026]
+localrule multiqc:
+    input: /srv/results/26-03-2026/3e/QC/fastp.json, /srv/results/26-03-2026/3e/QC/fastqc/R1_fastqc.html, /srv/results/26-03-2026/3e/QC/fastp.json, /srv/results/26-03-2026/3e/QC/self_coverage.tsv, /srv/results/26-03-2026/3e/QUAST/report.html, /srv/results/26-03-2026/3e/CheckM/quality.tsv, /srv/results/26-03-2026/3e/MLST/mlst.tsv, /srv/results/26-03-2026/3e/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/3e/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/3e/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/3e/MEfinder/mefinder.tsv, /srv/results/26-03-2026/3e/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/3e/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/3e/ID_Skani/skani.tsv, /srv/results/26-03-2026/3e/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/3e/MultiQC/multiqc_report.html
+    log: /srv/results/26-03-2026/3e/logs/multiqc.log
+    jobid: 568
+    reason: Input files updated by another job: /srv/results/26-03-2026/3e/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=26-03-2026/3e
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:44 2026]
+Finished jobid: 747 (Rule: multiqc)
+139 of 148 steps (94%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:44 2026]
+localrule report:
+    input: /srv/results/30-04-2026/2z/QC/fastp.json, /srv/results/30-04-2026/2z/QC/self_coverage.tsv, /srv/results/30-04-2026/2z/QUAST/report.html, /srv/results/30-04-2026/2z/CheckM/quality.tsv, /srv/results/30-04-2026/2z/MultiQC/multiqc_report.html, /srv/results/30-04-2026/2z/MLST/mlst.tsv, /srv/results/30-04-2026/2z/AMRFinder/amrfinder.tsv, /srv/results/30-04-2026/2z/MOBSuite/mobtyper.tsv, /srv/results/30-04-2026/2z/PlasmidFinder/results_tab.tsv, /srv/results/30-04-2026/2z/MEfinder/mefinder.tsv, /srv/results/30-04-2026/2z/ID_Kraken2/kraken2_report.txt, /srv/results/30-04-2026/2z/ID_Kraken2/bracken_species.txt, /srv/results/30-04-2026/2z/ID_Skani/skani.tsv, /srv/results/30-04-2026/2z/LRE-Finder/lre.res
+    output: /srv/results/30-04-2026/2z/pipeline_summary.html
+    jobid: 137
+    reason: Input files updated by another job: /srv/results/30-04-2026/2z/LRE-Finder/lre.res, /srv/results/30-04-2026/2z/MultiQC/multiqc_report.html
+    wildcards: sample=30-04-2026/2z
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:44 2026]
+Finished jobid: 137 (Rule: report)
+140 of 148 steps (95%) done
+[Fri May 29 11:51:44 2026]
+Finished jobid: 1070 (Rule: lrefinder)
+141 of 148 steps (95%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:44 2026]
+localrule multiqc:
+    input: /srv/results/11-03-2026/002o/QC/fastp.json, /srv/results/11-03-2026/002o/QC/fastqc/R1_fastqc.html, /srv/results/11-03-2026/002o/QC/fastp.json, /srv/results/11-03-2026/002o/QC/self_coverage.tsv, /srv/results/11-03-2026/002o/QUAST/report.html, /srv/results/11-03-2026/002o/CheckM/quality.tsv, /srv/results/11-03-2026/002o/MLST/mlst.tsv, /srv/results/11-03-2026/002o/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/002o/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/002o/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/002o/MEfinder/mefinder.tsv, /srv/results/11-03-2026/002o/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/002o/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/002o/ID_Skani/skani.tsv, /srv/results/11-03-2026/002o/LRE-Finder/lre.res
+    output: /srv/results/11-03-2026/002o/MultiQC/multiqc_report.html
+    log: /srv/results/11-03-2026/002o/logs/multiqc.log
+    jobid: 1062
+    reason: Input files updated by another job: /srv/results/11-03-2026/002o/LRE-Finder/lre.res; Set of input files has changed since last execution; Code has changed since last execution
+    wildcards: sample=11-03-2026/002o
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:45 2026]
+Finished jobid: 651 (Rule: multiqc)
+142 of 148 steps (96%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:45 2026]
+localrule report:
+    input: /srv/results/26-03-2026/3d/QC/fastp.json, /srv/results/26-03-2026/3d/QC/self_coverage.tsv, /srv/results/26-03-2026/3d/QUAST/report.html, /srv/results/26-03-2026/3d/CheckM/quality.tsv, /srv/results/26-03-2026/3d/MultiQC/multiqc_report.html, /srv/results/26-03-2026/3d/MLST/mlst.tsv, /srv/results/26-03-2026/3d/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/3d/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/3d/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/3d/MEfinder/mefinder.tsv, /srv/results/26-03-2026/3d/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/3d/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/3d/ID_Skani/skani.tsv, /srv/results/26-03-2026/3d/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/3d/pipeline_summary.html
+    jobid: 105
+    reason: Input files updated by another job: /srv/results/26-03-2026/3d/LRE-Finder/lre.res, /srv/results/26-03-2026/3d/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/3d
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:45 2026]
+Finished jobid: 105 (Rule: report)
+143 of 148 steps (97%) done
+[Fri May 29 11:51:45 2026]
+Finished jobid: 568 (Rule: multiqc)
+144 of 148 steps (97%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:45 2026]
+localrule report:
+    input: /srv/results/26-03-2026/3e/QC/fastp.json, /srv/results/26-03-2026/3e/QC/self_coverage.tsv, /srv/results/26-03-2026/3e/QUAST/report.html, /srv/results/26-03-2026/3e/CheckM/quality.tsv, /srv/results/26-03-2026/3e/MultiQC/multiqc_report.html, /srv/results/26-03-2026/3e/MLST/mlst.tsv, /srv/results/26-03-2026/3e/AMRFinder/amrfinder.tsv, /srv/results/26-03-2026/3e/MOBSuite/mobtyper.tsv, /srv/results/26-03-2026/3e/PlasmidFinder/results_tab.tsv, /srv/results/26-03-2026/3e/MEfinder/mefinder.tsv, /srv/results/26-03-2026/3e/ID_Kraken2/kraken2_report.txt, /srv/results/26-03-2026/3e/ID_Kraken2/bracken_species.txt, /srv/results/26-03-2026/3e/ID_Skani/skani.tsv, /srv/results/26-03-2026/3e/LRE-Finder/lre.res
+    output: /srv/results/26-03-2026/3e/pipeline_summary.html
+    jobid: 77
+    reason: Input files updated by another job: /srv/results/26-03-2026/3e/LRE-Finder/lre.res, /srv/results/26-03-2026/3e/MultiQC/multiqc_report.html
+    wildcards: sample=26-03-2026/3e
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:45 2026]
+Finished jobid: 77 (Rule: report)
+145 of 148 steps (98%) done
+[Fri May 29 11:51:46 2026]
+Finished jobid: 1062 (Rule: multiqc)
+146 of 148 steps (99%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:46 2026]
+localrule report:
+    input: /srv/results/11-03-2026/002o/QC/fastp.json, /srv/results/11-03-2026/002o/QC/self_coverage.tsv, /srv/results/11-03-2026/002o/QUAST/report.html, /srv/results/11-03-2026/002o/CheckM/quality.tsv, /srv/results/11-03-2026/002o/MultiQC/multiqc_report.html, /srv/results/11-03-2026/002o/MLST/mlst.tsv, /srv/results/11-03-2026/002o/AMRFinder/amrfinder.tsv, /srv/results/11-03-2026/002o/MOBSuite/mobtyper.tsv, /srv/results/11-03-2026/002o/PlasmidFinder/results_tab.tsv, /srv/results/11-03-2026/002o/MEfinder/mefinder.tsv, /srv/results/11-03-2026/002o/ID_Kraken2/kraken2_report.txt, /srv/results/11-03-2026/002o/ID_Kraken2/bracken_species.txt, /srv/results/11-03-2026/002o/ID_Skani/skani.tsv, /srv/results/11-03-2026/002o/LRE-Finder/lre.res
+    output: /srv/results/11-03-2026/002o/pipeline_summary.html
+    jobid: 241
+    reason: Input files updated by another job: /srv/results/11-03-2026/002o/LRE-Finder/lre.res, /srv/results/11-03-2026/002o/MultiQC/multiqc_report.html
+    wildcards: sample=11-03-2026/002o
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:46 2026]
+Finished jobid: 241 (Rule: report)
+147 of 148 steps (99%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Fri May 29 11:51:46 2026]
+localrule all:
+    input: /srv/results/22-04-2026/3n/pipeline_summary.html, /srv/results/22-04-2026/3o/pipeline_summary.html, /srv/results/22-04-2026/3l/pipeline_summary.html, /srv/results/22-04-2026/2h/pipeline_summary.html, /srv/results/22-04-2026/3j/pipeline_summary.html, /srv/results/22-04-2026/3k/pipeline_summary.html, /srv/results/22-04-2026/3g/pipeline_summary.html, /srv/results/22-04-2026/3i/pipeline_summary.html, /srv/results/22-04-2026/3h/pipeline_summary.html, /srv/results/05-03-2026/001j/pipeline_summary.html, /srv/results/05-03-2026/001o/pipeline_summary.html, /srv/results/05-03-2026/001u/pipeline_summary.html, /srv/results/05-03-2026/001i/pipeline_summary.html, /srv/results/05-03-2026/001v/pipeline_summary.html, /srv/results/05-03-2026/001k/pipeline_summary.html, /srv/results/05-03-2026/001n/pipeline_summary.html, /srv/results/26-03-2026/2b/pipeline_summary.html, /srv/results/26-03-2026/2f/pipeline_summary.html, /srv/results/26-03-2026/2d/pipeline_summary.html, /srv/results/26-03-2026/3e/pipeline_summary.html, /srv/results/26-03-2026/2a/pipeline_summary.html, /srv/results/26-03-2026/2g/pipeline_summary.html, /srv/results/26-03-2026/3c/pipeline_summary.html, /srv/results/26-03-2026/3f/pipeline_summary.html, /srv/results/26-03-2026/2x/pipeline_summary.html, /srv/results/26-03-2026/2y/pipeline_summary.html, /srv/results/26-03-2026/3d/pipeline_summary.html, /srv/results/26-03-2026/2e/pipeline_summary.html, /srv/results/26-03-2026/2q/pipeline_summary.html, /srv/results/26-03-2026/2w/pipeline_summary.html, /srv/results/26-03-2026/2c/pipeline_summary.html, /srv/results/30-04-2026/3r/pipeline_summary.html, /srv/results/30-04-2026/3q/pipeline_summary.html, /srv/results/30-04-2026/3s/pipeline_summary.html, /srv/results/30-04-2026/2z/pipeline_summary.html, /srv/results/30-04-2026/3v/pipeline_summary.html, /srv/results/30-04-2026/2i/pipeline_summary.html, /srv/results/30-04-2026/2j/pipeline_summary.html, /srv/results/30-04-2026/3t/pipeline_summary.html, /srv/results/30-04-2026/2k/pipeline_summary.html, /srv/results/30-04-2026/3u/pipeline_summary.html, /srv/results/19-03-2026/001wtl/pipeline_summary.html, /srv/results/19-03-2026/004c/pipeline_summary.html, /srv/results/19-03-2026/001y/pipeline_summary.html, /srv/results/19-03-2026/004b/pipeline_summary.html, /srv/results/19-03-2026/003b/pipeline_summary.html, /srv/results/19-03-2026/001x/pipeline_summary.html, /srv/results/19-03-2026/004a/pipeline_summary.html, /srv/results/19-03-2026/001z/pipeline_summary.html, /srv/results/19-03-2026/005a/pipeline_summary.html, /srv/results/19-03-2026/001w/pipeline_summary.html, /srv/results/19-03-2026/003a/pipeline_summary.html, /srv/results/27-05-2026/3yous/pipeline_summary.html, /srv/results/27-05-2026/3xous/pipeline_summary.html, /srv/results/27-05-2026/3wous/pipeline_summary.html, /srv/results/11-03-2026/001p/pipeline_summary.html, /srv/results/11-03-2026/001g/pipeline_summary.html, /srv/results/11-03-2026/001ptl/pipeline_summary.html, /srv/results/11-03-2026/001a/pipeline_summary.html, /srv/results/11-03-2026/001s/pipeline_summary.html, /srv/results/11-03-2026/002o/pipeline_summary.html, /srv/results/11-03-2026/001r/pipeline_summary.html, /srv/results/11-03-2026/002ntl/pipeline_summary.html, /srv/results/11-03-2026/002p/pipeline_summary.html, /srv/results/11-03-2026/002n/pipeline_summary.html, /srv/results/11-03-2026/001b/pipeline_summary.html, /srv/results/11-03-2026/001t/pipeline_summary.html
+    jobid: 0
+    reason: Input files updated by another job: /srv/results/19-03-2026/004a/pipeline_summary.html, /srv/results/30-04-2026/3v/pipeline_summary.html, /srv/results/30-04-2026/2i/pipeline_summary.html, /srv/results/05-03-2026/001v/pipeline_summary.html, /srv/results/22-04-2026/3o/pipeline_summary.html, /srv/results/11-03-2026/001g/pipeline_summary.html, /srv/results/26-03-2026/2g/pipeline_summary.html, /srv/results/26-03-2026/2a/pipeline_summary.html, /srv/results/22-04-2026/3j/pipeline_summary.html, /srv/results/26-03-2026/2y/pipeline_summary.html, /srv/results/22-04-2026/3l/pipeline_summary.html, /srv/results/11-03-2026/001s/pipeline_summary.html, /srv/results/11-03-2026/002n/pipeline_summary.html, /srv/results/19-03-2026/005a/pipeline_summary.html, /srv/results/05-03-2026/001k/pipeline_summary.html, /srv/results/19-03-2026/001y/pipeline_summary.html, /srv/results/05-03-2026/001j/pipeline_summary.html, /srv/results/30-04-2026/3q/pipeline_summary.html, /srv/results/22-04-2026/3h/pipeline_summary.html, /srv/results/05-03-2026/001i/pipeline_summary.html, /srv/results/26-03-2026/2q/pipeline_summary.html, /srv/results/19-03-2026/001w/pipeline_summary.html, /srv/results/30-04-2026/2k/pipeline_summary.html, /srv/results/22-04-2026/3k/pipeline_summary.html, /srv/results/19-03-2026/001wtl/pipeline_summary.html, /srv/results/05-03-2026/001n/pipeline_summary.html, /srv/results/11-03-2026/001r/pipeline_summary.html, /srv/results/26-03-2026/2w/pipeline_summary.html, /srv/results/26-03-2026/2f/pipeline_summary.html, /srv/results/27-05-2026/3wous/pipeline_summary.html, /srv/results/11-03-2026/001p/pipeline_summary.html, /srv/results/19-03-2026/004c/pipeline_summary.html, /srv/results/30-04-2026/3u/pipeline_summary.html, /srv/results/11-03-2026/001t/pipeline_summary.html, /srv/results/19-03-2026/001z/pipeline_summary.html, /srv/results/11-03-2026/002o/pipeline_summary.html, /srv/results/11-03-2026/001a/pipeline_summary.html, /srv/results/26-03-2026/3e/pipeline_summary.html, /srv/results/27-05-2026/3yous/pipeline_summary.html, /srv/results/30-04-2026/3s/pipeline_summary.html, /srv/results/26-03-2026/2x/pipeline_summary.html, /srv/results/30-04-2026/3r/pipeline_summary.html, /srv/results/11-03-2026/002ntl/pipeline_summary.html, /srv/results/27-05-2026/3xous/pipeline_summary.html, /srv/results/26-03-2026/2c/pipeline_summary.html, /srv/results/11-03-2026/001b/pipeline_summary.html, /srv/results/05-03-2026/001o/pipeline_summary.html, /srv/results/19-03-2026/003b/pipeline_summary.html, /srv/results/22-04-2026/3n/pipeline_summary.html, /srv/results/11-03-2026/002p/pipeline_summary.html, /srv/results/22-04-2026/3g/pipeline_summary.html, /srv/results/26-03-2026/2b/pipeline_summary.html, /srv/results/30-04-2026/3t/pipeline_summary.html, /srv/results/26-03-2026/3d/pipeline_summary.html, /srv/results/05-03-2026/001u/pipeline_summary.html, /srv/results/22-04-2026/2h/pipeline_summary.html, /srv/results/19-03-2026/001x/pipeline_summary.html, /srv/results/26-03-2026/2e/pipeline_summary.html, /srv/results/30-04-2026/2z/pipeline_summary.html, /srv/results/22-04-2026/3i/pipeline_summary.html, /srv/results/30-04-2026/2j/pipeline_summary.html, /srv/results/19-03-2026/004b/pipeline_summary.html, /srv/results/26-03-2026/2d/pipeline_summary.html, /srv/results/26-03-2026/3f/pipeline_summary.html, /srv/results/26-03-2026/3c/pipeline_summary.html, /srv/results/11-03-2026/001ptl/pipeline_summary.html, /srv/results/19-03-2026/003a/pipeline_summary.html
+    resources: tmpdir=/tmp
+[Fri May 29 11:51:46 2026]
+Finished jobid: 0 (Rule: all)
+148 of 148 steps (100%) done
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-05-29T115123.064079.snakemake.log

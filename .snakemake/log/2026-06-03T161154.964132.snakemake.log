@@ -1,0 +1,7 @@
+Config file config.yaml is extended by additional config specified via the command line.
+FileNotFoundError in file "/home/bruker/genomics/Snakefile_varcall", line 53:
+refseq_list.json not found at /home/bruker/genomics/refseq_list.json
+Create it with one entry per species you want to support, e.g.:
+  {"Klebsiella_pneumoniae": {"fasta": "/path/genome.fna", "gff": "/path/genome.gff"}}
+Override the location with --config refseq_list=/your/path.json
+  File "/home/bruker/genomics/Snakefile_varcall", line 53, in <module>

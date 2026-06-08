@@ -1,0 +1,988 @@
+Config file config.yaml is extended by additional config specified via the command line.
+Assuming unrestricted shared filesystem usage.
+host: odd-alexander-tellefsen-NGS-HP-Z4-G5-Workstation-Desktop-PC
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 16
+Rules claiming more threads will be scaled down.
+Job stats:
+job             count
+------------  -------
+fastp               7
+assemble            7
+fastqc              7
+checkm              7
+parsnp              1
+prokka              1
+quast               7
+skani               7
+multiqc             7
+snippy              7
+snp_dists           3
+multiqc_run         1
+snippy_core         1
+gubbins             1
+iqtree              1
+phylo_report        1
+all                 1
+total              67
+
+Select jobs to execute...
+Execute 2 jobs...
+[Mon Jun  8 10:13:54 2026]
+localrule fastp:
+    input: /srv/data/22-04-2026/3k/3k_R1.fastq.gz, /srv/data/22-04-2026/3k/3k_R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastp.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/logs/fastp.log
+    jobid: 17
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3k
+    threads: 8
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:13:54 2026]
+localrule fastp:
+    input: /srv/data/22-04-2026/3i/3i_R1.fastq.gz, /srv/data/22-04-2026/3i/3i_R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastp.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/logs/fastp.log
+    jobid: 7
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3i
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:13:57 2026]
+Finished jobid: 7 (Rule: fastp)
+1 of 67 steps (1%) done
+Execute 1 jobs...
+[Mon Jun  8 10:13:57 2026]
+localrule assemble:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/logs/assemble.log
+    jobid: 10
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R1.fastq.gz
+    wildcards: sample=22-04-2026/3i
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Mon Jun  8 10:13:57 2026]
+Finished jobid: 17 (Rule: fastp)
+2 of 67 steps (3%) done
+Execute 1 jobs...
+[Mon Jun  8 10:13:57 2026]
+localrule fastp:
+    input: /srv/data/30-04-2026/3v/3v_R1.fastq.gz, /srv/data/30-04-2026/3v/3v_R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastp.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/logs/fastp.log
+    jobid: 32
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastp.json
+    wildcards: sample=30-04-2026/3v
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:13:59 2026]
+Finished jobid: 32 (Rule: fastp)
+3 of 67 steps (4%) done
+Execute 1 jobs...
+[Mon Jun  8 10:13:59 2026]
+localrule fastp:
+    input: /srv/data/22-04-2026/3h/3h_R1.fastq.gz, /srv/data/22-04-2026/3h/3h_R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastp.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/fastp.log
+    jobid: 2
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3h
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:14:02 2026]
+Finished jobid: 2 (Rule: fastp)
+4 of 67 steps (6%) done
+Execute 1 jobs...
+[Mon Jun  8 10:14:02 2026]
+localrule fastp:
+    input: /srv/data/30-04-2026/3u/3u_R1.fastq.gz, /srv/data/30-04-2026/3u/3u_R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastp.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/logs/fastp.log
+    jobid: 27
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R1.fastq.gz
+    wildcards: sample=30-04-2026/3u
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:14:04 2026]
+Finished jobid: 27 (Rule: fastp)
+5 of 67 steps (7%) done
+Execute 1 jobs...
+[Mon Jun  8 10:14:04 2026]
+localrule assemble:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/logs/assemble.log
+    jobid: 30
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R1.fastq.gz
+    wildcards: sample=30-04-2026/3u
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Mon Jun  8 10:15:14 2026]
+Finished jobid: 10 (Rule: assemble)
+6 of 67 steps (9%) done
+Execute 4 jobs...
+[Mon Jun  8 10:15:15 2026]
+localrule fastqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastqc/R2_fastqc.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/logs/fastqc.log
+    jobid: 28
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastqc/R1_fastqc.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R1.fastq.gz
+    wildcards: sample=30-04-2026/3u
+    threads: 2
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:15:15 2026]
+localrule fastqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastqc/R2_fastqc.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/logs/fastqc.log
+    jobid: 18
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastqc/R1_fastqc.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3k
+    threads: 2
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:15:15 2026]
+localrule fastqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastqc/R2_fastqc.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/fastqc.log
+    jobid: 3
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastqc/R1_fastqc.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3h
+    threads: 2
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:15:15 2026]
+localrule fastqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastqc/R2_fastqc.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/logs/fastqc.log
+    jobid: 8
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastqc/R1_fastqc.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R1.fastq.gz
+    wildcards: sample=22-04-2026/3i
+    threads: 2
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:15:22 2026]
+Finished jobid: 8 (Rule: fastqc)
+7 of 67 steps (10%) done
+Execute 1 jobs...
+[Mon Jun  8 10:15:22 2026]
+localrule fastqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastqc/R2_fastqc.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/logs/fastqc.log
+    jobid: 33
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastqc/R1_fastqc.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R1.fastq.gz
+    wildcards: sample=30-04-2026/3v
+    threads: 2
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:15:23 2026]
+Finished jobid: 18 (Rule: fastqc)
+8 of 67 steps (12%) done
+[Mon Jun  8 10:15:23 2026]
+Finished jobid: 3 (Rule: fastqc)
+9 of 67 steps (13%) done
+[Mon Jun  8 10:15:23 2026]
+Finished jobid: 28 (Rule: fastqc)
+10 of 67 steps (15%) done
+[Mon Jun  8 10:15:29 2026]
+Finished jobid: 33 (Rule: fastqc)
+11 of 67 steps (16%) done
+Execute 1 jobs...
+[Mon Jun  8 10:15:29 2026]
+localrule assemble:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/logs/assemble.log
+    jobid: 20
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3k
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Mon Jun  8 10:15:33 2026]
+Finished jobid: 30 (Rule: assemble)
+12 of 67 steps (18%) done
+Execute 1 jobs...
+[Mon Jun  8 10:15:33 2026]
+localrule skani:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/ID_Skani/skani.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/ID_Skani/species.txt
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/logs/skani.log
+    jobid: 41
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/ID_Skani/species.txt; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa
+    wildcards: sample=30-04-2026/3u
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:15:34 2026]
+Finished jobid: 41 (Rule: skani)
+13 of 67 steps (19%) done
+Execute 1 jobs...
+[Mon Jun  8 10:15:34 2026]
+localrule quast:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QUAST/report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/logs/quast.log
+    jobid: 29
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QUAST/report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa
+    wildcards: sample=30-04-2026/3u
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:15:35 2026]
+Finished jobid: 29 (Rule: quast)
+14 of 67 steps (21%) done
+Execute 1 jobs...
+[Mon Jun  8 10:15:35 2026]
+localrule checkm:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/CheckM/quality.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/logs/checkm.log
+    jobid: 48
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/CheckM/quality.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa
+    wildcards: sample=30-04-2026/3u
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Mon Jun  8 10:16:59 2026]
+Finished jobid: 20 (Rule: assemble)
+15 of 67 steps (22%) done
+Execute 1 jobs...
+[Mon Jun  8 10:16:59 2026]
+localrule checkm:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/CheckM/quality.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/logs/checkm.log
+    jobid: 46
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/CheckM/quality.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3k
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Mon Jun  8 10:17:13 2026]
+Finished jobid: 48 (Rule: checkm)
+16 of 67 steps (24%) done
+Execute 1 jobs...
+[Mon Jun  8 10:17:13 2026]
+localrule quast:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QUAST/report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/logs/quast.log
+    jobid: 19
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QUAST/report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3k
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:17:15 2026]
+Finished jobid: 19 (Rule: quast)
+17 of 67 steps (25%) done
+Execute 1 jobs...
+[Mon Jun  8 10:17:15 2026]
+localrule checkm:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/CheckM/quality.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/logs/checkm.log
+    jobid: 44
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/CheckM/quality.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3i
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Mon Jun  8 10:18:39 2026]
+Finished jobid: 46 (Rule: checkm)
+18 of 67 steps (27%) done
+Execute 1 jobs...
+[Mon Jun  8 10:18:39 2026]
+localrule skani:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/ID_Skani/skani.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/ID_Skani/species.txt
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/logs/skani.log
+    jobid: 39
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/ID_Skani/species.txt; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3k
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:18:40 2026]
+Finished jobid: 39 (Rule: skani)
+19 of 67 steps (28%) done
+Execute 1 jobs...
+[Mon Jun  8 10:18:40 2026]
+localrule fastp:
+    input: /srv/data/22-04-2026/3j/3j_R1.fastq.gz, /srv/data/22-04-2026/3j/3j_R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastp.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/logs/fastp.log
+    jobid: 12
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R1.fastq.gz
+    wildcards: sample=22-04-2026/3j
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:18:42 2026]
+Finished jobid: 12 (Rule: fastp)
+20 of 67 steps (30%) done
+Execute 1 jobs...
+[Mon Jun  8 10:18:42 2026]
+localrule assemble:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/logs/assemble.log
+    jobid: 15
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R1.fastq.gz
+    wildcards: sample=22-04-2026/3j
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Mon Jun  8 10:18:56 2026]
+Finished jobid: 44 (Rule: checkm)
+21 of 67 steps (31%) done
+Execute 1 jobs...
+[Mon Jun  8 10:18:56 2026]
+localrule fastp:
+    input: /srv/data/22-04-2026/3l/3l_R1.fastq.gz, /srv/data/22-04-2026/3l/3l_R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastp.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/logs/fastp.log
+    jobid: 22
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastp.json
+    wildcards: sample=22-04-2026/3l
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:18:58 2026]
+Finished jobid: 22 (Rule: fastp)
+22 of 67 steps (33%) done
+Execute 1 jobs...
+[Mon Jun  8 10:18:58 2026]
+localrule quast:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QUAST/report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/logs/quast.log
+    jobid: 9
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QUAST/report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3i
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:18:59 2026]
+Finished jobid: 9 (Rule: quast)
+23 of 67 steps (34%) done
+Execute 1 jobs...
+[Mon Jun  8 10:18:59 2026]
+localrule skani:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/ID_Skani/skani.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/ID_Skani/species.txt
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/logs/skani.log
+    jobid: 37
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/ID_Skani/species.txt; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3i
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:19:00 2026]
+Finished jobid: 37 (Rule: skani)
+24 of 67 steps (36%) done
+Execute 1 jobs...
+[Mon Jun  8 10:19:00 2026]
+localrule assemble:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/logs/assemble.log
+    jobid: 25
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3l
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Mon Jun  8 10:20:03 2026]
+Finished jobid: 15 (Rule: assemble)
+25 of 67 steps (37%) done
+Execute 1 jobs...
+[Mon Jun  8 10:20:03 2026]
+localrule skani:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/ID_Skani/skani.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/ID_Skani/species.txt
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/logs/skani.log
+    jobid: 38
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/ID_Skani/species.txt; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3j
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:20:03 2026]
+Finished jobid: 38 (Rule: skani)
+26 of 67 steps (39%) done
+Execute 1 jobs...
+[Mon Jun  8 10:20:03 2026]
+localrule quast:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QUAST/report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/logs/quast.log
+    jobid: 14
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QUAST/report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3j
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:20:05 2026]
+Finished jobid: 14 (Rule: quast)
+27 of 67 steps (40%) done
+Execute 1 jobs...
+[Mon Jun  8 10:20:05 2026]
+localrule checkm:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/CheckM/quality.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/logs/checkm.log
+    jobid: 45
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/CheckM/quality.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3j
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Mon Jun  8 10:20:29 2026]
+Finished jobid: 25 (Rule: assemble)
+28 of 67 steps (42%) done
+Execute 1 jobs...
+[Mon Jun  8 10:20:29 2026]
+localrule quast:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QUAST/report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/logs/quast.log
+    jobid: 24
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QUAST/report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3l
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:20:30 2026]
+Finished jobid: 24 (Rule: quast)
+29 of 67 steps (43%) done
+Execute 1 jobs...
+[Mon Jun  8 10:20:30 2026]
+localrule skani:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/ID_Skani/skani.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/ID_Skani/species.txt
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/logs/skani.log
+    jobid: 40
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/ID_Skani/species.txt; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3l
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:20:30 2026]
+Finished jobid: 40 (Rule: skani)
+30 of 67 steps (45%) done
+Execute 1 jobs...
+[Mon Jun  8 10:20:30 2026]
+localrule checkm:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/CheckM/quality.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/logs/checkm.log
+    jobid: 47
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/CheckM/quality.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3l
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Mon Jun  8 10:21:46 2026]
+Finished jobid: 45 (Rule: checkm)
+31 of 67 steps (46%) done
+Execute 1 jobs...
+[Mon Jun  8 10:21:46 2026]
+localrule assemble:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/assemble.log
+    jobid: 5
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3h
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Mon Jun  8 10:22:13 2026]
+Finished jobid: 47 (Rule: checkm)
+32 of 67 steps (48%) done
+Execute 1 jobs...
+[Mon Jun  8 10:22:13 2026]
+localrule assemble:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/logs/assemble.log
+    jobid: 35
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R1.fastq.gz
+    wildcards: sample=30-04-2026/3v
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=12000, mem=12 GB, mem_mib=11445
+Select jobs to execute...
+[Mon Jun  8 10:23:27 2026]
+Finished jobid: 5 (Rule: assemble)
+33 of 67 steps (49%) done
+Execute 1 jobs...
+[Mon Jun  8 10:23:27 2026]
+localrule prokka:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/prokka.log
+    jobid: 53
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3h
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:23:41 2026]
+Finished jobid: 35 (Rule: assemble)
+34 of 67 steps (51%) done
+Execute 1 jobs...
+[Mon Jun  8 10:23:41 2026]
+localrule skani:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/ID_Skani/skani.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/ID_Skani/species.txt
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/logs/skani.log
+    jobid: 42
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/ID_Skani/species.txt; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa
+    wildcards: sample=30-04-2026/3v
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:23:42 2026]
+Finished jobid: 42 (Rule: skani)
+35 of 67 steps (52%) done
+Execute 1 jobs...
+[Mon Jun  8 10:23:42 2026]
+localrule skani:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/ID_Skani/skani.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/ID_Skani/species.txt
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/skani.log
+    jobid: 36
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/ID_Skani/species.txt; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3h
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:23:42 2026]
+Finished jobid: 36 (Rule: skani)
+36 of 67 steps (54%) done
+Execute 1 jobs...
+[Mon Jun  8 10:23:42 2026]
+localrule checkm:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/CheckM/quality.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/logs/checkm.log
+    jobid: 49
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/CheckM/quality.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa
+    wildcards: sample=30-04-2026/3v
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Mon Jun  8 10:25:14 2026]
+Finished jobid: 53 (Rule: prokka)
+37 of 67 steps (55%) done
+Execute 1 jobs...
+[Mon Jun  8 10:25:14 2026]
+localrule snippy:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3i/snps.vcf
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/logs/snippy.log
+    jobid: 54
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3i/snps.vcf; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Trimmed/R1.fastq.gz
+    wildcards: sample=22-04-2026/3i
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:25:21 2026]
+Finished jobid: 49 (Rule: checkm)
+38 of 67 steps (57%) done
+Execute 1 jobs...
+[Mon Jun  8 10:25:21 2026]
+localrule snippy:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3k/snps.vcf
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/logs/snippy.log
+    jobid: 56
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3k/snps.vcf; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3k
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:25:36 2026]
+Finished jobid: 54 (Rule: snippy)
+39 of 67 steps (58%) done
+Execute 1 jobs...
+[Mon Jun  8 10:25:36 2026]
+localrule snippy:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/30-04-2026/3u/snps.vcf
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/logs/snippy.log
+    jobid: 58
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/30-04-2026/3u/snps.vcf; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Trimmed/R1.fastq.gz
+    wildcards: sample=30-04-2026/3u
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:25:46 2026]
+Finished jobid: 56 (Rule: snippy)
+40 of 67 steps (60%) done
+Execute 1 jobs...
+[Mon Jun  8 10:25:46 2026]
+localrule snippy:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3h/snps.vcf
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/snippy.log
+    jobid: 52
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3h/snps.vcf; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3h
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:05 2026]
+Finished jobid: 58 (Rule: snippy)
+41 of 67 steps (61%) done
+Execute 1 jobs...
+[Mon Jun  8 10:26:05 2026]
+localrule quast:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QUAST/report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/logs/quast.log
+    jobid: 34
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QUAST/report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa
+    wildcards: sample=30-04-2026/3v
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:06 2026]
+Finished jobid: 34 (Rule: quast)
+42 of 67 steps (63%) done
+Execute 1 jobs...
+[Mon Jun  8 10:26:06 2026]
+localrule parsnp:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.tree, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.ggr, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.snps.fasta
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/parsnp.log
+    jobid: 63
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.tree, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.snps.fasta, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.vcf; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/Assembly/contigs.fa, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/Assembly/contigs.fa
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:12 2026]
+Finished jobid: 52 (Rule: snippy)
+43 of 67 steps (64%) done
+Execute 1 jobs...
+[Mon Jun  8 10:26:12 2026]
+localrule snippy:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3j/snps.vcf
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/logs/snippy.log
+    jobid: 55
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3j/snps.vcf; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R1.fastq.gz
+    wildcards: sample=22-04-2026/3j
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:31 2026]
+Finished jobid: 63 (Rule: parsnp)
+44 of 67 steps (66%) done
+Execute 6 jobs...
+[Mon Jun  8 10:26:31 2026]
+localrule multiqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QUAST/report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/MultiQC/multiqc_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/logs/multiqc.log
+    jobid: 26
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/MultiQC/multiqc_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QC/fastp.json
+    wildcards: sample=30-04-2026/3u
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:26:31 2026]
+localrule snp_dists:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.snps.fasta
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_parsnp.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/snp_dists_parsnp.log
+    jobid: 62
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_parsnp.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.snps.fasta
+    wildcards: suffix=_parsnp
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:26:31 2026]
+localrule fastqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastqc/R2_fastqc.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/logs/fastqc.log
+    jobid: 23
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastqc/R1_fastqc.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3l
+    threads: 2
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:26:31 2026]
+localrule fastqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R2.fastq.gz
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastqc/R2_fastqc.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/logs/fastqc.log
+    jobid: 13
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastqc/R1_fastqc.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/Trimmed/R1.fastq.gz
+    wildcards: sample=22-04-2026/3j
+    threads: 2
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:26:31 2026]
+localrule multiqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QUAST/report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/MultiQC/multiqc_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/logs/multiqc.log
+    jobid: 16
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/MultiQC/multiqc_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QC/fastqc/R1_fastqc.html
+    wildcards: sample=22-04-2026/3k
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:26:31 2026]
+localrule multiqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QUAST/report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/MultiQC/multiqc_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/logs/multiqc.log
+    jobid: 6
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/MultiQC/multiqc_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QC/fastqc/R1_fastqc.html
+    wildcards: sample=22-04-2026/3i
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:31 2026]
+Finished jobid: 62 (Rule: snp_dists)
+45 of 67 steps (67%) done
+Execute 1 jobs...
+[Mon Jun  8 10:26:31 2026]
+localrule multiqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QUAST/report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/MultiQC/multiqc_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/logs/multiqc.log
+    jobid: 31
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/MultiQC/multiqc_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QC/fastp.json
+    wildcards: sample=30-04-2026/3v
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:33 2026]
+Finished jobid: 16 (Rule: multiqc)
+46 of 67 steps (69%) done
+[Mon Jun  8 10:26:33 2026]
+Finished jobid: 6 (Rule: multiqc)
+47 of 67 steps (70%) done
+[Mon Jun  8 10:26:33 2026]
+Finished jobid: 31 (Rule: multiqc)
+48 of 67 steps (72%) done
+[Mon Jun  8 10:26:33 2026]
+Finished jobid: 26 (Rule: multiqc)
+49 of 67 steps (73%) done
+[Mon Jun  8 10:26:34 2026]
+Finished jobid: 55 (Rule: snippy)
+50 of 67 steps (75%) done
+Execute 1 jobs...
+[Mon Jun  8 10:26:34 2026]
+localrule quast:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QUAST/report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/quast.log
+    jobid: 4
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QUAST/report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3h
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:35 2026]
+Finished jobid: 4 (Rule: quast)
+51 of 67 steps (76%) done
+Execute 2 jobs...
+[Mon Jun  8 10:26:35 2026]
+localrule multiqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QUAST/report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/MultiQC/multiqc_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/multiqc.log
+    jobid: 1
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/MultiQC/multiqc_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QC/fastqc/R1_fastqc.html
+    wildcards: sample=22-04-2026/3h
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:26:35 2026]
+localrule snippy:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3l/snps.vcf
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/logs/snippy.log
+    jobid: 57
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3l/snps.vcf; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/Trimmed/R2.fastq.gz
+    wildcards: sample=22-04-2026/3l
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:37 2026]
+Finished jobid: 1 (Rule: multiqc)
+52 of 67 steps (78%) done
+[Mon Jun  8 10:26:37 2026]
+Finished jobid: 23 (Rule: fastqc)
+53 of 67 steps (79%) done
+Execute 1 jobs...
+[Mon Jun  8 10:26:37 2026]
+localrule multiqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QUAST/report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/MultiQC/multiqc_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/logs/multiqc.log
+    jobid: 21
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/MultiQC/multiqc_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QC/fastp.json
+    wildcards: sample=22-04-2026/3l
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:26:37 2026]
+Finished jobid: 13 (Rule: fastqc)
+54 of 67 steps (81%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Mon Jun  8 10:26:38 2026]
+localrule multiqc:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QUAST/report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/MultiQC/multiqc_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/logs/multiqc.log
+    jobid: 11
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/MultiQC/multiqc_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastp.json, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QC/fastqc/R1_fastqc.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QUAST/report.html
+    wildcards: sample=22-04-2026/3j
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:26:39 2026]
+Finished jobid: 21 (Rule: multiqc)
+55 of 67 steps (82%) done
+[Mon Jun  8 10:26:39 2026]
+Finished jobid: 11 (Rule: multiqc)
+56 of 67 steps (84%) done
+Execute 1 jobs...
+[Mon Jun  8 10:26:39 2026]
+localrule checkm:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/CheckM/quality.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/logs/checkm.log
+    jobid: 43
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/CheckM/quality.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Assembly/contigs.fa
+    wildcards: sample=22-04-2026/3h
+    threads: 8
+    resources: tmpdir=/tmp, mem_mb=22000, mem=22 GB, mem_mib=20981
+Select jobs to execute...
+[Mon Jun  8 10:27:04 2026]
+Finished jobid: 57 (Rule: snippy)
+57 of 67 steps (85%) done
+Execute 1 jobs...
+[Mon Jun  8 10:27:04 2026]
+localrule snippy:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R1.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/30-04-2026/3v/snps.vcf
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/logs/snippy.log
+    jobid: 59
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/30-04-2026/3v/snps.vcf; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R2.fastq.gz, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/Trimmed/R1.fastq.gz
+    wildcards: sample=30-04-2026/3v
+    threads: 8
+    resources: tmpdir=/tmp
+Select jobs to execute...
+[Mon Jun  8 10:27:27 2026]
+Finished jobid: 59 (Rule: snippy)
+58 of 67 steps (87%) done
+Execute 2 jobs...
+[Mon Jun  8 10:27:27 2026]
+localrule multiqc_run:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/MultiQC/multiqc_report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/MultiQC_run/multiqc_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/multiqc_run.log
+    jobid: 65
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/MultiQC_run/multiqc_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/MultiQC/multiqc_report.html
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:27:27 2026]
+localrule snippy_core:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3h/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3i/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3j/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3k/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3l/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/30-04-2026/3u/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/30-04-2026/3v/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.full.aln, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.tab
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/snippy_core.log
+    jobid: 51
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.full.aln, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.tab; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3i/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/30-04-2026/3u/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/30-04-2026/3v/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3l/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3k/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3h/snps.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/Prokka/reference.gbk, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Snippy/22-04-2026/3j/snps.vcf
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:27:29 2026]
+Finished jobid: 51 (Rule: snippy_core)
+59 of 67 steps (88%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Mon Jun  8 10:27:29 2026]
+localrule snp_dists:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.full.aln
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/snp_dists.log
+    jobid: 50
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.full.aln
+    wildcards: suffix=
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:27:29 2026]
+Finished jobid: 50 (Rule: snp_dists)
+60 of 67 steps (90%) done
+Select jobs to execute...
+[Mon Jun  8 10:27:32 2026]
+Finished jobid: 65 (Rule: multiqc_run)
+61 of 67 steps (91%) done
+Execute 1 jobs...
+[Mon Jun  8 10:27:32 2026]
+localrule gubbins:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.full.aln
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.filtered_polymorphic_sites.fasta, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.node_labelled.final_tree.tre, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.recombination_predictions.gff
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/gubbins.log
+    jobid: 61
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.recombination_predictions.gff, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.filtered_polymorphic_sites.fasta; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.full.aln
+    threads: 8
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:28:19 2026]
+Finished jobid: 43 (Rule: checkm)
+62 of 67 steps (93%) done
+[Mon Jun  8 10:28:25 2026]
+Finished jobid: 61 (Rule: gubbins)
+63 of 67 steps (94%) done
+Select jobs to execute...
+Execute 2 jobs...
+[Mon Jun  8 10:28:25 2026]
+localrule snp_dists:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.filtered_polymorphic_sites.fasta
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_gubbins.tsv
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/snp_dists_gubbins.log
+    jobid: 60
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_gubbins.tsv; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.filtered_polymorphic_sites.fasta
+    wildcards: suffix=_gubbins
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:28:25 2026]
+localrule iqtree:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.filtered_polymorphic_sites.fasta
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/IQtree/iqtree.treefile
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/iqtree.log
+    jobid: 64
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/IQtree/iqtree.treefile; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.filtered_polymorphic_sites.fasta
+    threads: 8
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:28:25 2026]
+Finished jobid: 60 (Rule: snp_dists)
+64 of 67 steps (96%) done
+[Mon Jun  8 10:28:26 2026]
+Finished jobid: 64 (Rule: iqtree)
+65 of 67 steps (97%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Mon Jun  8 10:28:26 2026]
+localrule phylo_report:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_gubbins.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_parsnp.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/IQtree/iqtree.treefile, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.tab, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.filtered_polymorphic_sites.fasta, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.recombination_predictions.gff, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.tree, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QUAST/report.html
+    output: /srv/phylo_results/bruker/phylo/08-06-2026_1013/phylo_report.html
+    log: /srv/phylo_results/bruker/phylo/08-06-2026_1013/logs/phylo_report.log
+    jobid: 66
+    reason: Missing output files: /srv/phylo_results/bruker/phylo/08-06-2026_1013/phylo_report.html; Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_gubbins.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.recombination_predictions.gff, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Core/core.tab, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_parsnp.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.vcf, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Gubbins/gubbins.filtered_polymorphic_sites.fasta, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/IQtree/iqtree.treefile, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/QUAST/report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.tree
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:28:40 2026]
+Finished jobid: 66 (Rule: phylo_report)
+66 of 67 steps (99%) done
+Select jobs to execute...
+Execute 1 jobs...
+[Mon Jun  8 10:28:40 2026]
+localrule all:
+    input: /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_gubbins.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_parsnp.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/IQtree/iqtree.treefile, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.tree, /srv/phylo_results/bruker/phylo/08-06-2026_1013/MultiQC_run/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/phylo_report.html
+    jobid: 0
+    reason: Input files updated by another job: /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_gubbins.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists_parsnp.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3i/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/phylo_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/SNP_Dists/snp_dists.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3h/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/MultiQC_run/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3k/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3u/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/CheckM/quality.tsv, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/MultiQC/multiqc_report.html, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3j/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/22-04-2026/3l/ID_Skani/species.txt, /srv/phylo_results/bruker/phylo/08-06-2026_1013/IQtree/iqtree.treefile, /srv/phylo_results/bruker/phylo/08-06-2026_1013/Parsnp/parsnp.tree, /srv/phylo_results/bruker/phylo/08-06-2026_1013/30-04-2026/3v/CheckM/quality.tsv
+    resources: tmpdir=/tmp
+[Mon Jun  8 10:28:40 2026]
+Finished jobid: 0 (Rule: all)
+67 of 67 steps (100%) done
+Complete log(s): /home/bruker/genomics/.snakemake/log/2026-06-08T101354.602065.snakemake.log
