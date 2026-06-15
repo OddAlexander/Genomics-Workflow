@@ -281,7 +281,7 @@ def main():
     samples = args.samples.split(",")
 
     # Reference label: auto-annotated Bakta refs live at <dir>/Bakta/reference.gbff;
-    # external refs come in as <name>.gbff (or .gbk for older Prokka refs).
+    # external refs come in as <name>.gbff (or .gbk for older refs).
     ref_path  = Path(args.ref)
     ref_auto  = ref_path.name == "reference.gbff"
     ref_label = ref_path.parent.parent.name if ref_auto else ref_path.stem

@@ -8,7 +8,7 @@
 #   bash scripts/pixi/pixi_mashtree.sh results/19-03-2026/005a/Assembly/contigs.fa ...
 #
 # Each positional argument is resolved against results/ if it is not an
-# existing path — same shorthand as pixi_annotate_prokka.sh.
+# existing path — same shorthand as pixi_annotate_bakta.sh.
 # Output goes to --outdir (default: results_phylo/MashTree/).
 
 set -euo pipefail
