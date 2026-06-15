@@ -499,15 +499,10 @@ ${D.partitions.headers.length ? `
   </div>
 </div>` : ''}
 
-<div class="card">
-  <h2>Tool versions</h2>
-  <table>
-    <thead><tr><th>Tool</th><th>Version</th></tr></thead>
-    <tbody>
-      ${Object.entries(D.tool_versions).map(([k,v]) =>
-        `<tr><td>${k}</td><td style="font-family:monospace">${v}</td></tr>`
-      ).join('')}
-    </tbody>
+<div class="card" style="padding:0">
+  <h2 style="padding:16px 20px 8px">Tool versions</h2>
+  <table><thead><tr><th>Tool</th><th>Version</th><th>Tool</th><th>Version</th></tr></thead>
+  <tbody>${(() => { const vs = D.versions || []; let r = ''; for (let i = 0; i < vs.length; i += 2) { const a = vs[i], b = vs[i+1] || {}; r += `<tr><td>${a.tool}</td><td style="font-family:monospace">${a.version}</td><td>${b.tool||''}</td><td style="font-family:monospace">${b.version||''}</td></tr>`; } return r; })()}</tbody>
   </table>
 </div>
 `;

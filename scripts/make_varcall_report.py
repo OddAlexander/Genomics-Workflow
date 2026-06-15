@@ -251,24 +251,51 @@ def parse_reference_tsv(path):
     return {"species": sp, "fasta": fasta, "gff": (gff if gff and gff != "-" else None)}
 
 
-def collect_tool_versions():
-    def ver(cmd):
-        try:
-            r     = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-            first = ((r.stdout + r.stderr).strip().splitlines() or [""])[0]
-            m     = re.search(r"(\d+\.\d+(?:\.\d+)*)", first)
-            return m.group(1) if m else (first or "-")
-        except Exception:
-            return "-"
-    return {
-        "fastp":    ver(["pixi", "run", "fastp",    "--version"]),
-        "FastQC":   ver(["pixi", "run", "fastqc",   "--version"]),
-        "Mash":     ver(["pixi", "run", "--environment", "identification", "mash", "--version"]),
-        "Bowtie2":  ver(["pixi", "run", "bowtie2",  "--version"]),
-        "samtools": ver(["pixi", "run", "samtools", "--version"]),
-        "bcftools": ver(["pixi", "run", "bcftools", "--version"]),
-        "MultiQC":  ver(["pixi", "run", "multiqc",  "--version"]),
-    }
+_TOOL_DISPLAY = {
+    "fastp":    "fastp",
+    "fastqc":   "FastQC",
+    "mash":     "Mash",
+    "bowtie2":  "Bowtie2",
+    "samtools": "samtools",
+    "bcftools": "bcftools",
+    "multiqc":  "MultiQC",
+    "snakemake": "Snakemake",
+}
+
+_TOOL_ENV = {
+    "fastp":    "default",
+    "fastqc":   "default",
+    "mash":     "identification",
+    "bowtie2":  "default",
+    "samtools": "default",
+    "bcftools": "default",
+    "multiqc":  "default",
+    "snakemake": "default",
+}
+
+
+def collect_versions():
+    """Read tool versions from pixi conda-meta filenames. Returns list of
+    {tool, version} dicts for the tools actually installed."""
+    pixi_envs = Path(__file__).parent.parent / ".pixi" / "envs"
+    versions = []
+    seen = set()
+    for pkg, env in _TOOL_ENV.items():
+        meta_dir = pixi_envs / env / "conda-meta"
+        if not meta_dir.is_dir():
+            continue
+        prefix = pkg + "-"
+        for f in meta_dir.iterdir():
+            if f.name.startswith(prefix) and f.suffix == ".json":
+                parts = f.stem.split("-")
+                pkg_parts = pkg.split("-")
+                version = parts[len(pkg_parts)] if len(parts) > len(pkg_parts) else "?"
+                display = _TOOL_DISPLAY.get(pkg, pkg)
+                if display not in seen:
+                    versions.append({"tool": display, "version": version})
+                    seen.add(display)
+                break
+    return versions
 
 
 def main():
@@ -308,7 +335,7 @@ def main():
         "vcf_summary":   vcf_summary,
         "vcf_records":   vcf_records,
         "bracken_pct":   bracken_pct,
-        "tool_versions": collect_tool_versions(),
+        "versions": collect_versions(),
     }
 
     Path(args.output).write_text(

@@ -39,18 +39,21 @@ pasty              = ">=2.2"          # P. aeruginosa O-antigen serotyping
 ectyper            = ">=2.0"          # E. coli O:H-serotyping
 emmtyper           = ">=0.2"          # S. pyogenes emm-typing (GAS)
 cgmlst-dists       = ">=0.4"          # Parvise cgMLST-avstandar
-sra-tools = ">=2.9.6,<3"
-quast     = ">=5.2"
+sra-tools  = ">=2.9.6,<3"
+quast      = ">=5.2"
+igv        = "*"
+weasyprint  = ">=60"          # kept as fallback
+wkhtmltopdf = ">=0.12"       # WebKit HTML → PDF for pipeline reports
 
-# ── Annotering (bakta 1.9.4 -- stabil med db v5)
-# NB: db v6 på /databases/bakta_db/db er inkompatibel -- krev db v5
+# ── Annotering (bakta >=1.10 -- støtter db v6)
 [feature.annotation.dependencies]
-python = "3.9.*"
-bakta  = "==1.9.4"
+python  = "3.9.*"
+bakta   = ">=1.10"
+diamond = "==2.1.22"
 
 [feature.annotation.tasks]
-annotate          = { cmd = "bakta --db $BAKTA_DB --output $OUTPUT --threads 8 --force $INPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/bakta/" } }
-download-db       = { cmd = "bakta_db download --output $BAKTA_DB_DIR --type full", env = { BAKTA_DB_DIR = "/databases/bakta_db_v5" } }
+annotate          = { cmd = "bakta --db $BAKTA_DB --output $OUTPUT --threads 8 --force $INPUT", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/bakta/", BAKTA_DB = "/databases/bakta_db_v6/db" } }
+download-db       = { cmd = "bakta_db download --output $BAKTA_DB_DIR --type full", env = { BAKTA_DB_DIR = "/databases/bakta_db_v6" } }
 
 # ── CheckM (isolert: krev Python 3.9 + setuptools)
 [feature.checkm.dependencies]

@@ -132,20 +132,24 @@ print(f"Running {len(SAMPLES)}/{len(ALL_SAMPLES)} samples.")
 # --- Rules ---
 rule all:
     input:
-        expand(f"{RESULTS_DIR}/{{sample}}/pipeline_summary.html", sample=SAMPLES)
+        [f"{RESULTS_DIR}/{s}/{Path(s).name}_pipeline_summary.html" for s in SAMPLES],
+        [f"{RESULTS_DIR}/{s}/{Path(s).name}_pipeline_summary.pdf"  for s in SAMPLES],
 
 rule report:
     input:
         get_all_outputs
     output:
-        f"{RESULTS_DIR}/{{sample}}/pipeline_summary.html"
+        html = f"{RESULTS_DIR}/{{sample}}/{{sname}}_pipeline_summary.html",
+        pdf  = f"{RESULTS_DIR}/{{sample}}/{{sname}}_pipeline_summary.pdf",
+    wildcard_constraints:
+        sname = r"[^/]+"
     params:
         template   = "scripts/templates/report_template.html",
         results    = RESULTS_DIR,
         kraken2_db = KRAKEN2_DB,
         log_path   = RUN_LOG
     shell:
-        "python scripts/make_report.py --sample {wildcards.sample} --results-dir {params.results} --template {params.template} --output {output} --kraken2-db {params.kraken2_db} --log-path {params.log_path}"
+        "python scripts/make_report.py --sample {wildcards.sample} --results-dir {params.results} --template {params.template} --output {output.html} --pdf {output.pdf} --kraken2-db {params.kraken2_db} --log-path {params.log_path}"
 
 rule fastp:
     input:

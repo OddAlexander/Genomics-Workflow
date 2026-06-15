@@ -198,29 +198,63 @@ def parse_snp_dists(path):
     return {"samples": rows[0][1:] if rows else [], "matrix": matrix}
 
 
-def collect_tool_versions():
-    def ver(cmd):
-        try:
-            r     = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-            first = ((r.stdout + r.stderr).strip().splitlines() or [""])[0]
-            m     = re.search(r"(\d+\.\d+(?:\.\d+)*)", first)
-            return m.group(1) if m else (first or "-")
-        except Exception:
-            return "-"
-    return {
-        "fastp":     ver(["pixi", "run", "fastp",    "--version"]),
-        "FastQC":    ver(["pixi", "run", "fastqc",   "--version"]),
-        "Shovill":   ver(["pixi", "run", "shovill",  "--version"]),
-        "Prokka":    ver(["pixi", "run", "--environment", "prokka",         "prokka",         "--version"]),
-        "QUAST":     ver(["pixi", "run", "quast",    "--version"]),
-        "Skani":     ver(["pixi", "run", "--environment", "identification", "skani",          "--version"]),
-        "Snippy":    ver(["pixi", "run", "snippy",   "--version"]),
-        "Gubbins":   ver(["pixi", "run", "--environment", "gubbins",        "run_gubbins.py", "--version"]),
-        "snp-dists": ver(["pixi", "run", "snp-dists", "-v"]),
-        "IQ-TREE":   ver(["pixi", "run", "iqtree",   "--version"]),
-        "Parsnp":    ver(["pixi", "run", "--environment", "parsnp",         "parsnp",         "--version"]),
-        "MultiQC":   ver(["pixi", "run", "multiqc",  "--version"]),
-    }
+_TOOL_DISPLAY = {
+    "fastp":         "fastp",
+    "fastqc":        "FastQC",
+    "shovill":       "Shovill",
+    "bakta":         "Bakta",
+    "quast":         "QUAST",
+    "skani":         "skani",
+    "snippy":        "Snippy",
+    "gubbins":       "Gubbins",
+    "snp-dists":     "snp-dists",
+    "iqtree":        "IQ-TREE",
+    "parsnp":        "Parsnp",
+    "multiqc":       "MultiQC",
+    "checkm-genome": "CheckM",
+    "snakemake":     "Snakemake",
+}
+
+_TOOL_ENV = {
+    "fastp":         "default",
+    "fastqc":        "default",
+    "shovill":       "default",
+    "bakta":         "annotation",
+    "quast":         "default",
+    "skani":         "identification",
+    "snippy":        "default",
+    "gubbins":       "gubbins",
+    "snp-dists":     "default",
+    "iqtree":        "default",
+    "parsnp":        "parsnp",
+    "multiqc":       "default",
+    "checkm-genome": "checkm",
+    "snakemake":     "default",
+}
+
+
+def collect_versions():
+    """Read tool versions from pixi conda-meta filenames. Returns list of
+    {tool, version} dicts for the tools actually installed."""
+    pixi_envs = Path(__file__).parent.parent / ".pixi" / "envs"
+    versions = []
+    seen = set()
+    for pkg, env in _TOOL_ENV.items():
+        meta_dir = pixi_envs / env / "conda-meta"
+        if not meta_dir.is_dir():
+            continue
+        prefix = pkg + "-"
+        for f in meta_dir.iterdir():
+            if f.name.startswith(prefix) and f.suffix == ".json":
+                parts = f.stem.split("-")
+                pkg_parts = pkg.split("-")
+                version = parts[len(pkg_parts)] if len(parts) > len(pkg_parts) else "?"
+                display = _TOOL_DISPLAY.get(pkg, pkg)
+                if display not in seen:
+                    versions.append({"tool": display, "version": version})
+                    seen.add(display)
+                break
+    return versions
 
 
 def main():
@@ -246,10 +280,10 @@ def main():
     pd      = Path(args.phylo_dir)
     samples = args.samples.split(",")
 
-    # Reference label: auto-annotated Prokka refs live at <dir>/Prokka/reference.gbk;
-    # external refs come in as <name>.gbk.
+    # Reference label: auto-annotated Bakta refs live at <dir>/Bakta/reference.gbff;
+    # external refs come in as <name>.gbff (or .gbk for older Prokka refs).
     ref_path  = Path(args.ref)
-    ref_auto  = ref_path.name == "reference.gbk"
+    ref_auto  = ref_path.name == "reference.gbff"
     ref_label = ref_path.parent.parent.name if ref_auto else ref_path.stem
 
     # Both snippy-core (via flat symlinks) and Parsnp (via copied FASTAs) emit
@@ -313,7 +347,7 @@ def main():
         "snp_dists_parsnp":  normalise(parse_snp_dists(args.snp_dists_parsnp))  if args.snp_dists_parsnp  else empty_matrix,
         "iqtree":            safe_read(pd / "IQtree/iqtree.treefile") or "",
         "parsnp_tree":       safe_read(args.parsnp_tree) if args.parsnp_tree else None,
-        "tool_versions":     collect_tool_versions(),
+        "versions":          collect_versions(),
     }
 
     Path(args.output).write_text(

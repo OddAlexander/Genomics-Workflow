@@ -2,9 +2,9 @@
 #
 # Run with external reference:
 #   pixi run snakemake -s Snakefile_phylo --cores 16 \
-#       --config ref=/databases/prokka_refs/19-03-2026_005a/19-03-2026_005a.gbk
+#       --config ref=/databases/bakta_refs/19-03-2026_005a/19-03-2026_005a.gbff
 #
-# Without reference -- auto-annotates the first sample with Prokka:
+# Without reference -- auto-annotates the first sample with Bakta:
 #   pixi run snakemake -s Snakefile_phylo --cores 16
 #
 # Options:
@@ -57,8 +57,8 @@ if "ref" in config:
 else:
     if not SAMPLES:
         raise ValueError("No samples found and no reference provided")
-    REFERENCE = f"{PHYLO_DIR}/{SAMPLES[0]}/Prokka/reference.gbk"
-    print(f"No reference provided -- auto-annotating first sample with Prokka: {SAMPLES[0]}")
+    REFERENCE = f"{PHYLO_DIR}/{SAMPLES[0]}/Bakta/reference.gbff"
+    print(f"No reference provided -- auto-annotating first sample with Bakta: {SAMPLES[0]}")
 
 print(f"Phylogenomics: {len(SAMPLES)}/{len(ALL_SAMPLES)} samples -- reference: {REFERENCE}")
 
@@ -124,16 +124,21 @@ rule assemble:
         "--cpus {threads} --ram $(( {resources.mem_mb} / 1024 )) --force 2>&1 | tee {log}"
 
 
-rule prokka:
+rule bakta:
     input:
         fa = f"{PHYLO_DIR}/{{sample}}/Assembly/contigs.fa",
     output:
-        gbk = f"{PHYLO_DIR}/{{sample}}/Prokka/reference.gbk",
-    log:    f"{PHYLO_DIR}/{{sample}}/logs/prokka.log"
+        gbff = f"{PHYLO_DIR}/{{sample}}/Bakta/reference.gbff",
+    log:    f"{PHYLO_DIR}/{{sample}}/logs/bakta.log"
     threads: THREADS
+    params:
+        # diamond (used internally by bakta) segfaults with too many threads;
+        # cap at 4 to avoid SIGSEGV (-11).
+        diamond_threads = min(4, THREADS)
     shell:
-        "pixi run --environment prokka prokka --outdir $(dirname {output.gbk}) "
-        "--prefix reference --cpus {threads} --force {input.fa} 2>&1 | tee {log}"
+        "pixi run --environment annotation bakta --db /databases/bakta_db_v6/db "
+        "--output $(dirname {output.gbff}) --prefix reference --threads {params.diamond_threads} "
+        "--force --verbose --skip-pseudo --skip-sorf {input.fa} 2>&1 | tee {log} >&2"
 
 
 rule quast:

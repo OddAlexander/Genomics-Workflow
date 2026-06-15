@@ -204,13 +204,16 @@ function render() {
   }
 
   // ── Tool versions ────────────────────────────────────────────────────────────
-  h += `<h2>Tool versions</h2><div class="card scroll-x"><table>
-    <thead><tr><th>Tool</th><th>Version</th></tr></thead>
-    <tbody>
-      ${Object.entries(D.tool_versions).map(([k, v]) =>
-        `<tr><td>${k}</td><td class="mono">${v}</td></tr>`).join('')}
-    </tbody>
-  </table></div>`;
+  if (D.versions && D.versions.length) {
+    h += `<h2>Tool versions</h2><div class="card" style="padding:0"><table>
+      <thead><tr><th>Tool</th><th>Version</th><th>Tool</th><th>Version</th></tr></thead>
+      <tbody>`;
+    for (let i = 0; i < D.versions.length; i += 2) {
+      const a = D.versions[i], b = D.versions[i+1] || {};
+      h += `<tr><td>${a.tool}</td><td class="mono">${a.version}</td><td>${b.tool||''}</td><td class="mono">${b.version||''}</td></tr>`;
+    }
+    h += `</tbody></table></div>`;
+  }
 
   h += `<p class="footer">Report generated ${D.completed}.</p>`;
 

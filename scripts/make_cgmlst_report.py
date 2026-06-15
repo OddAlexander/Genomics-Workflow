@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate HTML report for the cgMLST pipeline run."""
-import argparse, csv, json, math, re, subprocess
+import argparse, csv, json, math, re
 from datetime import datetime
 from pathlib import Path
 
@@ -229,20 +229,43 @@ def force_layout(n, edges, width=800, height=500, iters=500):
     return [{"x": round(p[0], 1), "y": round(p[1], 1)} for p in pos]
 
 
-def collect_tool_versions():
-    def ver(cmd):
-        try:
-            r     = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-            first = ((r.stdout + r.stderr).strip().splitlines() or [""])[0]
-            m     = re.search(r"(\d+\.\d+(?:\.\d+)*)", first)
-            return m.group(1) if m else (first or "-")
-        except Exception:
-            return "-"
-    return {
-        "chewBBACA":    ver(["pixi", "run", "--environment", "cgmlst",    "chewBBACA.py", "--version"]),
-        "cgmlst-dists": ver(["pixi", "run", "--environment", "cgmlst",    "cgmlst-dists", "--version"]),
-        "GrapeTree":    ver(["pixi", "run", "--environment", "grapetree", "grapetree",    "--version"]),
-    }
+_TOOL_DISPLAY = {
+    "chewbbaca":    "chewBBACA",
+    "cgmlst-dists": "cgmlst-dists",
+    "grapetree":    "GrapeTree",
+    "snakemake":    "Snakemake",
+}
+
+_TOOL_ENV = {
+    "chewbbaca":    "cgmlst",
+    "cgmlst-dists": "cgmlst",
+    "grapetree":    "grapetree",
+    "snakemake":    "default",
+}
+
+
+def collect_versions():
+    """Read tool versions from pixi conda-meta filenames. Returns list of
+    {tool, version} dicts for the tools actually installed."""
+    pixi_envs = Path(__file__).parent.parent / ".pixi" / "envs"
+    versions = []
+    seen = set()
+    for pkg, env in _TOOL_ENV.items():
+        meta_dir = pixi_envs / env / "conda-meta"
+        if not meta_dir.is_dir():
+            continue
+        prefix = pkg + "-"
+        for f in meta_dir.iterdir():
+            if f.name.startswith(prefix) and f.suffix == ".json":
+                parts = f.stem.split("-")
+                pkg_parts = pkg.split("-")
+                version = parts[len(pkg_parts)] if len(parts) > len(pkg_parts) else "?"
+                display = _TOOL_DISPLAY.get(pkg, pkg)
+                if display not in seen:
+                    versions.append({"tool": display, "version": version})
+                    seen.add(display)
+                break
+    return versions
 
 
 def main():
@@ -362,7 +385,7 @@ def main():
         "grapetree":     safe_read(args.grapetree) or "",
         "mst_nodes":     mst_nodes,
         "mst_edges":     mst_edges,
-        "tool_versions": collect_tool_versions(),
+        "versions": collect_versions(),
     }
 
     Path(args.output).write_text(

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pipeline summary -- {{ sample }}</title>
+<style>
+  @page { size: A4; margin: 10mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 9px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: #f5f7fa; color: #1a1a2e; padding: 0; font-size: 1rem;
+         print-color-adjust: exact; width: 100%; }
+  h1 { color: #1a3a5c; font-size: 1.5rem; padding-bottom: 6px;
+       border-bottom: 2px solid #1a3a5c; margin-bottom: 10px; }
+  h2 { color: #2e6da4; font-size: 1.15rem; margin: 10px 0 4px; }
+  h3 { color: #2e6da4; font-size: 1rem; margin: 8px 0 3px; }
+  .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;
+          padding: 8px; margin-bottom: 6px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 5px; }
+  .stat { background: #f5f7fa; border-radius: 5px; padding: 7px 5px; text-align: center;
+          flex: 0 0 calc(25% - 4px); }
+  .stat .val { font-size: 1.6rem; font-weight: 700; color: #1a3a5c; line-height: 1; }
+  .stat .lbl { font-size: 0.8rem; color: #6c757d; margin-top: 3px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem;
+          table-layout: fixed; }
+  th { background: #1a3a5c; color: white; padding: 3px 4px; text-align: left;
+       font-weight: 600; word-break: break-all; overflow: hidden; }
+  tr { break-inside: avoid; }
+  td { padding: 2px 4px; border-bottom: 1px solid #e2e8f0;
+       word-break: break-all; overflow-wrap: anywhere; white-space: normal;
+       overflow: hidden; max-width: 0; }
+  .badge { display: inline-block; padding: 1px 4px; border-radius: 8px;
+           font-size: 0.8rem; font-weight: 600; white-space: normal; word-break: break-word; }
+  .red    { background: #fde8ea; color: #b02a37; }
+  .yellow { background: #fff3cd; color: #856404; }
+  .green  { background: #d1e7dd; color: #0a3622; }
+  .blue   { background: #cfe2ff; color: #084298; }
+  .alert  { border-radius: 4px; padding: 5px 8px; margin-bottom: 5px;
+            border-left: 3px solid; font-size: 0.9rem; }
+  .ar { background: #fde8ea; border-color: #dc3545; }
+  .ay { background: #fff3cd; border-color: #ffc107; }
+  .ag { background: #d1e7dd; border-color: #28a745; }
+  .ab { background: #e8f4f8; border-color: #17a2b8; }
+  .two-col { display: flex; gap: 8px; }
+  .two-col > div { flex: 1; min-width: 0; }
+  .muted { color: #6c757d; }
+  .mono { font-family: monospace; font-size: 0.82rem; }
+</style>
+</head>
+<body>
+{#-- ── Macros ─────────────────────────────────────────────────────────── --#}
+{%- macro stat(value, label, color='inherit', size='') -%}
+<div class="stat"><div class="val"{% if color != 'inherit' or size %} style="{% if color != 'inherit' %}color:{{ color }};{% endif %}{% if size %}font-size:{{ size }};{% endif %}"{% endif %}>{{ value }}</div><div class="lbl">{{ label }}</div></div>
+{%- endmacro %}
+{%- macro lt_color(v, lo, hi) -%}{%- if v is not none -%}{%- if v < lo -%}#b02a37{%- elif v < hi -%}#856404{%- else -%}inherit{%- endif -%}{%- else -%}inherit{%- endif -%}{%- endmacro %}
+{%- macro ge_color(v, lo, hi) -%}{%- if v is not none -%}{%- if v >= lo -%}#b02a37{%- elif v >= hi -%}#856404{%- else -%}inherit{%- endif -%}{%- else -%}inherit{%- endif -%}{%- endmacro %}
+{%- macro gt_color(v, lo, hi) -%}{%- if v is not none -%}{%- if v > lo -%}#b02a37{%- elif v > hi -%}#856404{%- else -%}inherit{%- endif -%}{%- else -%}inherit{%- endif -%}{%- endmacro %}
+{%- macro opt(v, suffix='') -%}{{ v if v is not none else '-' }}{% if v is not none %}{{ suffix }}{% endif %}{%- endmacro %}
+{%- macro mob_badge(mobility) -%}{%- set m = mobility|replace('CONJUGATIVE','Conj')|replace('NON_MOBILIZABLE','Non-mob')|replace('MOBILIZABLE','Mob') -%}<span class="badge {% if mobility == 'CONJUGATIVE' %}red{% elif mobility == 'MOBILIZABLE' %}yellow{% else %}green{% endif %}">{{ m or '-' }}</span>{%- endmacro %}
+{#-- ── End macros ─────────────────────────────────────────────────────── --#}
+
+<h1>Pipeline summary &mdash; {{ sample.split('/')[-1] }}</h1>
+
+{# ── Summary tiles ─────────────────────────────────────────────────────── #}
+<div class="card"><div class="grid">
+  {{ stat(sample.split('/')[-1], 'Sample') }}
+  {{ stat(species|replace('_',' '), 'Species', size='1.1rem') }}
+  {{ stat('ST' ~ mlst.ST, 'MLST (' ~ mlst.scheme ~ ')') }}
+  {{ stat(amr.total_amr_genes, 'AMR genes', '#b02a37' if amr.total_amr_genes else 'inherit') }}
+  {{ stat(amr.total_virulence_genes, 'Virulence genes') }}
+  {{ stat(amr.total_stress_genes or 0, 'Stress genes') }}
+  {{ stat(plasmids.count, 'Plasmids') }}
+  {% if sccmec and sccmec.type not in ('-','skipped') %}
+  {{ stat('MRSA' if sccmec.mrsa else 'MSSA', 'SCCmec ' ~ sccmec.type, '#b02a37' if sccmec.mrsa else '#0a3622') }}
+  {% endif %}
+  {% if spatyper and spatyper.spa_type != '-' %}
+  {{ stat(spatyper.spa_type, 'spa-type', size='1.1rem') }}
+  {% endif %}
+  {% if kleborate and kleborate.ST != '-' %}
+  {{ stat('ST' ~ kleborate.ST, 'ST (Kleborate)') }}
+  {% endif %}
+  {% if kleborate %}
+    {% if kleborate.K_type != '-' %}{{ stat(kleborate.K_type, 'K-type', size='1.1rem') }}{% endif %}
+    {% if kleborate.O_type != '-' %}{{ stat(kleborate.O_type, 'O-type', size='1.1rem') }}{% endif %}
+    {% if kleborate.Bla_Carb != '-' %}{{ stat(kleborate.Bla_Carb, 'Carbapenemase', '#b02a37', '1rem') }}{% endif %}
+    {% if kleborate.Bla_ESBL != '-' %}{{ stat(kleborate.Bla_ESBL, 'ESBL', '#856404', '1rem') }}{% endif %}
+  {% endif %}
+  {% if ectyper and ectyper.serotype != '-' %}{{ stat(ectyper.serotype, 'Serotype (ECTyper)', size='1rem') }}{% endif %}
+  {% if emmtyper and emmtyper.emm_type != '-' %}{{ stat(emmtyper.emm_type, 'emm-type', size='1.1rem') }}{% endif %}
+  {% if seqsero2 and seqsero2.serotype != '-' %}{{ stat(seqsero2.serotype, 'Serotype (SeqSero2)', size='1rem') }}{% endif %}
+  {% if hicap and hicap.serotype != '-' %}{{ stat(hicap.serotype, 'Capsule (hicap)', size='1.1rem') }}{% endif %}
+  {% if gbsserotyper and gbsserotyper.serotype != '-' %}{{ stat(gbsserotyper.serotype, 'Serotype (GBS-SBG)', size='1.1rem') }}{% endif %}
+  {% if pasty and pasty.serotype != '-' %}{{ stat(pasty.serotype, 'O-antigen (Pasty)', size='1.1rem') }}{% endif %}
+  {% if lrefinder and lrefinder.n_acquired > 0 %}{{ stat(lrefinder.acquired_genes|map(attribute='template')|map('truncate',10,True,'')|join(' '), 'Linezolid R (acq.)', '#b02a37', '0.9rem') }}{% endif %}
+</div></div>
+
+{# ── Risk alerts ────────────────────────────────────────────────────────── #}
+{% if amr.high_risk_genes %}
+<div class="alert ar"><strong>HIGH RISK</strong> &mdash; AMR genes on conjugative plasmids:
+  {% for g in amr.high_risk_genes %}<span class="badge red">{{ g }}</span> {% endfor %}
+</div>{% endif %}
+{% if amr.medium_risk_genes %}
+<div class="alert ay"><strong>MEDIUM RISK</strong> &mdash; AMR on mobilizable plasmid:
+  {% for g in amr.medium_risk_genes %}<span class="badge yellow">{{ g }}</span> {% endfor %}
+</div>{% endif %}
+
+{# ── Read QC ────────────────────────────────────────────────────────────── #}
+{% set q = qc %}{% set pp = species_id.primary_pct %}
+<h2>Read QC</h2>
+<div class="card"><div class="grid">
+  {{ stat(('%.2f'|format(q.reads/1e6)) if q.reads else '-', 'Mreads (trimmed)') }}
+  {{ stat(opt(q.q30_pct, '%'), 'Q30', lt_color(q.q30_pct, 80, 90)) }}
+  {{ stat(opt(q.mapped_depth, '&times;'), 'Depth (mapped)', lt_color(q.mapped_depth, 20, 40)) }}
+  {{ stat(opt(q.breadth_pct, '%'), 'Breadth', lt_color(q.breadth_pct, 90, 95)) }}
+  {{ stat(opt(q.est_depth, '&times;'), 'Depth (est.)', lt_color(q.est_depth, 20, 40)) }}
+  {{ stat(opt(q.dup_pct, '%'), 'Duplication') }}
+  {{ stat('%.1f'|format(pp) ~ '%', 'Top sp. (Kraken2)', lt_color(pp, 80, 90)) }}
+</div></div>
+
+{# ── VarCall (optional, only when varcall pipeline has run) ─────────────── #}
+{% if varcall %}{% set v = varcall %}
+<h2>Reference mapping (from varcall pipeline)</h2>
+<div class="card"><div class="grid">
+  {{ stat(v.reference_species|replace('_',' '), 'Reference species', size='0.9rem') }}
+  {{ stat(('%.1f'|format(v.mapping_rate_pct) ~ '%') if v.mapping_rate_pct is not none else '-', 'Mapping rate', lt_color(v.mapping_rate_pct, 80, 95)) }}
+  {{ stat(opt(v.mean_depth, '&times;'), 'Depth (vs ref)', lt_color(v.mean_depth, 20, 40)) }}
+  {{ stat(opt(v.breadth_pct, '%'), 'Breadth (vs ref)', lt_color(v.breadth_pct, 90, 95)) }}
+  {{ stat(v.variants_pass if v.variants_pass is not none else '-', 'Variants (PASS)') }}
+  {{ stat(v.variants_filtered if v.variants_filtered is not none else '-', 'Filtered', '#856404' if v.variants_filtered else 'inherit') }}
+</div></div>
+{% endif %}
+
+{# ── Assembly + Species ID ───────────────────────────────────────────────── #}
+{% set asm = assembly %}{% set sid = species_id %}{% set gam = sid.gambit %}
+<div class="two-col">
+<div>
+  <h2>Assembly</h2>
+  <div class="card"><div class="grid">
+    {{ stat(asm.contigs, 'Contigs') }}
+    {{ stat('%.2f'|format(asm.total_length/1e6), 'Mb total') }}
+    {{ stat('%.0f'|format(asm.N50/1e3), 'N50 (kb)') }}
+    {{ stat('%.0f'|format(asm.largest_contig/1e3), 'Largest (kb)') }}
+    {{ stat(('%.1f'|format(asm.completeness) ~ '%') if asm.completeness is not none else '-', 'Completeness', lt_color(asm.completeness, 90, 95)) }}
+    {{ stat(('%.1f'|format(asm.contamination) ~ '%') if asm.contamination is not none else '-', 'Contamination', ge_color(asm.contamination, 5, 2)) }}
+  </div></div>
+</div>
+<div>
+  <h2>Species identification</h2>
+  <div class="card">
+    <div class="alert {% if sid.purity == 'PURE' %}ag{% elif sid.purity == 'LIKELY_PURE' %}ay{% else %}ar{% endif %}" style="margin-bottom:4px"><strong>Purity: {{ sid.purity }}</strong></div>
+    {% for w in sid.contamination_warnings %}<div class="alert ay" style="margin-bottom:3px">&#9888; {{ w }}</div>{% endfor %}
+    <div class="alert ab" style="margin-bottom:5px">
+      <strong>Concordance: <span class="badge {% if sid.concordance_score == 2 %}green{% else %}red{% endif %}">{% if sid.concordance_score == 2 %}Match{% else %}No match{% endif %}</span></strong><br>
+      GAMBIT: {{ sid.gambit_species|replace('_',' ') }} | Bracken: {{ sid.bracken_species|replace('_',' ') }}
+    </div>
+    <table><colgroup><col style="width:32%"><col style="width:68%"></colgroup>
+      <tr><th colspan="2">GAMBIT (primary ID)</th></tr>
+      {% if gam.status == 'ok' %}
+      <tr><td>Predicted</td><td><strong>{{ gam.predicted_name|replace('_',' ') }}</strong></td></tr>
+      <tr><td>Closest hit</td><td class="mono" style="font-size:0.85rem">{{ gam.closest_description }}</td></tr>
+      <tr><td>Distance</td><td style="color:{{ gt_color(gam.closest_distance, 0.05, 0.02) }};font-weight:600">{{ '%.4f'|format(gam.closest_distance) if gam.closest_distance is not none else '-' }}</td></tr>
+      {% else %}<tr><td colspan="2" class="muted">No match / not run</td></tr>{% endif %}
+      <tr><th colspan="2">SKANI (ANI)</th></tr>
+      {% if sid.skani.status == 'ok' %}
+      <tr><td>Top hit</td><td style="font-size:0.85rem">{{ sid.skani.top_hit }}</td></tr>
+      <tr><td>ANI</td><td><span class="badge {% if sid.skani.ani >= 99 %}green{% elif sid.skani.ani >= 95 %}yellow{% else %}red{% endif %}">{{ '%.2f'|format(sid.skani.ani) }}%</span></td></tr>
+      {% else %}<tr><td colspan="2" class="muted">No hit</td></tr>{% endif %}
+      <tr><th colspan="2">Bracken (reads)</th></tr>
+      <tr><td>Primary</td><td>{{ sid.primary_species|replace('_',' ') }} <span class="badge {% if sid.primary_pct >= 80 %}green{% elif sid.primary_pct >= 60 %}yellow{% else %}red{% endif %}">{{ '%.1f'|format(sid.primary_pct) }}%</span></td></tr>
+      <tr><td>Secondary</td><td>{{ sid.secondary_species|replace('_',' ') }} <span class="badge {% if sid.secondary_pct >= 10 %}yellow{% else %}blue{% endif %}">{{ '%.1f'|format(sid.secondary_pct) }}%</span></td></tr>
+      <tr><td>Unclassified</td><td><span class="badge {% if sid.unclassified_pct >= 20 %}yellow{% else %}blue{% endif %}">{{ '%.1f'|format(sid.unclassified_pct) }}%</span></td></tr>
+    </table>
+  </div>
+</div>
+</div>
+
+{# ── AMR ─────────────────────────────────────────────────────────────────── #}
+<h2>AMRFinder hits</h2>
+{% set amr_groups = [('AMR','Resistance genes','#b02a37'),('VIRULENCE','Virulence genes','#856404'),('STRESS','Stress response','#495057')] %}
+{% set ns = namespace(found=false) %}
+{% for typ, label, col in amr_groups %}
+  {% set rows = amr.details|selectattr('type','equalto',typ)|list %}
+  {% if rows %}{% set ns.found = true %}
+  <h3 style="color:{{ col }}">{{ label }}</h3>
+  <div class="card" style="padding:0">
+  <table>
+  <colgroup><col style="width:7%"><col style="width:10%"><col style="width:12%"><col style="width:5%"><col style="width:11%"><col style="width:6%"><col style="width:13%"><col style="width:18%"><col style="width:18%"></colgroup>
+  <tr><th>Gene</th><th>Name</th><th>Class / Subclass</th><th>Scope</th><th>Contig</th><th>Mob.</th><th>Replicon</th><th>PlasmidFinder</th><th>MGE</th></tr>
+  {% for g in rows %}
+  {% set cls = [g.class, g.subclass]|reject('in',('-','NA',''))|join(' / ') or '-' %}
+  <tr>
+    <td><strong>{{ g.gene }}</strong></td>
+    <td>{{ g.gene_name|default('') }}</td>
+    <td>{{ cls }}</td>
+    <td><span class="badge {% if g.scope == 'core' %}blue{% else %}green{% endif %}">{{ g.scope or '-' }}</span></td>
+    <td class="mono">{{ g.location }}</td>
+    <td>{{ mob_badge(g.mobility) }}</td>
+    <td>{{ g.replicon }}</td>
+    <td>{% if g.plasmids %}{% for p in g.plasmids %}<span class="badge red">{{ p }}</span> {% endfor %}{% else %}-{% endif %}</td>
+    <td>{% if g.mge %}{% for m in g.mge %}<span class="badge yellow">{{ m.name }}</span> {% endfor %}{% else %}-{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </table></div>
+  {% endif %}
+{% endfor %}
+{% if not ns.found %}<div class="card"><p class="muted">No hits.</p></div>{% endif %}
+
+{# ── Plasmids ────────────────────────────────────────────────────────────── #}
+<h2>Plasmids</h2>
+<div class="card">
+<div class="grid" style="margin-bottom:8px">
+  {{ stat(plasmids.count, 'Total') }}
+  {{ stat(plasmids.conjugative, 'Conjugative', '#b02a37' if plasmids.conjugative else 'inherit') }}
+  {{ stat(plasmids.mobilizable, 'Mobilizable', '#856404' if plasmids.mobilizable else 'inherit') }}
+  {{ stat(plasmids.non_mobilizable, 'Non-mob.') }}
+</div>
+{% if plasmids.details %}
+<table>
+<colgroup><col style="width:12%"><col style="width:26%"><col style="width:14%"><col style="width:9%"><col style="width:13%"><col style="width:13%"><col style="width:13%"></colgroup>
+<tr><th>Plasmid</th><th>Replicon</th><th>Relaxase</th><th>Mob.</th><th>Host range</th><th>Cluster</th><th>Size (bp)</th></tr>
+{% for p in plasmids.details %}
+<tr>
+  <td>{{ p.file_id }}</td>
+  <td>{{ p.replicon }}</td>
+  <td>{{ p.relaxase }}</td>
+  <td>{{ mob_badge(p.mobility) }}</td>
+  <td>{{ p.host_range|default('-') }}</td>
+  <td>{{ p.cluster }}</td>
+  <td>{{ '{:,}'.format(p.size|int) }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+</div>
+
+{# ── PlasmidFinder ───────────────────────────────────────────────────────── #}
+{% if plasmidfinder.hits %}
+<h2>PlasmidFinder</h2>
+<div class="card" style="padding:0">
+<table>
+<colgroup><col style="width:22%"><col style="width:10%"><col style="width:32%"><col style="width:18%"><col style="width:18%"></colgroup>
+<tr><th>Replicon</th><th>Identity</th><th>Contig</th><th>Database</th><th>Accession</th></tr>
+{% for p in plasmidfinder.hits %}
+<tr>
+  <td><strong>{{ p.plasmid }}</strong></td>
+  <td>{{ p.identity }}%</td>
+  <td class="mono">{{ p.contig }}</td>
+  <td>{{ p.database }}</td>
+  <td>{{ p.accession }}</td>
+</tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+{# ── MGE ─────────────────────────────────────────────────────────────────── #}
+{% if mge.count > 0 %}
+<h2>Mobile genetic elements</h2>
+<div class="card" style="padding:0">
+<table>
+<colgroup><col style="width:5%"><col style="width:22%"><col style="width:14%"><col style="width:35%"><col style="width:12%"><col style="width:12%"></colgroup>
+<tr><th>#</th><th>Name</th><th>Type</th><th>Contig</th><th>Start</th><th>End</th></tr>
+{% for m in mge.elements %}
+<tr><td>{{ m.nr }}</td><td><strong>{{ m.name }}</strong></td><td>{{ m.type }}</td>
+<td class="mono">{{ m.contig }}</td>
+<td>{{ m.start }}</td><td>{{ m.end }}</td></tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+{# ── SCCmec ───────────────────────────────────────────────────────────────── #}
+{% if sccmec and sccmec.type not in ('-','skipped') %}
+<h2>SCCmec typing</h2>
+<div class="card">
+<div class="alert {% if sccmec.mrsa %}ar{% else %}ag{% endif %}" style="margin-bottom:6px">
+  <strong>{% if sccmec.mrsa %}MRSA{% else %}MSSA{% endif %} — SCCmec type {{ sccmec.type }}</strong>
+</div>
+<table><colgroup><col style="width:32%"><col style="width:68%"></colgroup>
+<tr><td>Type</td><td>{{ sccmec.type }}</td></tr>
+{% if spatyper and spatyper.spa_type != '-' %}<tr><td>spa-type</td><td>{{ spatyper.spa_type }}</td></tr>{% endif %}
+<tr><td>Nomenclature</td><td>ST{{ mlst.ST }}-SCCmec{{ sccmec.type }}{% if spatyper %} ({{ spatyper.spa_type }}){% endif %}</td></tr>
+</table></div>
+{% endif %}
+
+{# ── LRE-Finder ───────────────────────────────────────────────────────────── #}
+{% if lrefinder %}
+{% set has_r = lrefinder.n_acquired > 0 or (lrefinder.max_23s_mut_pct is not none and lrefinder.max_23s_mut_pct >= 1) %}
+<h2>Linezolid resistance (LRE-Finder)</h2>
+<div class="card">
+<div class="alert {% if has_r %}ar{% else %}ag{% endif %}" style="margin-bottom:5px">
+  <strong>{% if has_r %}Resistance markers DETECTED{% else %}No markers detected{% endif %}</strong>
+</div>
+{% if lrefinder.acquired_genes %}
+<h3>Acquired resistance genes</h3>
+<table style="table-layout:fixed;width:100%">
+<colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+<tr><th>Gene template</th><th>Identity</th><th>Coverage</th><th>Depth</th></tr>
+{% for g in lrefinder.acquired_genes %}
+<tr><td><strong>{{ g.template }}</strong></td><td>{{ '%.2f'|format(g.identity) }}%</td><td>{{ '%.2f'|format(g.coverage) }}%</td><td>{{ g.depth }}&times;</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if lrefinder.ribosomal_hits %}
+<h3 style="margin-top:6px">23S rRNA references</h3>
+<table style="table-layout:fixed;width:100%">
+<colgroup><col style="width:36%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup>
+<tr><th>Reference</th><th>Identity</th><th>Mutated %</th><th>Coverage</th><th>Depth</th></tr>
+{% for r in lrefinder.ribosomal_hits %}
+<tr>
+  <td class="mono" style="font-size:0.85rem">{{ r.template }}</td>
+  <td>{{ '%.2f'|format(r.identity) }}%</td>
+  <td style="color:{{ ge_color(r.mut_pct, 5, 1) }};font-weight:600">{{ '%.2f'|format(r.mut_pct) if r.mut_pct is not none else '-' }}%</td>
+  <td>{{ '%.2f'|format(r.coverage) }}%</td>
+  <td>{{ r.depth }}&times;</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+</div>
+{% endif %}
+
+{# ── Typing methods ───────────────────────────────────────────────────────── #}
+<h2>Typing methods</h2>
+<div class="card" style="padding:0">
+<table style="table-layout:fixed;width:100%">
+<colgroup><col style="width:18%"><col style="width:52%"><col style="width:30%"></colgroup>
+<tr><th>Tool</th><th>Result</th><th>Database / method</th></tr>
+{% if species_id.gambit.status == 'ok' %}
+<tr><td>GAMBIT</td><td>{{ species_id.gambit.predicted_name|replace('_',' ') }} — dist: {{ '%.4f'|format(species_id.gambit.closest_distance) if species_id.gambit.closest_distance is not none else '-' }}</td><td>GAMBIT db</td></tr>
+{% endif %}
+<tr><td>Kraken2 + Bracken</td><td>{{ sid.primary_species|replace('_',' ') }} <span class="badge {% if sid.primary_pct >= 80 %}green{% else %}yellow{% endif %}">{{ '%.1f'|format(sid.primary_pct) }}%</span></td><td>{{ sid.kraken2_db|truncate(28,True,'..',0) }}</td></tr>
+{% if sid.skani.status == 'ok' %}
+<tr><td>skani</td><td>{{ sid.skani.top_hit|truncate(40,True,'..',0) }} — <span class="badge {% if sid.skani.ani >= 99 %}green{% elif sid.skani.ani >= 95 %}yellow{% else %}red{% endif %}">{{ '%.2f'|format(sid.skani.ani) }}% ANI</span></td><td>skani reference db</td></tr>
+{% endif %}
+<tr><td>MLST</td><td>ST{{ mlst.ST }}</td><td>{{ mlst.scheme }}</td></tr>
+<tr><td>AMRFinder</td><td>{{ amr.total_amr_genes }} AMR &nbsp; {{ amr.total_virulence_genes }} virulence &nbsp; {{ amr.total_stress_genes or 0 }} stress</td><td>NCBI AMR Ref. Gene Catalog</td></tr>
+<tr><td>MOB-suite</td><td>{{ plasmids.count }} plasmid(s)</td><td>mob_suite db</td></tr>
+{% if mge.count > 0 %}<tr><td>MEfinder</td><td>{{ mge.count }} MGE(s)</td><td>MGEdb (CGE)</td></tr>{% endif %}
+{% if kleborate %}<tr><td>Kleborate</td><td>{% if kleborate.ST != '-' %}ST{{ kleborate.ST }} {% endif %}K: {{ kleborate.K_type }} O: {{ kleborate.O_type }} Virulence: {{ kleborate.virulence_score }}</td><td>Kleborate v3</td></tr>{% endif %}
+{% if staphscope %}<tr><td>StaphScope</td><td>spa: {{ spatyper.spa_type if spatyper else '-' }} SCCmec: {{ sccmec.type if sccmec else '-' }} {% if sccmec and sccmec.mrsa %}MRSA{% else %}MSSA{% endif %}</td><td>StaphScope</td></tr>{% endif %}
+{% if ectyper %}<tr><td>ECTyper</td><td>{{ ectyper.serotype }}</td><td>ECTyper v2</td></tr>{% endif %}
+{% if emmtyper %}<tr><td>emmtyper</td><td>{{ emmtyper.emm_type }}</td><td>CDC emm db</td></tr>{% endif %}
+{% if seqsero2 %}<tr><td>SeqSero2</td><td>{{ seqsero2.serotype }} ({{ seqsero2.antigenic_profile }})</td><td>Kauffmann-White</td></tr>{% endif %}
+{% if hicap %}<tr><td>hicap</td><td>{{ hicap.serotype }} — {{ hicap.genes }}</td><td>hicap db</td></tr>{% endif %}
+{% if gbsserotyper %}<tr><td>GBS-SBG</td><td>{{ gbsserotyper.serotype }}</td><td>GBS-SBG (assembly)</td></tr>{% endif %}
+{% if lrefinder %}<tr><td>LRE-Finder</td><td>{{ lrefinder.n_acquired }} acquired; 23S max mut {{ '%.2f'|format(lrefinder.max_23s_mut_pct) if lrefinder.max_23s_mut_pct is not none else '-' }}%</td><td>KMA (reads)</td></tr>{% endif %}
+{% if pasty %}<tr><td>Pasty</td><td>{{ pasty.serotype }}</td><td>Pasty O-antigen db</td></tr>{% endif %}
+</table></div>
+
+{# ── Tool versions ────────────────────────────────────────────────────────── #}
+{% if versions %}
+<h2>Tool versions</h2>
+<div class="card" style="padding:0">
+<table style="table-layout:fixed;width:100%">
+<colgroup><col style="width:30%"><col style="width:20%"><col style="width:30%"><col style="width:20%"></colgroup>
+<tr><th>Tool</th><th>Version</th><th>Tool</th><th>Version</th></tr>
+{% for i in range(0, versions|length, 2) %}
+<tr>
+  <td>{{ versions[i].tool }}</td><td class="mono">{{ versions[i].version }}</td>
+  {% if i+1 < versions|length %}<td>{{ versions[i+1].tool }}</td><td class="mono">{{ versions[i+1].version }}</td>
+  {% else %}<td></td><td></td>{% endif %}
+</tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+<p style="color:#6c757d;font-size:0.8rem;margin-top:10px">Generated: {{ completed }} | Bacterial genomics pipeline</p>
+</body>
+</html>

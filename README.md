@@ -126,7 +126,7 @@ pixi run snakemake results/26-03-2026/001k/MLST/mlst.tsv
 
 Each run appends one row per sample to `results/run_log.tsv` (sample ID, GAMBIT species, GAMBIT closest hit, skani ANI, Bracken top, ST, MLST tool, species-specific typing, depth (mapped), N50, Q30, date). Re-running a sample replaces its prior row, so the file always reflects the latest call per sample — a single, cumulative summary across all runs.
 
-**Per-sample HTML report** at `results/<sample>/pipeline_summary.html` surfaces three depth numbers side-by-side:
+**Per-sample HTML and PDF report** at `results/<sample>/<sname>_pipeline_summary.html` / `.pdf` (where `<sname>` is the sample basename, e.g. `001k`) surfaces three depth numbers side-by-side:
 
 - **Depth (est.)** — `fastp` trimmed bases ÷ `QUAST` assembled length. Upper bound; no remapping.
 - **Depth (mapped)** — `bwa-mem2` self-mapping of trimmed reads back to the sample's own Shovill assembly, summarised by `samtools coverage`. SeqSphere-equivalent, mapping-verified, **reference-free**.
@@ -267,7 +267,7 @@ with gene + consequence when the reference GFF is available.
 
 **Main-report refresh.** After `varcall_report` finishes for a sample, an
 `update_pipeline_report` rule re-runs `make_report.py` so the main
-`pipeline_summary.html` picks up the new "Reference mapping (from varcall
+`<sname>_pipeline_summary.html` picks up the new "Reference mapping (from varcall
 pipeline)" card with reference-mapped depth, mapping rate, and PASS/filtered
 variant counts. The card appears only on samples where varcall has been run;
 others render exactly as the main pipeline produced them. Recommended workflow:
@@ -357,7 +357,7 @@ flowchart TD
     id --> plf[PlasmidFinder]
     id --> sp[Species-specific:<br/>StaphScope · Kleborate · ECTyper<br/>emmtyper · Pasty · SeqSero2 · hicap<br/>LRE-Finder · GBS-SBG]
     fastqc & kraken & quast & checkm & selfcov & mlst & amr & mob & me & plf & sp --> multiqc[MultiQC]
-    multiqc --> report[pipeline_summary.html]
+    multiqc --> report["{sname}_pipeline_summary.html/.pdf"]
 ```
 
 ### Phylogenomics pipeline — DAG
@@ -399,7 +399,7 @@ flowchart TD
     bcfcall --> bcfcsq[bcftools csq<br/>consequence annotation<br/>from GFF]
     fastqc & kraken & sstats & bcfcsq --> multiqc[MultiQC]
     multiqc --> vcreport[varcall_report.html]
-    vcreport --> refresh[update_pipeline_report<br/>re-runs make_report.py<br/>so pipeline_summary.html<br/>picks up the varcall section]
+    vcreport --> refresh[update_pipeline_report<br/>re-runs make_report.py<br/>so {sname}_pipeline_summary.html/.pdf<br/>picks up the varcall section]
 ```
 
 ### cgMLST pipeline — DAG

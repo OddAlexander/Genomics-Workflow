@@ -550,12 +550,184 @@ def concordance_score(species_sp, bracken_sp):
     return 2 if species_sp == bracken_sp and species_sp not in ("unknown", "-", "") else 0
 
 
+_TOOL_DISPLAY = {
+    "fastp":               "fastp",
+    "fastqc":              "FastQC",
+    "multiqc":             "MultiQC",
+    "shovill":             "Shovill",
+    "quast":               "QUAST",
+    "bwa-mem2":            "bwa-mem2",
+    "samtools":            "samtools",
+    "mlst":                "MLST",
+    "emmtyper":            "emmtyper",
+    "pasty":               "Pasty",
+    "ectyper":             "ECTyper",
+    "gambit":              "GAMBIT",
+    "skani":               "skani",
+    "kraken2":             "Kraken2",
+    "bracken":             "Bracken",
+    "kleborate":           "Kleborate",
+    "checkm-genome":       "CheckM",
+    "ncbi-amrfinderplus":  "AMRFinder",
+    "mob_suite":           "MOB-suite",
+    "MobileElementFinder": "MEfinder",
+    "staphscope":          "StaphScope",
+    "seqsero2":            "SeqSero2",
+    "hicap":               "hicap",
+    "plasmidfinder":       "PlasmidFinder",
+    "kma":                 "KMA (LRE-Finder)",
+    "snakemake":           "Snakemake",
+}
+
+_TOOL_ENV = {
+    "fastp":               "default",
+    "fastqc":              "default",
+    "multiqc":             "default",
+    "shovill":             "default",
+    "quast":               "default",
+    "bwa-mem2":            "default",
+    "samtools":            "default",
+    "mlst":                "default",
+    "emmtyper":            "default",
+    "pasty":               "default",
+    "ectyper":             "identification",
+    "gambit":              "identification",
+    "skani":               "identification",
+    "kraken2":             "identification",
+    "bracken":             "identification",
+    "kleborate":           "identification",
+    "checkm-genome":       "checkm",
+    "ncbi-amrfinderplus":  "amrfinder4",
+    "mob_suite":           "mobsuite",
+    "MobileElementFinder": "mefinder",
+    "staphscope":          "staphscope",
+    "seqsero2":            "seqsero2",
+    "hicap":               "hicap",
+    "plasmidfinder":       "plasmidfinder",
+    "kma":                 "lrefinder",
+    "snakemake":           "default",
+}
+
+
+def collect_versions():
+    """Read tool versions from pixi conda-meta filenames. Returns list of
+    {tool, version} dicts for the tools actually installed."""
+    pixi_envs = Path(__file__).parent.parent / ".pixi" / "envs"
+    versions = []
+    seen = set()
+    for pkg, env in _TOOL_ENV.items():
+        meta_dir = pixi_envs / env / "conda-meta"
+        if not meta_dir.is_dir():
+            continue
+        prefix = pkg + "-"
+        for f in meta_dir.iterdir():
+            if f.name.startswith(prefix) and f.suffix == ".json":
+                # filename: {name}-{version}-{build}.json
+                parts = f.stem.split("-")
+                # version is the segment right after the package name segments
+                pkg_parts = pkg.split("-")
+                version = parts[len(pkg_parts)] if len(parts) > len(pkg_parts) else "?"
+                display = _TOOL_DISPLAY.get(pkg, pkg)
+                if display not in seen:
+                    versions.append({"tool": display, "version": version})
+                    seen.add(display)
+                break
+    return versions
+
+
+def render_pdf(data: dict, template_dir: Path, output_path: str) -> None:
+    from weasyprint import HTML
+    from jinja2 import Environment, FileSystemLoader
+    env      = Environment(loader=FileSystemLoader(str(template_dir)))
+    pdf_html = env.get_template("report_template_pdf.html").render(**data)
+    HTML(string=pdf_html).write_pdf(output_path)
+
+
+def _typing_summary(data: dict) -> str:
+    """One-line species-specific typing string for the run log."""
+    parts = []
+    if (k := data.get("kleborate")):
+        kp = ["Kleborate:"]
+        for key, prefix in [("ST","ST"), ("K_type","K="), ("O_type","O="),
+                             ("Bla_Carb","Carb="), ("Bla_ESBL","ESBL=")]:
+            if k.get(key) and k[key] != "-":
+                kp.append(f"{prefix}{k[key]}")
+        if len(kp) > 1:
+            parts.append(" ".join(kp))
+    if data.get("ectyper"):
+        parts.append(f"ECTyper: {data['ectyper'].get('serotype', '-')}")
+    if (ss := data.get("staphscope")):
+        parts.append(f"StaphScope: spa={ss.get('spa_type','-')} "
+                     f"SCCmec={ss.get('sccmec_type','-')} "
+                     f"({'MRSA' if ss.get('mrsa') else 'MSSA'})")
+    if data.get("emmtyper"):
+        parts.append(f"emmtyper: {data['emmtyper'].get('emm_type', '-')}")
+    if data.get("seqsero2"):
+        parts.append(f"SeqSero2: {data['seqsero2'].get('serotype', '-')}")
+    if data.get("hicap"):
+        parts.append(f"hicap: {data['hicap'].get('serotype', '-')}")
+    if data.get("pasty"):
+        parts.append(f"Pasty: {data['pasty'].get('serotype', '-')}")
+    if data.get("gbsserotyper"):
+        parts.append(f"GBS-SBG: {data['gbsserotyper'].get('serotype', '-')}")
+    return "; ".join(parts) if parts else "-"
+
+
+def write_run_log(data: dict, sample: str, results_dir: str, log_path: Path | None) -> None:
+    """Upsert this sample's row into the cumulative run log TSV (flock-safe)."""
+    log_path = log_path or Path(results_dir) / "run_log.tsv"
+    header   = "\t".join(["#", "Sample", "Species (GAMBIT)", "GAMBIT hit", "Skani ANI",
+                           "Bracken top", "ST", "MLST tool", "Species-specific typing",
+                           "Depth (mapped)", "N50", "Q30", "Date"])
+    sid    = data["species_id"]
+    skani  = sid["skani"]
+    gambit = sid["gambit"]
+    mlst   = data["mlst"]
+    qc     = data["qc"]
+    asm    = data["assembly"]
+
+    row = "\t".join([
+        "{nr}",
+        sample,
+        sid["gambit_species"].replace("_", " ") if sid["gambit_species"] not in ("unknown", "") else "-",
+        gambit.get("closest_description", "-") if gambit.get("status") == "ok" else "-",
+        f"{skani['ani']:.2f}" if skani.get("status") == "ok" and skani.get("ani") else "-",
+        sid["primary_species"].replace("_", " "),
+        mlst["ST"],
+        f"mlst ({mlst['scheme']})" if mlst["scheme"] != "-" else "mlst",
+        _typing_summary(data),
+        f"{qc['mapped_depth']:.1f}" if qc.get("mapped_depth") else "-",
+        str(asm.get("N50") or "-"),
+        f"{qc['q30_pct']:.1f}" if qc.get("q30_pct") is not None else "-",
+        datetime.now().strftime("%Y-%m-%d %H:%M"),
+    ])
+
+    log_path.touch()
+    with open(log_path, "r+") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            existing = f.read().splitlines()
+            body     = existing[1:] if existing and existing[0].startswith("#") else existing
+            rows     = [l for l in body if l.strip() and (l.split("\t") + [""])[1] != sample]
+            rows.append(row)
+            renumbered = []
+            for i, l in enumerate(rows, 1):
+                cols    = l.split("\t")
+                cols[0] = str(i)
+                renumbered.append("\t".join(cols))
+            f.seek(0); f.truncate()
+            f.write("\n".join([header] + renumbered) + "\n")
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--sample",      required=True)
     ap.add_argument("--results-dir", required=True)
     ap.add_argument("--template",    required=True)
     ap.add_argument("--output",      required=True)
+    ap.add_argument("--pdf",         default=None)
     ap.add_argument("--kraken2-db",  default="-")
     ap.add_argument("--log-path",    default=None)
     args = ap.parse_args()
@@ -567,7 +739,6 @@ if __name__ == "__main__":
     quast_data   = parse_quast(sp_dir / "QUAST/report.html")
     quast_data.update(parse_checkm(sp_dir / "CheckM/quality.tsv"))
     fastp_data   = parse_fastp(sp_dir / "QC/fastp.json")
-    est_depth    = estimate_depth(fastp_data["bases"], quast_data["total_length"])
     bracken_data = parse_bracken(sp_dir / "ID_Kraken2/bracken_species.txt")
     uncl_pct     = parse_kraken2_unclassified(sp_dir / "ID_Kraken2/kraken2_report.txt")
     amr_raw      = parse_amrfinder(sp_dir / "AMRFinder/amrfinder.tsv")
@@ -578,7 +749,7 @@ if __name__ == "__main__":
     gambit_data  = parse_gambit(sp_dir / "ID_Gambit/gambit.csv")
     species_sp   = (safe_read(sp_dir / "species.txt") or "unknown").strip()
     self_cov     = parse_self_coverage(sp_dir / "QC/self_coverage.tsv")
-    varcall_data = parse_varcall(sp_dir)   # None when varcall hasn't been run for this sample
+    varcall_data = parse_varcall(sp_dir)
 
     contig_mge = {}
     for el in mge_data.get("elements", []):
@@ -590,12 +761,7 @@ if __name__ == "__main__":
         amr_raw.get("_rows", []), mob_data.get("_contig_mob", {}),
         contig_mge, pf_data.get("_contig_plasmid", {}))
 
-    purity  = derive_purity(bracken_data["primary_pct"], species_sp, bracken_data["primary_species"])
-    score   = concordance_score(species_sp, bracken_data["primary_species"])
     species = species_sp if species_sp not in ("unknown", "") else bracken_data["primary_species"]
-    contam_warnings = contamination_check(
-        bracken_data["primary_pct"], bracken_data["secondary_pct"],
-        bracken_data["secondary_species"], uncl_pct)
 
     data = {
         "sample":    args.sample,
@@ -604,12 +770,12 @@ if __name__ == "__main__":
         "mlst":      mlst_data,
         "assembly":  quast_data,
         "qc": {
-            "reads":         fastp_data["reads"],
-            "q30_pct":       fastp_data["q30_pct"],
-            "dup_pct":       fastp_data["dup_pct"],
-            "est_depth":     est_depth,                # fastp bases / QUAST length -- upper bound
-            "mapped_depth":  self_cov["mean_depth"],   # self-mapped (bwa-mem2 vs Shovill assembly)
-            "breadth_pct":   self_cov["breadth_pct"],
+            "reads":        fastp_data["reads"],
+            "q30_pct":      fastp_data["q30_pct"],
+            "dup_pct":      fastp_data["dup_pct"],
+            "est_depth":    estimate_depth(fastp_data["bases"], quast_data["total_length"]),
+            "mapped_depth": self_cov["mean_depth"],
+            "breadth_pct":  self_cov["breadth_pct"],
         },
         "amr": {
             "total_amr_genes":       amr_raw["total_amr_genes"],
@@ -623,29 +789,32 @@ if __name__ == "__main__":
         "plasmidfinder": {"hits": pf_data.get("hits", [])},
         "mge":           mge_data,
         "species_id": {
-            "purity":                 purity,
-            "concordance_score":      score,
-            "contamination_warnings": contam_warnings,
-            "bracken_species":        bracken_data["primary_species"],
-            "gambit_species":          species_sp,
-            "id_method":              "Bracken + GAMBIT + SKANI",
-            "primary_species":        bracken_data["primary_species"],
-            "primary_pct":            bracken_data["primary_pct"],
-            "secondary_species":      bracken_data["secondary_species"],
-            "secondary_pct":          bracken_data["secondary_pct"],
-            "unclassified_pct":       uncl_pct,
-            "skani":                  skani_data,
-            "gambit":                 gambit_data,
-            "kraken2_db":             args.kraken2_db,
+            "purity":                 derive_purity(bracken_data["primary_pct"], species_sp,
+                                                   bracken_data["primary_species"]),
+            "concordance_score":      concordance_score(species_sp, bracken_data["primary_species"]),
+            "contamination_warnings": contamination_check(bracken_data["primary_pct"],
+                                                         bracken_data["secondary_pct"],
+                                                         bracken_data["secondary_species"], uncl_pct),
+            "bracken_species":   bracken_data["primary_species"],
+            "gambit_species":    species_sp,
+            "id_method":         "Bracken + GAMBIT + SKANI",
+            "primary_species":   bracken_data["primary_species"],
+            "primary_pct":       bracken_data["primary_pct"],
+            "secondary_species": bracken_data["secondary_species"],
+            "secondary_pct":     bracken_data["secondary_pct"],
+            "unclassified_pct":  uncl_pct,
+            "skani":             skani_data,
+            "gambit":            gambit_data,
+            "kraken2_db":        args.kraken2_db,
         },
     }
 
     for parser, key, fname in [
-        (parse_kleborate, "kleborate", "Kleborate/kleborate_output.tsv"),
-        (parse_ectyper,   "ectyper",   "ECTyper/ectyper.tsv"),
-        (parse_emmtyper,  "emmtyper",  "EmmTyper/emmtyper.txt"),
-        (parse_seqsero2,  "seqsero2",  "SeqSero2/seqsero2.tsv"),
-        (parse_hicap,     "hicap",     "Hicap/hicap.tsv"),
+        (parse_kleborate,    "kleborate",    "Kleborate/kleborate_output.tsv"),
+        (parse_ectyper,      "ectyper",      "ECTyper/ectyper.tsv"),
+        (parse_emmtyper,     "emmtyper",     "EmmTyper/emmtyper.txt"),
+        (parse_seqsero2,     "seqsero2",     "SeqSero2/seqsero2.tsv"),
+        (parse_hicap,        "hicap",        "Hicap/hicap.tsv"),
         (parse_pasty,        "pasty",        "Pasty/pasty.tsv"),
         (parse_lrefinder,    "lrefinder",    "LRE-Finder/lre.res"),
         (parse_gbsserotyper, "gbsserotyper", "GBSSeroTyper/serotype.tsv"),
@@ -654,7 +823,8 @@ if __name__ == "__main__":
         if result:
             data[key] = result
 
-    ss = parse_staphscope(sp_dir / "Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv")
+    ss = parse_staphscope(
+        sp_dir / "Staphscope/Staphscope_final_report/staphscope_comprehensive_report.tsv")
     if ss:
         data["staphscope"] = ss
         data["spatyper"]   = {"spa_type": ss["spa_type"], "CC": "-"}
@@ -663,87 +833,16 @@ if __name__ == "__main__":
     if varcall_data:
         data["varcall"] = varcall_data
 
+    data["versions"] = collect_versions()
+
     Path(args.output).write_text(
         Path(args.template).read_text()
             .replace("__PIPELINE_JSON_DATA__", json.dumps(data, ensure_ascii=False))
             .replace("__SAMPLE_NAME__", args.sample)
     )
 
-    # --- Cumulative run log ---
-    # Static, single TSV — re-running a sample upserts (replaces) its row.
-    log_path = Path(args.log_path) if args.log_path else \
-               Path(args.results_dir) / "run_log.tsv"
-    header = "\t".join(["#", "Sample", "Species (GAMBIT)", "GAMBIT hit", "Skani ANI",
-                         "Bracken top", "ST", "MLST tool", "Species-specific typing",
-                         "Depth (mapped)", "N50", "Q30", "Date"])
-    skani  = data["species_id"]["skani"]
-    gambit = data["species_id"]["gambit"]
+    if args.pdf:
+        render_pdf(data, Path(args.template).parent, args.pdf)
 
-    typing_parts = []
-    if data.get("kleborate"):
-        k     = data["kleborate"]
-        parts = ["Kleborate:"]
-        if k.get("ST")       and k["ST"]       != "-": parts.append(f"ST{k['ST']}")
-        if k.get("K_type")   and k["K_type"]   != "-": parts.append(f"K={k['K_type']}")
-        if k.get("O_type")   and k["O_type"]   != "-": parts.append(f"O={k['O_type']}")
-        if k.get("Bla_Carb") and k["Bla_Carb"] != "-": parts.append(f"Carb={k['Bla_Carb']}")
-        if k.get("Bla_ESBL") and k["Bla_ESBL"] != "-": parts.append(f"ESBL={k['Bla_ESBL']}")
-        if len(parts) > 1:
-            typing_parts.append(" ".join(parts))
-    if data.get("ectyper"):
-        typing_parts.append(f"ECTyper: {data['ectyper'].get('serotype', '-')}")
-    if data.get("staphscope"):
-        ss = data["staphscope"]
-        typing_parts.append(f"StaphScope: spa={ss.get('spa_type','-')} SCCmec={ss.get('sccmec_type','-')} "
-                            f"({'MRSA' if ss.get('mrsa') else 'MSSA'})")
-    if data.get("emmtyper"):
-        typing_parts.append(f"emmtyper: {data['emmtyper'].get('emm_type', '-')}")
-    if data.get("seqsero2"):
-        typing_parts.append(f"SeqSero2: {data['seqsero2'].get('serotype', '-')}")
-    if data.get("hicap"):
-        typing_parts.append(f"hicap: {data['hicap'].get('serotype', '-')}")
-    if data.get("pasty"):
-        typing_parts.append(f"Pasty: {data['pasty'].get('serotype', '-')}")
-    if data.get("gbsserotyper"):
-        typing_parts.append(f"GBS-SBG: {data['gbsserotyper'].get('serotype', '-')}")
-
-    row = "\t".join([
-        "{nr}",
-        args.sample,
-        species_sp.replace("_", " ") if species_sp not in ("unknown", "") else "-",
-        gambit.get("closest_description", "-") if gambit.get("status") == "ok" else "-",
-        f"{skani['ani']:.2f}" if skani.get("status") == "ok" and skani.get("ani") else "-",
-        bracken_data["primary_species"].replace("_", " "),
-        mlst_data["ST"],
-        f"mlst ({mlst_data['scheme']})" if mlst_data["scheme"] != "-" else "mlst",
-        "; ".join(typing_parts) if typing_parts else "-",
-        f"{self_cov['mean_depth']:.1f}" if self_cov.get("mean_depth") else "-",
-        str(quast_data.get("N50") or "-"),
-        f"{fastp_data['q30_pct']:.1f}" if fastp_data.get("q30_pct") is not None else "-",
-        datetime.now().strftime("%Y-%m-%d %H:%M"),
-    ])
-
-    # Parallel report jobs all write to the same TSV; flock serialises the
-    # read-modify-write so rows don't clobber each other. Re-runs of the same
-    # sample overwrite the prior row (matched by column 1 = sample ID).
-    log_path.touch()
-    with open(log_path, "r+") as f:
-        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-        try:
-            existing = f.read().splitlines()
-            body = existing[1:] if existing and existing[0].startswith("#") else existing
-            # Drop any prior row for this sample, then append the fresh one.
-            data = [l for l in body
-                    if l.strip() and (l.split("\t") + [""])[1] != args.sample]
-            data.append(row)
-            # Renumber column 0 (#) so the file stays 1..N after deletions.
-            renumbered = []
-            for i, l in enumerate(data, 1):
-                parts    = l.split("\t")
-                parts[0] = str(i)
-                renumbered.append("\t".join(parts))
-            f.seek(0)
-            f.truncate()
-            f.write("\n".join([header] + renumbered) + "\n")
-        finally:
-            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+    write_run_log(data, args.sample, args.results_dir,
+                  Path(args.log_path) if args.log_path else None)

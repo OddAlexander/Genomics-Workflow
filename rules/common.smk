@@ -19,7 +19,7 @@ def filter_samples(all_samples, samples_filter):
 
     Preserves the user-given order so SAMPLES[0] is the first match of token #1
     (downstream rules rely on this -- the phylo auto-reference picker uses
-    SAMPLES[0] as its Prokka seed). Deduplicates: a sample matched by more than
+    SAMPLES[0] as its Bakta seed). Deduplicates: a sample matched by more than
     one token only appears once.
 
     Matching is exact against any path component (date or leaf), or the full

@@ -71,12 +71,9 @@ const purity_badge = p => {
   if (p === 'LIKELY_PURE') return badge(p, 'yellow');
   return badge(p, 'red');
 };
+const depthThr = v => v == null ? 'inherit' : v < 20 ? '#b02a37' : v < 40 ? '#856404' : 'inherit';
 
-function render() {
-  const s = D;
-  let h = '';
-
-  // -- Top section: species-specific typing tiles
+function renderSummaryTiles(s) {
   const sp = s.species || '';
   let extraStats = '';
 
@@ -87,7 +84,6 @@ function render() {
       extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.spatyper.spa_type}</div><div class="lbl">spa-type (${s.spatyper.CC||'-'})</div></div>`;
   }
 
-  // Kleborate -- read from JSON if available
   if (sp.includes('Klebsiella') || sp.includes('Escherichia') || sp.includes('Shigella')) {
     if (s.kleborate?.K_type && s.kleborate.K_type!=='-')
       extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.kleborate.K_type}</div><div class="lbl">K-type</div></div>`;
@@ -109,39 +105,31 @@ function render() {
     }
   }
 
-  // ECTyper serotype
   if (sp.includes('Escherichia') || sp.includes('Shigella')) {
     if (s.ectyper?.serotype && s.ectyper.serotype!=='-')
       extraStats += `<div class="stat"><div class="val" style="font-size:0.9rem">${s.ectyper.serotype}</div><div class="lbl">Serotype (ECTyper)</div></div>`;
   }
 
-  // emmtyper
   if (sp.includes('Streptococcus_pyogenes')) {
     if (s.emmtyper?.emm_type && s.emmtyper.emm_type!=='-')
       extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.emmtyper.emm_type}</div><div class="lbl">emm-type</div></div>`;
   }
 
-  // SeqSero2
   if (sp.includes('Salmonella')) {
     if (s.seqsero2?.serotype && s.seqsero2.serotype!=='-')
       extraStats += `<div class="stat"><div class="val" style="font-size:0.9rem">${s.seqsero2.serotype}</div><div class="lbl">Serotype (SeqSero2)</div></div>`;
   }
 
-  // hicap
   if (sp.includes('Haemophilus')) {
     if (s.hicap?.serotype && s.hicap.serotype!=='-')
       extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.hicap.serotype}</div><div class="lbl">Capsule type (hicap)</div></div>`;
   }
 
-  // GBS-SBG
   if (sp.includes('Streptococcus_agalactiae')) {
     if (s.gbsserotyper?.serotype && s.gbsserotyper.serotype!=='-')
       extraStats += `<div class="stat"><div class="val" style="font-size:1rem">${s.gbsserotyper.serotype}</div><div class="lbl">Serotype (GBS-SBG)</div></div>`;
   }
 
-  // LRE-Finder -- linezolid resistance summary for Enterococcus faecium / faecalis.
-  // Tile shows the maximum % of mutated 23S rRNA copies + count of acquired
-  // resistance genes (cfr / optrA / poxtA). Red when either is present.
   if (sp.includes('Enterococcus_fae') && s.lrefinder) {
     const mut = s.lrefinder.max_23s_mut_pct;
     const nAc = s.lrefinder.n_acquired;
@@ -154,7 +142,7 @@ function render() {
     }
   }
 
-  h += `<div class="card"><div class="grid">
+  return `<div class="card"><div class="grid">
     <div class="stat"><div class="val">${s.sample}</div><div class="lbl">Sample</div></div>
     <div class="stat"><div class="val" style="font-size:1rem">${sp.replace(/_/g,' ')}</div><div class="lbl">Species</div></div>
     <div class="stat"><div class="val">ST${s.mlst.ST}</div><div class="lbl">MLST (${s.mlst.scheme})</div></div>
@@ -165,31 +153,33 @@ function render() {
     <div class="stat"><div class="val">${s.plasmids.count}</div><div class="lbl">Plasmids</div></div>
     ${extraStats}
   </div></div>`;
+}
 
-  // -- Risk alerts
+function renderAlerts(s) {
+  let h = '';
   if (s.amr.high_risk_genes.length)
     h += `<div class="alert alert-red"><strong>HIGH RISK</strong> -- Genes on conjugative plasmids: ${s.amr.high_risk_genes.map(g=>badge(g,'red')).join(' ')}</div>`;
   if (s.amr.medium_risk_genes.length)
     h += `<div class="alert alert-yellow"><strong>MEDIUM RISK</strong> -- Mobilizable + conjugative helper: ${s.amr.medium_risk_genes.map(g=>badge(g,'yellow')).join(' ')}</div>`;
+  return h;
+}
 
-  // -- Read QC
+function renderQC(s) {
   const q = s.qc || {};
-  const depthThr = v => v == null ? 'inherit' : v < 20 ? '#b02a37' : v < 40 ? '#856404' : 'inherit';
-  const estColor   = depthThr(q.est_depth);
-  const mapColor   = depthThr(q.mapped_depth);
-  const brColor    = q.breadth_pct == null ? 'inherit'
-                   : q.breadth_pct < 90    ? '#b02a37'
-                   : q.breadth_pct < 95    ? '#856404' : 'inherit';
-  const q30Color   = q.q30_pct == null   ? 'inherit'
-                   : q.q30_pct < 80      ? '#b02a37'
-                   : q.q30_pct < 90      ? '#856404'
-                                         : 'inherit';
-  const primaryPct = s.species_id?.primary_pct;
+  const mapColor  = depthThr(q.mapped_depth);
+  const estColor  = depthThr(q.est_depth);
+  const brColor   = q.breadth_pct == null ? 'inherit'
+                  : q.breadth_pct < 90    ? '#b02a37'
+                  : q.breadth_pct < 95    ? '#856404' : 'inherit';
+  const q30Color  = q.q30_pct == null ? 'inherit'
+                  : q.q30_pct < 80    ? '#b02a37'
+                  : q.q30_pct < 90    ? '#856404'  : 'inherit';
+  const primaryPct  = s.species_id?.primary_pct;
   const purityColor = primaryPct == null ? 'inherit'
                     : primaryPct < 80     ? '#b02a37'
-                    : primaryPct < 90     ? '#856404'
-                                          : 'inherit';
-  h += `<h2>Read QC</h2><div class="card"><div class="grid">
+                    : primaryPct < 90     ? '#856404' : 'inherit';
+
+  return `<h2>Read QC</h2><div class="card"><div class="grid">
     <div class="stat"><div class="val">${q.reads != null ? (q.reads/1e6).toFixed(2) : '-'}</div><div class="lbl">Mreads (trimmed)</div></div>
     <div class="stat"><div class="val" style="color:${q30Color}">${q.q30_pct != null ? q.q30_pct + '%' : '-'}</div><div class="lbl">Q30</div></div>
     <div class="stat" title="samtools coverage on bwa-mem2 self-mapped BAM (SeqSphere-equivalent)">
@@ -231,43 +221,70 @@ function render() {
       Sources: Ridom SeqSphere+ NGS QC guide; cgMLST.org nomenclature server submission criteria.
     </p>
   </div>`;
+}
 
-  // -- Optional: reference-mapped depth + variants from the varcall pipeline.
-  // Section appears only when results/<sample>/VarCall/ exists (varcall has been run).
-  if (s.varcall) {
-    const v       = s.varcall;
-    const mdColor = q.mapped_depth == null ? 'inherit' : depthThr(v.mean_depth);
-    const brColor = v.breadth_pct == null ? 'inherit'
-                  : v.breadth_pct < 90    ? '#b02a37'
-                  : v.breadth_pct < 95    ? '#856404' : 'inherit';
-    const mrColor = v.mapping_rate_pct == null ? 'inherit'
-                  : v.mapping_rate_pct < 80    ? '#b02a37'
-                  : v.mapping_rate_pct < 95    ? '#856404' : 'inherit';
-    h += `<h2>Reference mapping (from varcall pipeline)</h2><div class="card">
-      <div class="grid">
-        <div class="stat"><div class="val" style="font-size:0.95rem"><em>${(v.reference_species||'-').replace(/_/g,' ')}</em></div><div class="lbl">Reference species</div></div>
-        <div class="stat" title="samtools flagstat: % of reads aligning to the reference"><div class="val" style="color:${mrColor}">${v.mapping_rate_pct != null ? v.mapping_rate_pct.toFixed(1) + '%' : '-'}</div><div class="lbl">Mapping rate</div></div>
-        <div class="stat" title="Length-weighted mean depth across the reference (samtools coverage)"><div class="val" style="color:${mdColor}">${v.mean_depth != null ? v.mean_depth + '×' : '-'}</div><div class="lbl">Depth (vs ref)</div></div>
-        <div class="stat" title="Fraction of reference bases covered by &ge;1 read"><div class="val" style="color:${brColor}">${v.breadth_pct != null ? v.breadth_pct + '%' : '-'}</div><div class="lbl">Breadth (vs ref)</div></div>
-        <div class="stat"><div class="val">${v.variants_pass != null ? v.variants_pass.toLocaleString() : '-'}</div><div class="lbl">Variants (PASS)</div></div>
-        <div class="stat"><div class="val" style="color:${v.variants_filtered > 0 ? '#856404' : 'inherit'}">${v.variants_filtered != null ? v.variants_filtered.toLocaleString() : '-'}</div><div class="lbl">Filtered (LOW_QUAL)</div></div>
-      </div>
-      <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
-        Depth here is <strong>${v.mean_depth ?? '-'}×</strong> against the chosen NCBI reference vs <strong>${q.mapped_depth ?? '-'}×</strong> mapped to the sample's own assembly above.
-        The gap is the fraction of reads that didn't map to this reference (plasmids the reference lacks, strain divergence, contamination).
-        &nbsp;Full breakdown:
-        <a href="${v.report_link}" style="color:var(--blue2);font-weight:600">varcall_report.html</a>
-      </p>
-    </div>`;
-  }
+function renderVarCall(s) {
+  if (!s.varcall) return '';
+  const v       = s.varcall;
+  const q       = s.qc || {};
+  const mdColor = depthThr(v.mean_depth);
+  const brColor = v.breadth_pct == null ? 'inherit'
+                : v.breadth_pct < 90    ? '#b02a37'
+                : v.breadth_pct < 95    ? '#856404' : 'inherit';
+  const mrColor = v.mapping_rate_pct == null ? 'inherit'
+                : v.mapping_rate_pct < 80    ? '#b02a37'
+                : v.mapping_rate_pct < 95    ? '#856404' : 'inherit';
+  return `<h2>Reference mapping (from varcall pipeline)</h2><div class="card">
+    <div class="grid">
+      <div class="stat"><div class="val" style="font-size:0.95rem"><em>${(v.reference_species||'-').replace(/_/g,' ')}</em></div><div class="lbl">Reference species</div></div>
+      <div class="stat" title="samtools flagstat: % of reads aligning to the reference"><div class="val" style="color:${mrColor}">${v.mapping_rate_pct != null ? v.mapping_rate_pct.toFixed(1) + '%' : '-'}</div><div class="lbl">Mapping rate</div></div>
+      <div class="stat" title="Length-weighted mean depth across the reference (samtools coverage)"><div class="val" style="color:${mdColor}">${v.mean_depth != null ? v.mean_depth + '×' : '-'}</div><div class="lbl">Depth (vs ref)</div></div>
+      <div class="stat" title="Fraction of reference bases covered by &ge;1 read"><div class="val" style="color:${brColor}">${v.breadth_pct != null ? v.breadth_pct + '%' : '-'}</div><div class="lbl">Breadth (vs ref)</div></div>
+      <div class="stat"><div class="val">${v.variants_pass != null ? v.variants_pass.toLocaleString() : '-'}</div><div class="lbl">Variants (PASS)</div></div>
+      <div class="stat"><div class="val" style="color:${v.variants_filtered > 0 ? '#856404' : 'inherit'}">${v.variants_filtered != null ? v.variants_filtered.toLocaleString() : '-'}</div><div class="lbl">Filtered (LOW_QUAL)</div></div>
+    </div>
+    <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
+      Depth here is <strong>${v.mean_depth ?? '-'}×</strong> against the chosen NCBI reference vs <strong>${q.mapped_depth ?? '-'}×</strong> mapped to the sample's own assembly above.
+      The gap is the fraction of reads that didn't map to this reference (plasmids the reference lacks, strain divergence, contamination).
+      &nbsp;Full breakdown:
+      <a href="${v.report_link}" style="color:var(--blue2);font-weight:600">varcall_report.html</a>
+    </p>
+  </div>`;
+}
 
-
-  // -- Assembly + species ID
+function renderAssembly(s) {
   const cmpl = s.assembly.completeness, cont = s.assembly.contamination;
   const cmplColor = cmpl == null ? 'inherit' : cmpl < 90 ? '#b02a37' : cmpl < 95 ? '#856404' : 'inherit';
   const contColor = cont == null ? 'inherit' : cont >= 5 ? '#b02a37' : cont >= 2 ? '#856404' : 'inherit';
-  h += `<div class="two-col">`;
-  h += `<div><h2>Assembly</h2><div class="card"><div class="grid">
+  const sid = s.species_id;
+  const pcls = sid.purity === 'PURE' ? 'alert-green'
+             : sid.purity === 'LIKELY_PURE' ? 'alert-yellow'
+             : 'alert-red';
+  const score_col = sid.concordance_score===2?'green':'red';
+  const score_lbl = sid.concordance_score===2?'Match':'No match';
+
+  const gambitHtml = (() => {
+    const g = sid.gambit;
+    if (!g || g.status === 'skipped') return `<tr><td colspan="2" style="color:var(--muted)">GAMBIT not run</td></tr>`;
+    if (g.status === 'no_match') return `<tr><td colspan="2" style="color:var(--muted)">No GAMBIT match</td></tr>`;
+    const distColor = g.closest_distance == null ? 'inherit'
+                    : g.closest_distance > 0.05  ? '#b02a37'
+                    : g.closest_distance > 0.02  ? '#856404' : 'inherit';
+    return `
+      <tr><td>Predicted species</td><td><strong>${(g.predicted_name||'-').replace(/_/g,' ')}</strong></td></tr>
+      <tr><td>Closest hit</td><td style="font-size:0.85rem">${g.closest_description||'-'}</td></tr>
+      <tr><td>Distance</td><td style="color:${distColor};font-weight:600">${g.closest_distance != null ? g.closest_distance.toFixed(4) : '-'}</td></tr>`;
+  })();
+
+  const skaniHtml = sid.skani?.status === 'ok' ? `
+    <tr><td>Top hit</td><td>${sid.skani.top_hit}</td></tr>
+    <tr><td>ANI</td><td>${badge(sid.skani.ani?.toFixed(2)+'%', sid.skani.ani>=99?'green':sid.skani.ani>=95?'yellow':'red')}</td></tr>
+    <tr><td>Aln. fraction (query)</td><td>${sid.skani.af_query}</td></tr>
+    <tr><td>Aln. fraction (reference)</td><td>${sid.skani.af_ref}</td></tr>` : `
+    <tr><td colspan="2" style="color:var(--muted)">SKANI returned no hit (sketch missing this species?)</td></tr>`;
+
+  return `<div class="two-col">
+  <div><h2>Assembly</h2><div class="card"><div class="grid">
     <div class="stat"><div class="val">${s.assembly.contigs}</div><div class="lbl">Contigs</div></div>
     <div class="stat"><div class="val">${(s.assembly.total_length/1e6).toFixed(2)}</div><div class="lbl">Mb total</div></div>
     <div class="stat"><div class="val">${(s.assembly.N50/1e3).toFixed(0)}</div><div class="lbl">N50 (kb)</div></div>
@@ -280,31 +297,20 @@ function render() {
       <div class="val" style="color:${contColor}">${cont != null ? cont.toFixed(1) + '%' : '-'}</div>
       <div class="lbl">Contamination</div>
     </div>
-  </div></div></div>`;
-
-  const sid = s.species_id;
-  const pcls = sid.purity === 'PURE' ? 'alert-green'
-             : sid.purity === 'LIKELY_PURE' ? 'alert-yellow'
-             : 'alert-red';
-  const score_col = sid.concordance_score===2?'green':'red';
-  const score_lbl = sid.concordance_score===2?'Match':'No match';
-
-  h += `<div><h2>Species identification</h2><div class="card">
+  </div></div></div>
+  <div><h2>Species identification</h2><div class="card">
     <div class="alert ${pcls}" style="margin-bottom:6px"><strong>Purity: ${sid.purity}</strong></div>
     ${(sid.contamination_warnings||[]).map(w=>`<div class="alert alert-yellow" style="margin-bottom:4px">&#9888; ${w}</div>`).join('')}
     <div class="alert alert-blue" style="margin-bottom:8px">
       <strong>Concordance: ${badge(score_lbl, score_col)}</strong><br>
-      SKANI: ${(sid.skani_species||'-').replace(/_/g,' ')} &nbsp;|&nbsp;
+      GAMBIT: ${(sid.gambit_species||'-').replace(/_/g,' ')} &nbsp;|&nbsp;
       Bracken: ${sid.bracken_species.replace(/_/g,' ')}
     </div>
     <table style="margin-top:8px">
+      <tr><th colspan="2">GAMBIT (assembly &rarr; primary species ID, drives DAG)</th></tr>
+      ${gambitHtml}
       <tr><th colspan="2">SKANI (assembly &rarr; ANI)</th></tr>
-      ${sid.skani?.status === 'ok' ? `
-        <tr><td>Top hit</td><td>${sid.skani.top_hit}</td></tr>
-        <tr><td>ANI</td><td>${badge(sid.skani.ani?.toFixed(2)+'%', sid.skani.ani>=99?'green':sid.skani.ani>=95?'yellow':'red')}</td></tr>
-        <tr><td>Aln. fraction (query)</td><td>${sid.skani.af_query}</td></tr>
-        <tr><td>Aln. fraction (reference)</td><td>${sid.skani.af_ref}</td></tr>` : `
-        <tr><td colspan="2" style="color:var(--muted)">SKANI returned no hit (sketch missing this species?)</td></tr>`}
+      ${skaniHtml}
       <tr><th colspan="2">Bracken (Kraken2, reads)</th></tr>
       <tr><td>Primary species</td><td>${sid.primary_species.replace(/_/g,' ')}
         ${badge(sid.primary_pct.toFixed(1)+'%', sid.primary_pct>=80?'green':sid.primary_pct>=60?'yellow':'red')}</td></tr>
@@ -312,65 +318,67 @@ function render() {
         ${badge(sid.secondary_pct.toFixed(1)+'%', sid.secondary_pct>=10?'yellow':'blue')}</td></tr>
       <tr><td>Unclassified</td><td>${badge(sid.unclassified_pct.toFixed(1)+'%', sid.unclassified_pct>=20?'yellow':'blue')}</td></tr>
     </table>
-  </div></div>`;
-  h += `</div>`;
+  </div></div>
+  </div>`;
+}
 
-  // -- AMR genes (tabbed by type)
+function renderAMR(s) {
   const amr_type_order = ['AMR', 'VIRULENCE', 'STRESS'];
   const amr_type_label = {AMR:'Resistance genes', VIRULENCE:'Virulence genes', STRESS:'Stress response'};
   const amr_type_color = {AMR:'#b02a37', VIRULENCE:'#856404', STRESS:'#495057'};
 
-  h += `<h2>AMRFinder hits</h2>
+  let h = `<h2>AMRFinder hits</h2>
   <div class="alert alert-blue" style="margin-bottom:10px;font-family:inherit">
     Resistance genes are linked to plasmids via contig ID: MOB-suite classifies each contig by mobility (conjugative / mobilizable / non-mobilizable),
     and PlasmidFinder identifies replicons on the same contig. MEfinder detects insertion sequences and transposons per contig &mdash;
     an AMR gene and an MGE on the same contig suggests potential mobilization but does not confirm functional linkage.
     Conjugative plasmids carrying AMR genes pose the highest dissemination risk between isolates and across species.
   </div>`;
-  if (!s.amr.details.length) {
-    h += `<div class="card"><p style="color:var(--muted)">No hits.</p></div>`;
-  } else {
-    for (const typ of amr_type_order) {
-      const rows = s.amr.details.filter(g => g.type === typ);
-      if (!rows.length) continue;
-      h += `<h2 style="color:${amr_type_color[typ]};font-size:0.95rem;margin-top:12px">${amr_type_label[typ]||typ}</h2>
-      <div class="card" style="padding:0">
-      <table><tr><th>Gene</th><th>Name</th><th>Class / Subclass</th><th>Scope</th><th>Contig</th><th>Plasmid mobility</th><th>Replicon</th><th>PlasmidFinder</th><th>MGE</th></tr>`;
-      for (const g of rows) {
-        const cls_str = [g.class, g.subclass].filter(x=>x&&x!=='-'&&x!=='NA').join(' / ') || '-';
-        const mge_str = (g.mge&&g.mge.length)
-          ? g.mge.map(m=>`<span class="badge yellow" title="${m.type}">${m.name}</span>`).join(' ')
-          : '-';
-        const pf_str = (g.plasmids&&g.plasmids.length)
-          ? g.plasmids.map(p=>`<span class="badge red">${p}</span>`).join(' ')
-          : '-';
-        h += `<tr>
-          <td><strong>${g.gene}</strong></td>
-          <td style="font-size:0.82rem">${g.gene_name}</td>
-          <td>${cls_str}</td>
-          <td>${badge(g.scope||'-', g.scope==='core'?'blue':'green')}</td>
-          <td style="font-family:monospace;font-size:0.82rem">${g.location}</td>
-          <td>${mob_badge(g.mobility)}</td>
-          <td style="font-size:0.82rem">${g.replicon}</td>
-          <td style="font-size:0.82rem">${pf_str}</td>
-          <td style="font-size:0.82rem">${mge_str}</td>
-        </tr>`;
-      }
-      h += `</table></div>`;
+
+  if (!s.amr.details.length) return h + `<div class="card"><p style="color:var(--muted)">No hits.</p></div>`;
+
+  for (const typ of amr_type_order) {
+    const rows = s.amr.details.filter(g => g.type === typ);
+    if (!rows.length) continue;
+    h += `<h2 style="color:${amr_type_color[typ]};font-size:0.95rem;margin-top:12px">${amr_type_label[typ]||typ}</h2>
+    <div class="card" style="padding:0">
+    <table><tr><th>Gene</th><th>Name</th><th>Class / Subclass</th><th>Scope</th><th>Contig</th><th>Plasmid mobility</th><th>Replicon</th><th>PlasmidFinder</th><th>MGE</th></tr>`;
+    for (const g of rows) {
+      const cls_str = [g.class, g.subclass].filter(x=>x&&x!=='-'&&x!=='NA').join(' / ') || '-';
+      const mge_str = (g.mge&&g.mge.length)
+        ? g.mge.map(m=>`<span class="badge yellow" title="${m.type}">${m.name}</span>`).join(' ')
+        : '-';
+      const pf_str = (g.plasmids&&g.plasmids.length)
+        ? g.plasmids.map(p=>`<span class="badge red">${p}</span>`).join(' ')
+        : '-';
+      h += `<tr>
+        <td><strong>${g.gene}</strong></td>
+        <td style="font-size:0.82rem">${g.gene_name}</td>
+        <td>${cls_str}</td>
+        <td>${badge(g.scope||'-', g.scope==='core'?'blue':'green')}</td>
+        <td style="font-family:monospace;font-size:0.82rem">${g.location}</td>
+        <td>${mob_badge(g.mobility)}</td>
+        <td style="font-size:0.82rem">${g.replicon}</td>
+        <td style="font-size:0.82rem">${pf_str}</td>
+        <td style="font-size:0.82rem">${mge_str}</td>
+      </tr>`;
     }
-    // Catch any types not in the predefined list
-    const other = s.amr.details.filter(g => !amr_type_order.includes(g.type));
-    if (other.length) {
-      h += `<h2 style="font-size:0.95rem;margin-top:12px">Other</h2><div class="card" style="padding:0"><table>
-        <tr><th>Gene</th><th>Name</th><th>Type</th><th>Class</th><th>Contig</th><th>Mobility</th></tr>`;
-      for (const g of other)
-        h += `<tr><td><strong>${g.gene}</strong></td><td>${g.gene_name}</td><td>${g.type}</td><td>${g.class}</td><td style="font-family:monospace;font-size:0.82rem">${g.location}</td><td>${mob_badge(g.mobility)}</td></tr>`;
-      h += `</table></div>`;
-    }
+    h += `</table></div>`;
   }
 
-  // -- Plasmids
-  h += `<h2>Plasmids</h2><div class="card"><div class="grid" style="margin-bottom:12px">
+  const other = s.amr.details.filter(g => !amr_type_order.includes(g.type));
+  if (other.length) {
+    h += `<h2 style="font-size:0.95rem;margin-top:12px">Other</h2><div class="card" style="padding:0"><table>
+      <tr><th>Gene</th><th>Name</th><th>Type</th><th>Class</th><th>Contig</th><th>Mobility</th></tr>`;
+    for (const g of other)
+      h += `<tr><td><strong>${g.gene}</strong></td><td>${g.gene_name}</td><td>${g.type}</td><td>${g.class}</td><td style="font-family:monospace;font-size:0.82rem">${g.location}</td><td>${mob_badge(g.mobility)}</td></tr>`;
+    h += `</table></div>`;
+  }
+  return h;
+}
+
+function renderPlasmids(s) {
+  let h = `<h2>Plasmids</h2><div class="card"><div class="grid" style="margin-bottom:12px">
     <div class="stat"><div class="val">${s.plasmids.count}</div><div class="lbl">Total</div></div>
     <div class="stat"><div class="val" style="color:${s.plasmids.conjugative?'#b02a37':'inherit'}">${s.plasmids.conjugative}</div><div class="lbl">Conjugative</div></div>
     <div class="stat"><div class="val" style="color:${s.plasmids.mobilizable?'#856404':'inherit'}">${s.plasmids.mobilizable}</div><div class="lbl">Mobilizable</div></div>
@@ -384,113 +392,126 @@ function render() {
       <td>${p.cluster}</td><td>${Number(p.size).toLocaleString()}</td>
     </tr>`;
   }
-  h += `</table></div>`;
+  return h + `</table></div>`;
+}
 
-  // -- PlasmidFinder
-  if (s.plasmidfinder?.hits?.length) {
-    h += `<h2>PlasmidFinder</h2><div class="card" style="padding:0">
-    <table><tr><th>Replicon</th><th>Identity</th><th>Contig</th><th>Database</th><th>Accession</th></tr>`;
-    for (const p of s.plasmidfinder.hits) {
-      h += `<tr>
-        <td><strong>${p.plasmid}</strong></td>
-        <td>${p.identity}%</td>
-        <td style="font-family:monospace;font-size:0.82rem">${p.contig}</td>
-        <td style="font-size:0.82rem">${p.database}</td>
-        <td style="font-size:0.82rem">${p.accession}</td>
-      </tr>`;
-    }
-    h += `</table></div>`;
+function renderPlasmidFinder(s) {
+  if (!s.plasmidfinder?.hits?.length) return '';
+  let h = `<h2>PlasmidFinder</h2><div class="card" style="padding:0">
+  <table><tr><th>Replicon</th><th>Identity</th><th>Contig</th><th>Database</th><th>Accession</th></tr>`;
+  for (const p of s.plasmidfinder.hits) {
+    h += `<tr>
+      <td><strong>${p.plasmid}</strong></td>
+      <td>${p.identity}%</td>
+      <td style="font-family:monospace;font-size:0.82rem">${p.contig}</td>
+      <td style="font-size:0.82rem">${p.database}</td>
+      <td style="font-size:0.82rem">${p.accession}</td>
+    </tr>`;
   }
+  return h + `</table></div>`;
+}
 
-  // -- SCCmec (S. aureus only)
-  if (s.sccmec?.type && s.sccmec.type!=='-' && s.sccmec.type!=='skipped') {
-    const SCCMEC = {"I":"HA-MRSA, early","II":"HA-MRSA ST5/CC5","III":"HA-MRSA, largest cassette",
-                    "IV":"CA/HA-MRSA, most common (USA300)","V":"CA-MRSA, small cassette",
-                    "VI":"HA-MRSA ST239","XI":"mecC -- bovine origin"};
-    h += `<h2>SCCmec typing</h2><div class="card">
-      <div class="alert ${s.sccmec.mrsa?'alert-red':'alert-green'}" style="margin-bottom:10px">
-        <strong>${s.sccmec.mrsa?'MRSA':'MSSA'} -- SCCmec type ${s.sccmec.type}</strong>
-      </div>
-      <table>
-        <tr><td>Type</td><td>${s.sccmec.type}</td></tr>
-        <tr><td>Clinical context</td><td>${SCCMEC[s.sccmec.type]||'See IWG-SCC'}</td></tr>
-        ${s.spatyper?.spa_type && s.spatyper.spa_type!=='-'
-          ? `<tr><td>spa-type</td><td>${s.spatyper.spa_type} (${s.spatyper.CC})</td></tr>` : ''}
-        <tr><td>MRSA nomenclature</td><td>ST${s.mlst.ST}-SCCmec${s.sccmec.type} (${s.spatyper?.spa_type||'-'})</td></tr>
-      </table>
-    </div>`;
+function renderSCCmec(s) {
+  if (!s.sccmec?.type || s.sccmec.type==='-' || s.sccmec.type==='skipped') return '';
+  const SCCMEC = {"I":"HA-MRSA, early","II":"HA-MRSA ST5/CC5","III":"HA-MRSA, largest cassette",
+                  "IV":"CA/HA-MRSA, most common (USA300)","V":"CA-MRSA, small cassette",
+                  "VI":"HA-MRSA ST239","XI":"mecC -- bovine origin"};
+  return `<h2>SCCmec typing</h2><div class="card">
+    <div class="alert ${s.sccmec.mrsa?'alert-red':'alert-green'}" style="margin-bottom:10px">
+      <strong>${s.sccmec.mrsa?'MRSA':'MSSA'} -- SCCmec type ${s.sccmec.type}</strong>
+    </div>
+    <table>
+      <tr><td>Type</td><td>${s.sccmec.type}</td></tr>
+      <tr><td>Clinical context</td><td>${SCCMEC[s.sccmec.type]||'See IWG-SCC'}</td></tr>
+      ${s.spatyper?.spa_type && s.spatyper.spa_type!=='-'
+        ? `<tr><td>spa-type</td><td>${s.spatyper.spa_type} (${s.spatyper.CC})</td></tr>` : ''}
+      <tr><td>MRSA nomenclature</td><td>ST${s.mlst.ST}-SCCmec${s.sccmec.type} (${s.spatyper?.spa_type||'-'})</td></tr>
+    </table>
+  </div>`;
+}
+
+function renderLRE(s) {
+  if (!s.lrefinder) return '';
+  const lre = s.lrefinder;
+  const hasResistance = lre.n_acquired > 0 || (lre.max_23s_mut_pct != null && lre.max_23s_mut_pct >= 1);
+
+  const acquiredHtml = lre.acquired_genes.length ? `
+    <h3 style="margin-top:8px;font-size:0.95rem;color:#b02a37">Acquired resistance genes (${lre.acquired_genes.length})</h3>
+    <table>
+      <thead><tr><th>Gene template</th><th>Identity</th><th>Coverage</th><th>Depth</th></tr></thead>
+      <tbody>
+        ${lre.acquired_genes.map(g => `<tr>
+          <td><strong>${g.template}</strong></td>
+          <td>${g.identity.toFixed(2)}%</td>
+          <td>${g.coverage.toFixed(2)}%</td>
+          <td>${g.depth}×</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '';
+
+  const ribosomalHtml = lre.ribosomal_hits.length ? `
+    <h3 style="margin-top:10px;font-size:0.95rem">23S rRNA references</h3>
+    <p style="font-size:0.8rem;color:var(--muted);margin:2px 0 6px 0">
+      E. faecium / faecalis carry 6 copies of 23S rRNA. <strong>Mutated %</strong> below = fraction of copies carrying the linezolid-resistance mutation (G2576T, G2505A, etc.). &ge;1% suggests partial mosaicism worth phenotypic confirmation; &ge;5% is typically associated with clinical resistance.
+    </p>
+    <table>
+      <thead><tr><th>Reference</th><th>Identity</th><th>Mutated %</th><th>Coverage</th><th>Depth</th></tr></thead>
+      <tbody>
+        ${lre.ribosomal_hits.map(r => {
+          const mp = r.mut_pct;
+          const c  = mp == null ? 'inherit' : mp >= 5 ? '#b02a37' : mp >= 1 ? '#856404' : 'inherit';
+          return `<tr>
+            <td style="font-family:monospace;font-size:0.82rem">${r.template}</td>
+            <td>${r.identity.toFixed(2)}%</td>
+            <td style="color:${c};font-weight:600">${mp != null ? mp.toFixed(2) + '%' : '-'}</td>
+            <td>${r.coverage.toFixed(2)}%</td>
+            <td>${r.depth}×</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>` : '';
+
+  return `<h2>Linezolid resistance (LRE-Finder)</h2><div class="card">
+    <div class="alert ${hasResistance ? 'alert-red' : 'alert-green'}" style="margin-bottom:10px">
+      <strong>${hasResistance ? 'Linezolid resistance markers DETECTED' : 'No linezolid resistance markers detected'}</strong>
+      &nbsp;<span style="font-weight:normal;font-size:0.85rem">(KMA on trimmed reads; reports % of mutated 23S rRNA copies + acquired resistance genes)</span>
+    </div>
+    ${acquiredHtml}
+    ${ribosomalHtml}
+    <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
+      Caveats: assemblies collapse the 6 rRNA copies into one consensus, so assembly-based AMR tools may miss low-mosaicism resistance. LRE-Finder maps reads directly to track the per-copy state. Verify clinical resistance with MIC.
+    </p>
+    <p style="font-size:0.72rem;color:var(--muted);margin-top:6px;font-style:italic">
+      Filtering applied:
+      acquired-gene rows below <strong>90% template coverage</strong> or <strong>98% identity</strong> are dropped (k-mer noise / fragmentary hits);
+      23S rows below <strong>50% coverage</strong> or <strong>80% identity</strong> are dropped (cross-species probe).
+      Banner turns red when an acquired gene survives or 23S mosaicism &ge; 1%.
+      Raw output retained at <code>results/&lt;sample&gt;/LRE-Finder/lre.res</code> for borderline review.
+    </p>
+  </div>`;
+}
+
+function renderMGE(s) {
+  if (!s.mge || s.mge.count === 0) return '';
+  let h = `<h2>Mobile genetic elements (MGE)</h2><div class="card">
+  <table><tr><th>#</th><th>Name</th><th>Type</th><th>Contig</th><th>Start</th><th>End</th></tr>`;
+  for (const m of s.mge.elements) {
+    h += `<tr><td>${m.nr}</td><td><strong>${m.name}</strong></td><td>${m.type}</td>
+      <td>${m.contig}</td><td>${m.start}</td><td>${m.end}</td></tr>`;
   }
+  return h + `</table></div>`;
+}
 
-  // -- LRE-Finder (Enterococcus linezolid resistance, read-based)
-  if (s.lrefinder) {
-    const lre = s.lrefinder;
-    const hasResistance = lre.n_acquired > 0 || (lre.max_23s_mut_pct != null && lre.max_23s_mut_pct >= 1);
-    h += `<h2>Linezolid resistance (LRE-Finder)</h2><div class="card">
-      <div class="alert ${hasResistance ? 'alert-red' : 'alert-green'}" style="margin-bottom:10px">
-        <strong>${hasResistance ? 'Linezolid resistance markers DETECTED' : 'No linezolid resistance markers detected'}</strong>
-        &nbsp;<span style="font-weight:normal;font-size:0.85rem">(KMA on trimmed reads; reports % of mutated 23S rRNA copies + acquired resistance genes)</span>
-      </div>
-      ${lre.acquired_genes.length ? `
-        <h3 style="margin-top:8px;font-size:0.95rem;color:#b02a37">Acquired resistance genes (${lre.acquired_genes.length})</h3>
-        <table>
-          <thead><tr><th>Gene template</th><th>Identity</th><th>Coverage</th><th>Depth</th></tr></thead>
-          <tbody>
-            ${lre.acquired_genes.map(g => `<tr>
-              <td><strong>${g.template}</strong></td>
-              <td>${g.identity.toFixed(2)}%</td>
-              <td>${g.coverage.toFixed(2)}%</td>
-              <td>${g.depth}×</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>` : ''}
-      ${lre.ribosomal_hits.length ? `
-        <h3 style="margin-top:10px;font-size:0.95rem">23S rRNA references</h3>
-        <p style="font-size:0.8rem;color:var(--muted);margin:2px 0 6px 0">
-          E. faecium / faecalis carry 6 copies of 23S rRNA. <strong>Mutated %</strong> below = fraction of copies carrying the linezolid-resistance mutation (G2576T, G2505A, etc.). &ge;1% suggests partial mosaicism worth phenotypic confirmation; &ge;5% is typically associated with clinical resistance.
-        </p>
-        <table>
-          <thead><tr><th>Reference</th><th>Identity</th><th>Mutated %</th><th>Coverage</th><th>Depth</th></tr></thead>
-          <tbody>
-            ${lre.ribosomal_hits.map(r => {
-              const mp = r.mut_pct;
-              const c  = mp == null ? 'inherit' : mp >= 5 ? '#b02a37' : mp >= 1 ? '#856404' : 'inherit';
-              return `<tr>
-                <td style="font-family:monospace;font-size:0.82rem">${r.template}</td>
-                <td>${r.identity.toFixed(2)}%</td>
-                <td style="color:${c};font-weight:600">${mp != null ? mp.toFixed(2) + '%' : '-'}</td>
-                <td>${r.coverage.toFixed(2)}%</td>
-                <td>${r.depth}×</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>` : ''}
-      <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">
-        Caveats: assemblies collapse the 6 rRNA copies into one consensus, so assembly-based AMR tools may miss low-mosaicism resistance. LRE-Finder maps reads directly to track the per-copy state. Verify clinical resistance with MIC.
-      </p>
-      <p style="font-size:0.72rem;color:var(--muted);margin-top:6px;font-style:italic">
-        Filtering applied:
-        acquired-gene rows below <strong>90% template coverage</strong> or <strong>98% identity</strong> are dropped (k-mer noise / fragmentary hits);
-        23S rows below <strong>50% coverage</strong> or <strong>80% identity</strong> are dropped (cross-species probe).
-        Banner turns red when an acquired gene survives or 23S mosaicism &ge; 1%.
-        Raw output retained at <code>results/&lt;sample&gt;/LRE-Finder/lre.res</code> for borderline review.
-      </p>
-    </div>`;
-  }
-
-  // -- MGE
-  if (s.mge && s.mge.count > 0) {
-    h += `<h2>Mobile genetic elements (MGE)</h2><div class="card">
-    <table><tr><th>#</th><th>Name</th><th>Type</th><th>Contig</th><th>Start</th><th>End</th></tr>`;
-    for (const m of s.mge.elements) {
-      h += `<tr><td>${m.nr}</td><td><strong>${m.name}</strong></td><td>${m.type}</td>
-        <td>${m.contig}</td><td>${m.start}</td><td>${m.end}</td></tr>`;
-    }
-    h += `</table></div>`;
-  }
-
-  // -- Typing methods used
-  h += `<h2>Typing methods</h2><div class="card">
+function renderTypingMethods(s) {
+  const sid = s.species_id;
+  const sp  = s.species || '';
+  return `<h2>Typing methods</h2><div class="card">
   <table><tr><th>Tool</th><th>Result</th><th>Database / method</th></tr>
+    ${sid.gambit?.status==='ok'
+      ? `<tr><td>GAMBIT</td>
+          <td>${(sid.gambit.predicted_name||'-').replace(/_/g,' ')} &mdash; dist: ${sid.gambit.closest_distance != null ? sid.gambit.closest_distance.toFixed(4) : '-'}</td>
+          <td style="font-size:0.8rem">GAMBIT db (primary species ID)</td></tr>`
+      : `<tr><td>GAMBIT</td><td style="color:var(--muted)">No match / not run</td><td>-</td></tr>`}
     <tr><td>Kraken2 + Bracken</td>
       <td>${sid.primary_species.replace(/_/g,' ')} ${badge(sid.primary_pct.toFixed(1)+'%', sid.primary_pct>=80?'green':'yellow')}</td>
       <td style="font-size:0.8rem">${sid.kraken2_db}</td></tr>
@@ -506,34 +527,64 @@ function render() {
     <tr><td>MOB-suite (mob_typer)</td><td>${s.plasmids.count} plasmid(s)</td><td>mob_suite database</td></tr>
     ${s.mge && s.mge.count > 0
       ? `<tr><td>MobileElementFinder</td><td>${s.mge.count} MGE(s)</td><td>MGEdb v1.1.1 (CGE)</td></tr>` : ''}
-    ${s.species?.includes('Klebsiella') || s.species?.includes('Escherichia') || s.species?.includes('Shigella')
+    ${sp.includes('Klebsiella') || sp.includes('Escherichia') || sp.includes('Shigella')
       ? `<tr><td>Kleborate</td>
           <td>${s.kleborate?.ST&&s.kleborate.ST!=='-'?'ST'+s.kleborate.ST+' &nbsp; ':''
             }K: ${s.kleborate?.K_type||'-'} &nbsp; O: ${s.kleborate?.O_type||'-'}
               &nbsp; Virulence: ${s.kleborate?.virulence_score||'-'}</td>
           <td>Kleborate v3 (${
-            s.species.includes('Klebsiella_pneumoniae')||s.species.includes('Klebsiella_variicola')||s.species.includes('Klebsiella_quasipneumoniae') ? 'kpsc' :
-            s.species.includes('Klebsiella_oxytoca')||s.species.includes('Klebsiella_michiganensis') ? 'kosc' : 'escherichia'} preset)</td></tr>` : ''}
-    ${s.species?.includes('Staphylococcus_aureus')
+            sp.includes('Klebsiella_pneumoniae')||sp.includes('Klebsiella_variicola')||sp.includes('Klebsiella_quasipneumoniae') ? 'kpsc' :
+            sp.includes('Klebsiella_oxytoca')||sp.includes('Klebsiella_michiganensis') ? 'kosc' : 'escherichia'} preset)</td></tr>` : ''}
+    ${sp.includes('Staphylococcus_aureus')
       ? `<tr><td>StaphScope</td>
            <td>spa: ${s.spatyper?.spa_type||'-'} &nbsp; SCCmec: ${s.sccmec?.type||'-'} &nbsp; ${s.sccmec?.mrsa?badge('MRSA','red'):badge('MSSA','green')}</td>
            <td>StaphScope (spa, SCCmec, MRSA status, virulence, lineage)</td></tr>` : ''}
-    ${s.species?.includes('Escherichia') || s.species?.includes('Shigella')
+    ${sp.includes('Escherichia') || sp.includes('Shigella')
       ? `<tr><td>ECTyper</td><td>${s.ectyper?.serotype||'-'}</td><td>ECTyper v2</td></tr>` : ''}
-    ${s.species?.includes('Streptococcus_pyogenes')
+    ${sp.includes('Streptococcus_pyogenes')
       ? `<tr><td>emmtyper</td><td>${s.emmtyper?.emm_type||'-'}</td><td>CDC emm type database</td></tr>` : ''}
-    ${s.species?.includes('Salmonella') && s.seqsero2
+    ${sp.includes('Salmonella') && s.seqsero2
       ? `<tr><td>SeqSero2</td><td>${s.seqsero2.serotype} (${s.seqsero2.antigenic_profile})</td><td>Kauffmann-White scheme</td></tr>` : ''}
-    ${s.species?.includes('Haemophilus') && s.hicap
+    ${sp.includes('Haemophilus') && s.hicap
       ? `<tr><td>hicap</td><td>${s.hicap.serotype} &mdash; genes: ${s.hicap.genes}</td><td>hicap database</td></tr>` : ''}
-    ${s.species?.includes('Streptococcus_agalactiae') && s.gbsserotyper
+    ${sp.includes('Streptococcus_agalactiae') && s.gbsserotyper
       ? `<tr><td>GBS-SBG</td><td>${s.gbsserotyper.serotype}${s.gbsserotyper.uncertainty ? ` <span style="color:var(--muted);font-size:0.85em">(${s.gbsserotyper.uncertainty})</span>` : ''}</td><td>GBS-SBG (assembly-based)</td></tr>` : ''}
   </table></div>`;
+}
 
-  h += `<p style="color:var(--muted);font-size:0.78rem;margin-top:16px">
-    Generated: ${s.completed} | Bacterial genomics pipeline
-  </p>`;
+function renderVersions(s) {
+  if (!s.versions || !s.versions.length) return '';
+  let h = `<h2>Tool versions</h2><div class="card" style="padding:0">
+  <table><tr><th>Tool</th><th>Version</th><th>Tool</th><th>Version</th></tr>`;
+  const vs = s.versions;
+  for (let i = 0; i < vs.length; i += 2) {
+    const a = vs[i], b = vs[i+1] || {};
+    h += `<tr>
+      <td>${a.tool}</td><td style="font-family:monospace">${a.version}</td>
+      <td>${b.tool||''}</td><td style="font-family:monospace">${b.version||''}</td>
+    </tr>`;
+  }
+  return h + `</table></div>`;
+}
 
+function render() {
+  const s = D;
+  const h = [
+    renderSummaryTiles(s),
+    renderAlerts(s),
+    renderQC(s),
+    renderVarCall(s),
+    renderAssembly(s),
+    renderAMR(s),
+    renderPlasmids(s),
+    renderPlasmidFinder(s),
+    renderSCCmec(s),
+    renderLRE(s),
+    renderMGE(s),
+    renderTypingMethods(s),
+    renderVersions(s),
+    `<p style="color:var(--muted);font-size:0.78rem;margin-top:16px">Generated: ${s.completed} | Bacterial genomics pipeline</p>`,
+  ].join('');
   document.getElementById('root').innerHTML = h;
 }
 render();
