@@ -8,13 +8,15 @@ from pathlib import Path
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
-KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db/")
+KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_light/")
 KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reserved per job -- caps parallel jobs via --resources mem_mb=<available RAM>
 SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reserved per Shovill/SPAdes job (SPAdes --ram is set to this / 1024)
-SKANI_MEM        = config.get("skani_mem_mb", 4000)     # MB RAM reserved per skani job (much lower than fastANI)
+SKANI_MEM        = config.get("skani_mem_mb", 10000)    # MB RAM reserved per skani job; sized for the full-DB fallback peak (~8 GB for GTDB r226) since any sample may trigger it. Small-DB searches use far less.
 SKANI_THREADS    = config.get("skani_threads", 8)
 CHECKM_MEM       = config.get("checkm_mem_mb", 22000)   # MB RAM per CheckM job (lineage_wf --reduced_tree, pplacer peaks ~14-18 GB; 22 GB allows 1 job per 30 GB host)
 SKANI_DB         = config.get("skani_db",         "/databases/skani_db/bacteria")       # ANI confirmation in report
+SKANI_DB_FULL    = config.get("skani_db_full",    "/databases/skani_db_full/database")  # fallback when normal skani ANI is low
+SKANI_ANI_MIN    = config.get("skani_ani_min", 95)                                      # top-hit ANI below this triggers full-DB fallback
 GAMBIT_DB        = config.get("gambit_db",        "/databases/gambit_db")              # Primary species ID (drives DAG routing)
 ECTYPER_MASH     = config.get("ectyper_mash",     "/databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh")
 PLASMIDFINDER_DB = config.get("plasmidfinder_db", "/databases/plasmidfinder_db/")
@@ -200,8 +202,10 @@ checkpoint identify_species:
     log:
         f"{RESULTS_DIR}/{{sample}}/logs/identify_species.log"
     params:
-        gambit_db = GAMBIT_DB,
-        skani_db  = SKANI_DB,
+        gambit_db     = GAMBIT_DB,
+        skani_db      = SKANI_DB,
+        skani_db_full = SKANI_DB_FULL,
+        skani_ani_min = SKANI_ANI_MIN,
     threads: SKANI_THREADS
     resources:
         mem_mb = SKANI_MEM
@@ -212,6 +216,15 @@ checkpoint identify_species:
             -o {output.gambit_csv} -f csv {input.fa} 2>&1 | tee {log}
         pixi run --environment identification skani search \
             -q {input.fa} -d {params.skani_db} -o {output.tsv} -t {threads} 2>&1 | tee -a {log}
+        ani=$(awk -F'\t' 'NR==2{{print $3}}' {output.tsv})
+        if [ -z "$ani" ] || awk "BEGIN{{exit !($ani < {params.skani_ani_min})}}"; then
+            printf '\033[1;93m================================================================\033[0m\n' >&2
+            printf '\033[1;91m  Normal species ID failed (skani top-hit ANI=%s < %s).\033[0m\n' "${{ani:-none}}" "{params.skani_ani_min}" >&2
+            printf '\033[1;93m  Running full skani search against %s ...\033[0m\n' "{params.skani_db_full}" >&2
+            printf '\033[1;93m================================================================\033[0m\n' >&2
+            pixi run --environment identification skani search \
+                -q {input.fa} -d {params.skani_db_full} -o {output.tsv} -t {threads} 2>&1 | tee -a {log}
+        fi
         sp=$(awk -F',' 'NR==2{{
             gsub(/"/, "", $2);
             n = split($2, a, " ");

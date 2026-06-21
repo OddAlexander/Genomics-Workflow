@@ -25,7 +25,7 @@ pixi install
 
 **GAMBIT** (~2 GB) — primary species ID, drives DAG routing
 
-**skani** (~3 GB sketch) — ANI confirmation shown in the report alongside GAMBIT
+**skani** (~3 GB sketch) — ANI confirmation shown in the report alongside GAMBIT. If the top-hit ANI falls below `skani_ani_min` (default 95), the pipeline retries against a full GTDB sketch at `skani_db_full` (prebuilt GTDB-r226, ~30 GB download / ~60 GB on disk) and shows that hit in the report instead.
 
 **MOB-suite** (~1.5 GB): `pixi run --environment mobsuite mob_init`
 
