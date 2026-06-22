@@ -15,7 +15,7 @@ SKANI_MEM        = config.get("skani_mem_mb", 10000)    # MB RAM reserved per sk
 SKANI_THREADS    = config.get("skani_threads", 8)
 CHECKM_MEM       = config.get("checkm_mem_mb", 22000)   # MB RAM per CheckM job (lineage_wf --reduced_tree, pplacer peaks ~14-18 GB; 22 GB allows 1 job per 30 GB host)
 SKANI_DB         = config.get("skani_db",         "/databases/skani_db/bacteria")       # ANI confirmation in report
-SKANI_DB_FULL    = config.get("skani_db_full",    "/databases/skani_db_full/database")  # fallback when normal skani ANI is low
+SKANI_DB_FULL    = config.get("skani_db_full",    "/databases/skani_db_full")           # fallback when normal skani ANI is low (dir with markers.bin/sketches.db)
 SKANI_ANI_MIN    = config.get("skani_ani_min", 95)                                      # top-hit ANI below this triggers full-DB fallback
 GAMBIT_DB        = config.get("gambit_db",        "/databases/gambit_db")              # Primary species ID (drives DAG routing)
 ECTYPER_MASH     = config.get("ectyper_mash",     "/databases/ectyper/EnteroRef_GTDBSketch_20231003_V2.msh")
@@ -441,10 +441,8 @@ rule mefinder_db:
     shell:
         """
         mkdir -p {params.db_dir}
-        pixi run --environment mefinder bash -c '
-            FNA=$(python -c "import mgedb, os; print(os.path.join(os.path.dirname(mgedb.__file__), \"data/sequences.d/mge_records.fna\"))")
-            makeblastdb -in "$FNA" -dbtype nucl -title mge_records -out {params.db_dir}/mge_records
-        ' 2>&1 | tee {log}
+        FNA=$(pixi run --environment mefinder python -c 'import mgedb, os; print(os.path.join(os.path.dirname(mgedb.__file__), "data/sequences.d/mge_records.fna"))')
+        pixi run --environment mefinder makeblastdb -in "$FNA" -dbtype nucl -title mge_records -out {params.db_dir}/mge_records 2>&1 | tee {log}
         """
 
 

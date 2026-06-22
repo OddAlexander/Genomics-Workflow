@@ -123,7 +123,7 @@ prep-schema = { cmd = "chewBBACA.py PrepExternalSchema -g $SCHEMA -o $OUTPUT --c
 allele-call = { cmd = "chewBBACA.py AlleleCall -i $INPUT -g $SCHEMA -o $OUTPUT --cpu 8 --no-inferred", env = { INPUT = "results/assemblies/", SCHEMA = "/databases/cgmlst/schema", OUTPUT = "results/cgmlst/" } }
 
 [feature.staphscope.dependencies]
-staphscope = ">=1.0"        # S. aureus: spa, SCCmec, AMR, virulence, lineage
+staphscope = "==1.2.1"      # S. aureus: spa, SCCmec, AMR, virulence, lineage (pinned: 1.2.3 dropped .fa input + .tsv report)
 
 [feature.seqsero2.dependencies]
 seqsero2 = ">=1.3"          # Salmonella serotyping
@@ -132,9 +132,11 @@ seqsero2 = ">=1.3"          # Salmonella serotyping
 python = "3.11.*"
 hicap  = ">=1.0"            # H. influenzae kapseltype
 
-# ── PlasmidFinder (isolert: krever Python 3.14)
+# ── PlasmidFinder (isolert; pin Python 3.11 -- unpinned solved to the broken
+#    free-threaded python3.14t build, whose stdlib fails importing annotationlib)
 [feature.plasmidfinder.dependencies]
 plasmidfinder = ">=2.1"
+python        = "3.11.*"
 
 [feature.plasmidfinder.tasks]
 plasmidfinder-run = { cmd = "plasmidfinder.py -i $INPUT -o $OUTPUT -p $DB", env = { INPUT = "results/assembly/contigs.fa", OUTPUT = "results/plasmidfinder/", DB = "/databases/plasmidfinder_db/" } }
