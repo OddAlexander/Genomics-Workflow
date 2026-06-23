@@ -31,7 +31,7 @@ DATA_DIR        = config.get("data_dir",       "data/").rstrip("/")
 RESULTS_DIR     = config.get("results_dir",    "results").rstrip("/")
 THREADS         = config.get("threads", 8)
 MASH_DB         = config.get("mash_db",        "/databases/mash_db/refseq.msh")
-KRAKEN2_DB      = config.get("kraken2_db",     "/databases/kraken2_db_light/")
+KRAKEN2_DB      = config.get("kraken2_db",     "/databases/kraken2_db_pluspf_111GB/")
 KRAKEN2_MEM     = config.get("kraken2_mem_mb", 12000)
 REFSEQ_LIST     = config.get("refseq_list",    f"{workflow.basedir}/refseq_list.json")
 REFSEQ_MIN_ID   = float(config.get("refseq_min_identity", 0.95))
@@ -173,7 +173,7 @@ rule kraken2_qc:
     shell:
         """
         pixi run --environment identification kraken2 --db {params.db} \
-            --threads {threads} --paired --report {output.rep} {input.r1} {input.r2} 2>&1 | tee {log}
+            --threads {threads} --paired --memory-mapping --report {output.rep} {input.r1} {input.r2} 2>&1 | tee {log}
         pixi run --environment identification bracken -d {params.db} \
             -i {output.rep} -o {output.bracken} -l S 2>&1 | tee -a {log}
         """
@@ -436,7 +436,7 @@ rule update_pipeline_report:
         f"{RESULTS_DIR}/{{sample}}/logs/pipeline_report_refresh.log",
     params:
         template   = "scripts/templates/report_template.html",
-        kraken2_db = config.get("kraken2_db", "/databases/kraken2_db_light/"),
+        kraken2_db = config.get("kraken2_db", "/databases/kraken2_db_pluspf_111GB/"),
         log_path   = f"{RESULTS_DIR}/run_log.tsv",
     shell:
         """
