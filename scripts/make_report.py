@@ -729,6 +729,8 @@ if __name__ == "__main__":
     ap.add_argument("--output",      required=True)
     ap.add_argument("--pdf",         default=None)
     ap.add_argument("--kraken2-db",  default="-")
+    ap.add_argument("--skani-db",    default="-")
+    ap.add_argument("--gambit-db",   default="-")
     ap.add_argument("--log-path",    default=None)
     args = ap.parse_args()
 
@@ -806,6 +808,8 @@ if __name__ == "__main__":
             "skani":             skani_data,
             "gambit":            gambit_data,
             "kraken2_db":        args.kraken2_db,
+            "skani_db":          args.skani_db,
+            "gambit_db":         args.gambit_db,
         },
     }
 

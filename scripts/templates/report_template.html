@@ -510,16 +510,16 @@ function renderTypingMethods(s) {
     ${sid.gambit?.status==='ok'
       ? `<tr><td>GAMBIT</td>
           <td>${(sid.gambit.predicted_name||'-').replace(/_/g,' ')} &mdash; dist: ${sid.gambit.closest_distance != null ? sid.gambit.closest_distance.toFixed(4) : '-'}</td>
-          <td style="font-size:0.8rem">GAMBIT db (primary species ID)</td></tr>`
-      : `<tr><td>GAMBIT</td><td style="color:var(--muted)">No match / not run</td><td>-</td></tr>`}
+          <td style="font-size:0.8rem">${sid.gambit_db||'-'}</td></tr>`
+      : `<tr><td>GAMBIT</td><td style="color:var(--muted)">No match / not run</td><td style="font-size:0.8rem">${sid.gambit_db||'-'}</td></tr>`}
     <tr><td>Kraken2 + Bracken</td>
       <td>${sid.primary_species.replace(/_/g,' ')} ${badge(sid.primary_pct.toFixed(1)+'%', sid.primary_pct>=80?'green':'yellow')}</td>
-      <td style="font-size:0.8rem">${sid.kraken2_db}</td></tr>
+      <td style="font-size:0.8rem">${sid.kraken2_db||'-'}</td></tr>
     ${sid.skani?.status==='ok'
       ? `<tr><td>skani</td>
           <td>${sid.skani.top_hit} &mdash; ${badge(sid.skani.ani?.toFixed(2)+'% ANI', sid.skani.ani>=99?'green':sid.skani.ani>=95?'yellow':'red')}</td>
-          <td style="font-size:0.8rem">skani reference database</td></tr>`
-      : `<tr><td>skani</td><td style="color:var(--muted)">No hit (sketch missing this species?)</td><td>-</td></tr>`}
+          <td style="font-size:0.8rem">${sid.skani_db||'-'}</td></tr>`
+      : `<tr><td>skani</td><td style="color:var(--muted)">No hit (sketch missing this species?)</td><td style="font-size:0.8rem">${sid.skani_db||'-'}</td></tr>`}
     <tr><td>MLST (PubMLST)</td><td>ST${s.mlst.ST}</td><td>${s.mlst.scheme}</td></tr>
     <tr><td>AMRFinder v4</td>
       <td>${s.amr.total_amr_genes} AMR &nbsp; ${s.amr.total_virulence_genes} virulence &nbsp; ${s.amr.total_stress_genes||0} stress</td>

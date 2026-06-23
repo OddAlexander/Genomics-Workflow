@@ -8,8 +8,8 @@ from pathlib import Path
 DATA_DIR    = config.get("data_dir", "data/").rstrip("/")
 RESULTS_DIR = config.get("results_dir", "results/").rstrip("/")
 THREADS     = config.get("threads", 8)
-KRAKEN2_DB       = config.get("kraken2_db", "/databases/kraken2_db_light/")
-KRAKEN2_MEM      = config.get("kraken2_mem_mb", 12000)  # MB RAM reserved per job -- caps parallel jobs via --resources mem_mb=<available RAM>
+KRAKEN2_DB       = config.get("kraken2_db",     "/databases/kraken2_db_pluspf_16GB/")
+KRAKEN2_MEM      = config.get("kraken2_mem_mb", 58000)  # MB RAM reserved per job -- caps parallel jobs via --resources mem_mb=<available RAM>
 SHOVILL_MEM      = config.get("shovill_mem_mb",  12000)  # MB RAM reserved per Shovill/SPAdes job (SPAdes --ram is set to this / 1024)
 SKANI_MEM        = config.get("skani_mem_mb", 10000)    # MB RAM reserved per skani job; sized for the full-DB fallback peak (~8 GB for GTDB r226) since any sample may trigger it. Small-DB searches use far less.
 SKANI_THREADS    = config.get("skani_threads", 8)
@@ -149,9 +149,11 @@ rule report:
         template   = "scripts/templates/report_template.html",
         results    = RESULTS_DIR,
         kraken2_db = KRAKEN2_DB,
+        skani_db   = SKANI_DB,
+        gambit_db  = GAMBIT_DB,
         log_path   = RUN_LOG
     shell:
-        "python scripts/make_report.py --sample {wildcards.sample} --results-dir {params.results} --template {params.template} --output {output.html} --pdf {output.pdf} --kraken2-db {params.kraken2_db} --log-path {params.log_path}"
+        "python scripts/make_report.py --sample {wildcards.sample} --results-dir {params.results} --template {params.template} --output {output.html} --pdf {output.pdf} --kraken2-db {params.kraken2_db} --skani-db {params.skani_db} --gambit-db {params.gambit_db} --log-path {params.log_path}"
 
 rule fastp:
     input:
@@ -185,7 +187,7 @@ rule kraken2_qc:
     shell:
         """
         pixi run --environment identification kraken2 --db {params.db} \
-            --threads {threads} --paired --report {output.rep} {input.r1} {input.r2} 2>&1 | tee {log}
+            --threads {threads} --paired --memory-mapping --report {output.rep} {input.r1} {input.r2} 2>&1 | tee {log}
         pixi run --environment identification bracken -d {params.db} \
             -i {output.rep} -o {output.bracken} -l S 2>&1 | tee -a {log}
         """

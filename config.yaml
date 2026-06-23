@@ -35,6 +35,10 @@ scripts_dir: ~/bin
 # Number of threads per rule (override per rule in Snakefile if needed)
 threads: 8
 
+# Kraken2 / Bracken database
+kraken2_db:     /databases/kraken2_db_pluspf_111GB
+kraken2_mem_mb: 18000
+
 # Path to mash sketch database (e.g. RefSeq .msh file)
 mash_db: /databases/mash_db/refseq.msh
 
