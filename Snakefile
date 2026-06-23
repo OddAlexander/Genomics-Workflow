@@ -153,7 +153,10 @@ rule report:
         gambit_db  = GAMBIT_DB,
         log_path   = RUN_LOG
     shell:
-        "python scripts/make_report.py --sample {wildcards.sample} --results-dir {params.results} --template {params.template} --output {output.html} --pdf {output.pdf} --kraken2-db {params.kraken2_db} --skani-db {params.skani_db} --gambit-db {params.gambit_db} --log-path {params.log_path}"
+        """
+        skani_db_used=$(cat {params.results}/{wildcards.sample}/ID_Skani/skani_db_used.txt 2>/dev/null || echo "{params.skani_db}")
+        python scripts/make_report.py --sample {wildcards.sample} --results-dir {params.results} --template {params.template} --output {output.html} --pdf {output.pdf} --kraken2-db {params.kraken2_db} --skani-db "$skani_db_used" --gambit-db {params.gambit_db} --log-path {params.log_path}
+        """
 
 rule fastp:
     input:
@@ -226,6 +229,9 @@ checkpoint identify_species:
             printf '\033[1;93m================================================================\033[0m\n' >&2
             pixi run --environment identification skani search \
                 -q {input.fa} -d {params.skani_db_full} -o {output.tsv} -t {threads} 2>&1 | tee -a {log}
+            echo "{params.skani_db_full}" > $(dirname {output.tsv})/skani_db_used.txt
+        else
+            echo "{params.skani_db}" > $(dirname {output.tsv})/skani_db_used.txt
         fi
         sp=$(awk -F',' 'NR==2{{
             gsub(/"/, "", $2);
